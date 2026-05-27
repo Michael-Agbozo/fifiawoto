@@ -120,3 +120,58 @@ document.addEventListener('DOMContentLoaded', init)
 // Re-run after Livewire `wire:navigate` swaps a new page in — without this
 // the next page's reveal targets never get observed.
 document.addEventListener('livewire:navigated', init)
+
+/* ------------------------------------------------------------------
+ * Theme store
+ *
+ * Backs the public site + admin <x-*.theme-toggle> components.
+ * The initial value is read from the same `data-theme` attribute that
+ * the inline script in partials/head.blade.php sets before paint, so
+ * Alpine never disagrees with what's already on screen.
+ * ------------------------------------------------------------------ */
+document.addEventListener('alpine:init', () => {
+    const root = document.documentElement
+
+    function applyMode(mode) {
+        root.setAttribute('data-theme', mode)
+        root.classList.toggle('dark', mode === 'dark')
+        try {
+            localStorage.setItem('theme', mode)
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    window.Alpine.store('theme', {
+        mode: root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
+
+        isDark() {
+            return this.mode === 'dark'
+        },
+
+        toggle() {
+            this.setMode(this.mode === 'dark' ? 'light' : 'dark')
+        },
+
+        setMode(mode) {
+            this.mode = mode === 'dark' ? 'dark' : 'light'
+            applyMode(this.mode)
+        },
+    })
+
+    /* Keep the store in sync with the OS preference IF the user hasn't
+       explicitly picked yet (no `theme` key in localStorage). */
+    try {
+        if (!localStorage.getItem('theme') && window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+                if (!localStorage.getItem('theme')) {
+                    window.Alpine.store('theme').setMode(event.matches ? 'dark' : 'light')
+                    // setMode wrote to localStorage; clear it so we keep tracking the OS
+                    try { localStorage.removeItem('theme') } catch (e) { /* ignore */ }
+                }
+            })
+        }
+    } catch (e) {
+        /* ignore */
+    }
+})

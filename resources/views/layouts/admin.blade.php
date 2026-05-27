@@ -89,14 +89,14 @@
     >
         {{-- Outer wrap: light cream canvas with padding around the app card --}}
         <div class="min-h-screen p-0 sm:p-4 lg:p-6">
-            <div class="flex min-h-[calc(100vh-3rem)] overflow-hidden bg-white shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
+            <div class="flex min-h-[calc(100vh-3rem)] overflow-hidden bg-cream-50 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
                 {{-- SIDEBAR --}}
                 <aside
                     :class="[
                         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
                         sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
                     ]"
-                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-white transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
+                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-cream-50 transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
                 >
                     <div
                         :class="sidebarCollapsed ? 'lg:justify-center lg:px-3' : 'lg:px-5'"
@@ -257,7 +257,7 @@
 
                 {{-- MAIN --}}
                 <div class="flex min-w-0 flex-1 flex-col">
-                    <header class="flex items-center gap-4 border-b border-cream-300 bg-white px-5 py-4 sm:px-6 lg:px-8">
+                    <header class="flex items-center gap-4 border-b border-cream-300 bg-cream-50 px-5 py-4 sm:px-6 lg:px-8">
                         <button
                             type="button"
                             @click="sidebarOpen = true"
@@ -302,6 +302,23 @@
                         </form>
 
                         <div class="ml-auto flex items-center gap-2 md:ml-0">
+                            <x-admin.theme-toggle class="hidden sm:inline-flex" />
+                            {{-- Compact icon-only toggle on mobile to save room next to the help/notifications buttons --}}
+                            <button
+                                type="button"
+                                @click="$store.theme.toggle()"
+                                :aria-label="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                :title="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900 sm:hidden"
+                            >
+                                <svg x-cloak x-show="$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                                </svg>
+                                <svg x-cloak x-show="!$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+                                </svg>
+                            </button>
                             <button type="button" class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Help">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>
                             </button>
@@ -312,7 +329,7 @@
                         </div>
                     </header>
 
-                    <main class="flex-1 overflow-x-hidden bg-white px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
+                    <main class="flex-1 overflow-x-hidden bg-cream-50 px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
                         @if ($title)
                             <div class="mb-6">
                                 <h1 class="font-serif text-2xl font-bold text-ink-900 sm:text-3xl">{{ $title }}</h1>

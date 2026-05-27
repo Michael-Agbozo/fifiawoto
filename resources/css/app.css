@@ -99,6 +99,73 @@
 }
 
 /* ------------------------------------------------------------------
+ | Dark mode
+ |
+ | Activated by setting `data-theme="dark"` (or class `.dark`) on the
+ | <html> element. The block below overrides the same custom-property
+ | names that the light palette defines so every utility that uses a
+ | brand/cream/ink/gold token re-skins automatically — no `dark:` prefix
+ | needed in views. A blocking script in partials/head.blade.php applies
+ | the attribute before first paint to avoid flash-of-wrong-theme.
+ |
+ | Reduced-motion: the transition below is suppressed for users who
+ | request it (see the `prefers-reduced-motion` block already present).
+ ------------------------------------------------------------------ */
+:root[data-theme="dark"],
+.dark {
+    /* Paper / surface scale → flipped to dark-elevated values.
+       cream-200 is the body canvas (darkest); cream-50 is the elevated
+       card surface (slightly lighter); cream-100 is the in-between. */
+    --color-cream-50:  #11144a;
+    --color-cream-100: #0d104a;
+    --color-cream-200: #07092e;
+    --color-cream-300: #262c66;
+
+    /* Brand scale — keep navy tone but rebalance so links/borders read
+       on dark, and "deep navy" hero/CTA strips stay distinctly dark. */
+    --color-brand-50:  #1a1f5a;
+    --color-brand-100: #2b3175;
+    --color-brand-200: #4a5199;
+    --color-brand-300: #6f76c1;
+    --color-brand-400: #8b91d9;
+    --color-brand-500: #a8aedb;
+    --color-brand-600: #c2c6e8;
+    --color-brand-700: #d6daf2;
+    --color-brand-800: #eef0ff;
+    --color-brand-900: #07092e;
+
+    /* Body greys inverted */
+    --color-ink-500: #a5a8c4;
+    --color-ink-700: #d1d4e8;
+    --color-ink-900: #ffffff;
+
+    /* Red accent — slightly brighter so it pops against dark surfaces */
+    --color-gold-300: #ffb0b0;
+    --color-gold-400: #ff8585;
+    --color-gold-500: #ff4d4d;
+    --color-gold-600: #ff7373;
+}
+
+/* Smooth theme transition on the structural surfaces that actually
+   change colour when the theme flips. Kept narrow (not a universal `*`)
+   so scroll + hover transitions on cards/buttons aren't impacted. */
+html,
+body,
+header,
+footer,
+main,
+section,
+article,
+aside,
+nav,
+figure {
+    transition:
+        background-color 220ms ease,
+        color 220ms ease,
+        border-color 220ms ease;
+}
+
+/* ------------------------------------------------------------------
  | Page navigation transitions
  |
  | Cross-fade between page loads for `wire:navigate` (and full browser
