@@ -1,15 +1,14 @@
 @import 'tailwindcss';
-@import '../../vendor/livewire/flux/dist/flux.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
-@source '../../vendor/livewire/flux/stubs/**/*.blade.php';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-serif: 'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif;
+    --font-display: var(--font-serif);
 
     --color-zinc-50: #fafafa;
     --color-zinc-100: #f5f5f5;
@@ -23,44 +22,216 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    /* Brand palette — Fifiawoto Foundation
+       Sourced from the foundation's WordPress reference build.
+       White surfaces · deep navy structure · red primary accent. */
+
+    /* Light "paper" surfaces — was cream-*; kept name for compatibility */
+    --color-cream-50:  #ffffff;
+    --color-cream-100: #f9fafb;
+    --color-cream-200: #f1f3f5;
+    --color-cream-300: #e0e3e8;
+
+    /* Deep navy scale — anchors dark sections, sticky header, hover states */
+    --color-brand-50:  #eef0ff;
+    --color-brand-100: #d6daf2;
+    --color-brand-200: #a8aedb;
+    --color-brand-300: #6f76c1;
+    --color-brand-400: #444ca6;
+    --color-brand-500: #1d2589;
+    --color-brand-600: #060b6a;
+    --color-brand-700: #03075e;
+    --color-brand-800: #000342;
+    --color-brand-900: #00044e;
+
+    /* Body text greys */
+    --color-ink-500: #5a5a5a;
+    --color-ink-700: #2c2c2c;
+    --color-ink-900: #000000;
+
+    /* Red accent scale (kept the `gold` token name so existing views still work) */
+    --color-gold-300: #ffb0b0;
+    --color-gold-400: #ff5a5a;
+    --color-gold-500: #df0000;
+    --color-gold-600: #a30000;
+
+    --color-accent: var(--color-gold-500);
+    --color-accent-content: var(--color-brand-900);
     --color-accent-foreground: var(--color-white);
-}
 
-@layer theme {
-    .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+    /* Modal entrance — used by <x-admin.modal> so the dialog fades + lifts in
+       and the backdrop fades up instead of popping. */
+    --animate-modal-enter: modal-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --animate-backdrop-enter: backdrop-enter 180ms ease-out both;
+
+    /* Reveal-on-scroll & first-paint entrance utilities. `animate-rise-in`
+       is used by sections so they fade up as the page loads or as they
+       scroll into view (via the small IntersectionObserver in app.js).
+       `animate-fade-in` is the quieter sibling for hero text. */
+    --animate-rise-in: rise-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    --animate-fade-in: fade-in 500ms ease-out both;
+
+    @keyframes modal-enter {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(10px);
+        }
+    }
+
+    @keyframes backdrop-enter {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes rise-in {
+        from {
+            opacity: 0;
+            transform: translateY(24px);
+        }
+    }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
     }
 }
 
-@layer base {
+/* ------------------------------------------------------------------
+ | Page navigation transitions
+ |
+ | Cross-fade between page loads for `wire:navigate` (and full browser
+ | navigations on browsers that support the API). The keyword `auto`
+ | tells the browser to apply the default cross-fade to every same-origin
+ | navigation; non-supporting browsers (Firefox <17.4) just navigate as
+ | normal. Custom `view-transition-name` on the header keeps it visually
+ | continuous across page transitions instead of flashing.
+ ------------------------------------------------------------------ */
+@view-transition {
+    navigation: auto;
+}
 
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------
+ | Scroll-reveal utility (.reveal)
+ |
+ | Add `class="reveal"` + `x-intersect:enter.once="$el.classList.add('is-visible')"`
+ | to any element to fade-and-lift it in the first time it scrolls into
+ | view. Variants:
+ |   reveal-fade   — fade only (no translate)
+ |   reveal-left   — slides in from the left
+ |   reveal-right  — slides in from the right
+ |   reveal-zoom   — scales up
+ |
+ | Add `style="transition-delay: 120ms"` (or via Tailwind delay-* utility
+ | with arbitrary value) to stagger siblings.
+ ------------------------------------------------------------------ */
+.reveal,
+.reveal-fade,
+.reveal-up,
+.reveal-down,
+.reveal-left,
+.reveal-right,
+.reveal-zoom {
+    opacity: 0;
+    transition-property: opacity, transform;
+    transition-duration: 1800ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+}
+/* `reveal` / `reveal-up` = Elementor fadeInUp (most common — content rises). */
+.reveal,
+.reveal-up    { transform: translateY(48px); }
+.reveal-down  { transform: translateY(-48px); }
+.reveal-left  { transform: translateX(-48px); }
+.reveal-right { transform: translateX(48px); }
+.reveal-zoom  { transform: scale(0.88); }
+
+.reveal.is-visible,
+.reveal-fade.is-visible,
+.reveal-up.is-visible,
+.reveal-down.is-visible,
+.reveal-left.is-visible,
+.reveal-right.is-visible,
+.reveal-zoom.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* Counter animation — used by [data-counter] elements. The CSS just sets up
+   a font-variant for stable digit width so the number doesn't jiggle as it
+   counts. The animation itself happens in JS (resources/js/app.js). */
+[data-counter] {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Image fade-in once loaded — opt in by adding `class="img-fade"` to an
+   <img>. Pairs with `loading="lazy"` for a graceful reveal of late images. */
+img.img-fade {
+    opacity: 0;
+    transition: opacity 600ms ease-out;
+}
+img.img-fade.is-loaded,
+img.img-fade[data-loaded="true"] {
+    opacity: 1;
+}
+
+/* Respect the user's reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
     *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .reveal,
+    .reveal-fade,
+    .reveal-up,
+    .reveal-down,
+    .reveal-left,
+    .reveal-right,
+    .reveal-zoom {
+        opacity: 1 !important;
+        transform: none !important;
     }
 }
 
-[data-flux-field]:not(ui-radio, ui-checkbox) {
-    @apply grid gap-2;
-}
+/* ------------------------------------------------------------------
+ | Site-wide font defaults
+ |
+ | Body text uses Roboto (the hero subhead/body font). All headings
+ | h1–h6 default to Playfair Display (the hero headline font) — so a
+ | new view doesn't have to remember to add `font-serif` to its
+ | headings. Form controls inherit the body font instead of the
+ | browser default. An explicit utility class on an element still
+ | wins via Tailwind's higher specificity.
+ ------------------------------------------------------------------ */
+@layer base {
+    html,
+    body {
+        font-family: var(--font-sans);
+    }
 
-[data-flux-label] {
-    @apply  !mb-0 !leading-tight;
-}
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-serif);
+        font-weight: 700;
+        line-height: 1.15;
+    }
 
-input:focus[data-flux-control],
-textarea:focus[data-flux-control],
-select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    button,
+    input,
+    optgroup,
+    select,
+    textarea {
+        font-family: inherit;
+    }
 }
-
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
