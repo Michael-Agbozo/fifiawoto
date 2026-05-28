@@ -1,0 +1,2 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "php83", "php83Extensions.pdo", "php83Extensions.mbstring", "php83Extensions.xml", "php83Extensions.curl", "php83Extensions.zip", "composer"]
