@@ -144,7 +144,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Self-service registration is intentionally disabled — accounts are
+        // provisioned only by admins via the invite flow in /admin/users.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
