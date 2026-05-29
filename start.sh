@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 mkdir -p /var/log/nginx
 
@@ -10,6 +9,9 @@ chmod -R 775 /app/storage /app/bootstrap/cache
 php artisan storage:link --force
 php artisan config:cache
 php artisan route:cache
-php artisan migrate --force
+php artisan migrate --force || echo "[warn] migrate failed, continuing"
 
-nginx -c /app/nginx.conf
+APP_PORT=${PORT:-80}
+sed "s/PORT_PLACEHOLDER/${APP_PORT}/g" /app/nginx.conf > /tmp/nginx-final.conf
+
+nginx -c /tmp/nginx-final.conf
