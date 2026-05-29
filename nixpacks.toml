@@ -1,5 +1,5 @@
 [phases.setup]
 cmds = ["mkdir -p /var/log/nginx"]
 
-[variables]
-NIXPACKS_PHP_FALLBACK_PATH = ""
+[start]
+cmd = "php-fpm -y /assets/php-fpm.conf -D && nginx -c /app/nginx.conf"
