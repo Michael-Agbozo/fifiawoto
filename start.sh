@@ -1,9 +1,15 @@
 #!/bin/bash
+set -e
+
 mkdir -p /var/log/nginx
-php artisan migrate --force
+
+php-fpm -y /assets/php-fpm.conf -D
+
+chmod -R 775 /app/storage /app/bootstrap/cache
+
+php artisan storage:link --force
 php artisan config:cache
 php artisan route:cache
-php artisan storage:link
-chmod -R 775 /app/storage /app/bootstrap/cache
-node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf
-nginx -c /nginx.conf
+php artisan migrate --force
+
+nginx -c /app/nginx.conf

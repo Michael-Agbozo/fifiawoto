@@ -2,4 +2,4 @@
 cmds = ["mkdir -p /var/log/nginx"]
 
 [start]
-cmd = "php-fpm -y /assets/php-fpm.conf -D && nginx -c /app/nginx.conf"
+cmd = "bash /app/start.sh"
