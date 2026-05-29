@@ -10,7 +10,11 @@ return new class extends Migration
     {
         Schema::create('beneficiary_application_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('beneficiary_application_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('beneficiary_application_id');
+            $table->foreign('beneficiary_application_id', 'bad_app_doc_foreign')
+                  ->references('id')
+                  ->on('beneficiary_applications')
+                  ->onDelete('cascade');
             $table->string('disk')->default('beneficiaries');
             $table->string('path');
             $table->string('original_name');
