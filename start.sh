@@ -11,7 +11,4 @@ php artisan config:cache
 php artisan route:cache
 php artisan migrate --force || echo "[warn] migrate failed, continuing"
 
-APP_PORT=${PORT:-80}
-sed "s/PORT_PLACEHOLDER/${APP_PORT}/g" /app/nginx.conf > /tmp/nginx-final.conf
-
-nginx -c /tmp/nginx-final.conf
+nginx -c /app/nginx.conf
