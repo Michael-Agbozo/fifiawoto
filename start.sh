@@ -7,7 +7,7 @@ php-fpm -y /assets/php-fpm.conf -D
 chmod -R 777 /app/storage /app/bootstrap/cache
 
 php artisan storage:link --force
-php artisan vendor:publish --tag=livewire:assets --force
+php artisan vendor:publish --tag=livewire:assets --force || echo "[warn] livewire asset publish failed, continuing"
 php artisan config:cache
 php artisan route:cache
 php artisan migrate --force || echo "[warn] migrate failed, continuing"
