@@ -11,6 +11,5 @@ php artisan vendor:publish --tag=livewire:assets --force || echo "[warn] livewir
 php artisan config:cache
 php artisan route:cache
 php artisan migrate --force || echo "[warn] migrate failed, continuing"
-php artisan db:seed --class=AdminUserSeeder --force
 
 nginx -c /app/nginx.conf
