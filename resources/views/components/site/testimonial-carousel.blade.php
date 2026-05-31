@@ -71,6 +71,7 @@
                     @foreach ($pages as $pageIndex => $pageItems)
                         <div
                             x-show="active === {{ $pageIndex }}"
+                            @if ($pageIndex !== 0) style="display:none;" @endif
                             x-transition:enter="transition ease-out duration-500"
                             x-transition:enter-start="opacity-0 translate-x-6"
                             x-transition:enter-end="opacity-100 translate-x-0"
@@ -165,7 +166,7 @@
                         type="button"
                         @click="go({{ $pageIndex }})"
                         :class="active === {{ $pageIndex }} ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100 hover:bg-brand-300'"
-                        class="h-2.5 rounded-full transition-all"
+                        class="h-2.5 rounded-full transition-all {{ $pageIndex === 0 ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100' }}"
                         aria-label="Show testimonials page {{ $pageIndex + 1 }}"
                     ></button>
                 @endforeach
