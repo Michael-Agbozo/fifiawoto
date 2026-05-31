@@ -12,8 +12,8 @@
     wire:transition="site-header"
     x-data="{ open: false, scrolled: false }"
     x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 8)"
-    :class="scrolled ? 'bg-brand-900 text-white shadow-lg' : 'bg-white text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)]'"
-    class="sticky top-3 z-40 overflow-clip rounded-3xl transition-colors sm:top-4 lg:top-6"
+    :class="scrolled ? '!bg-brand-900 !text-white !shadow-lg' : ''"
+    class="sticky top-3 z-40 overflow-clip rounded-3xl bg-white text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
 >
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-5 sm:px-6 lg:px-8">
         <a href="{{ route('home') }}" class="flex items-center" aria-label="Fifiawoto Foundation home" wire:navigate>
@@ -40,8 +40,8 @@
                 @else
                     <a
                         href="{{ route($item['route']) }}"
-                        :class="scrolled ? 'text-white/85 hover:text-white' : 'text-ink-700 hover:text-gold-500'"
-                        class="text-sm font-medium transition-colors"
+                        :class="scrolled ? '!text-white/85 hover:!text-white' : ''"
+                        class="text-sm font-medium text-ink-700 transition-colors hover:text-gold-500"
                         wire:navigate
                     >
                         {{ $item['label'] }}
@@ -53,10 +53,8 @@
         <div class="hidden items-center gap-3 lg:flex">
             <a
                 href="{{ route('volunteer') }}"
-                :class="scrolled
-                    ? 'border-white/40 text-white hover:bg-white hover:text-brand-900'
-                    : 'border-brand-900 text-brand-900 hover:bg-brand-900 hover:text-white'"
-                class="rounded-full border-2 px-5 py-2.5 text-sm font-semibold transition-colors"
+                :class="scrolled ? '!border-white/40 !text-white hover:!bg-white hover:!text-brand-900' : ''"
+                class="rounded-full border-2 border-brand-900 px-5 py-2.5 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-900 hover:text-white"
                 wire:navigate
             >
                 Get Involved
@@ -72,8 +70,8 @@
 
         <button
             type="button"
-            :class="scrolled ? 'text-white' : 'text-ink-900'"
-            class="inline-flex items-center justify-center rounded-md p-2 lg:hidden"
+            :class="scrolled ? '!text-white' : ''"
+            class="inline-flex items-center justify-center rounded-md p-2 text-ink-900 lg:hidden"
             @click="open = ! open"
             :aria-expanded="open"
             aria-label="Toggle navigation"
