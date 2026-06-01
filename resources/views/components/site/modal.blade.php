@@ -17,13 +17,15 @@
 <div
     x-cloak
     x-show="{{ $name }}Open"
+    x-effect="document.body.classList.toggle('overflow-hidden', {{ $name }}Open)"
     x-transition.opacity.duration.200ms
     @keydown.escape.window="{{ $name }}Open = false"
     class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-10"
     role="dialog"
     aria-modal="true"
+    @if ($title) aria-labelledby="{{ $name }}-modal-heading" @endif
 >
-    <button type="button" @click="{{ $name }}Open = false" class="absolute inset-0 bg-ink-900/55" aria-label="Close dialog"></button>
+    <button type="button" @click="{{ $name }}Open = false" class="absolute inset-0 bg-ink-900/55" aria-label="Close dialog" tabindex="-1"></button>
 
     <div
         x-show="{{ $name }}Open"
@@ -39,7 +41,7 @@
             <div class="flex items-start justify-between gap-4 border-b border-brand-100 bg-cream-50 px-6 py-5">
                 <div class="min-w-0">
                     @if ($title)
-                        <h3 class="font-serif text-2xl font-bold text-brand-900">{{ $title }}</h3>
+                        <h3 id="{{ $name }}-modal-heading" class="font-serif text-2xl font-bold text-brand-900">{{ $title }}</h3>
                     @endif
                     @if ($subtitle)
                         <p class="mt-1 text-sm text-ink-500">{{ $subtitle }}</p>

@@ -25,6 +25,7 @@ new class extends Component
 
 <div
     x-data="{ open: @js($errors->isNotEmpty()) }"
+    x-effect="document.body.classList.toggle('overflow-hidden', open)"
     @open-delete-account.window="open = true"
     @keydown.escape.window="open = false"
 >
@@ -35,6 +36,7 @@ new class extends Component
         class="fixed inset-0 z-50 grid place-items-center bg-brand-900/60 px-4 py-8"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="delete-account-modal-heading"
     >
         <div
             x-show="open"
@@ -45,7 +47,7 @@ new class extends Component
         >
             <form method="POST" wire:submit="deleteUser" class="space-y-5 p-8">
                 <div>
-                    <h3 class="font-serif text-2xl font-bold text-ink-900">{{ __('Are you sure you want to delete your account?') }}</h3>
+                    <h3 id="delete-account-modal-heading" class="font-serif text-2xl font-bold text-ink-900">{{ __('Are you sure you want to delete your account?') }}</h3>
                     <p class="mt-2 text-sm text-ink-500">
                         {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
                     </p>

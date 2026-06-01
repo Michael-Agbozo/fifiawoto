@@ -135,6 +135,7 @@ new class extends Component
 
 <div
     x-data="{ open: false }"
+    x-effect="document.body.classList.toggle('overflow-hidden', open)"
     @open-two-factor-setup.window="open = true"
     @close-two-factor-setup.window="open = false"
     @keydown.escape.window="open = false; $wire.closeModal()"
@@ -146,6 +147,7 @@ new class extends Component
         class="fixed inset-0 z-50 grid place-items-center bg-brand-900/60 px-4 py-8"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="two-factor-modal-heading"
     >
         <div
             x-show="open"
@@ -156,7 +158,7 @@ new class extends Component
         >
             <div class="space-y-6">
                 <div class="text-center">
-                    <h3 class="font-serif text-xl font-bold text-ink-900">{{ $this->modalConfig['title'] }}</h3>
+                    <h3 id="two-factor-modal-heading" class="font-serif text-xl font-bold text-ink-900">{{ $this->modalConfig['title'] }}</h3>
                     <p class="mt-2 text-sm text-ink-500">{{ $this->modalConfig['description'] }}</p>
                 </div>
 
