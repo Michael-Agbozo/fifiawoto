@@ -1,5 +1,106 @@
 # Production deployment
 
+This document covers two deployment paths: **Coolify (current production setup)** and a traditional VPS/Forge setup.
+
+---
+
+## Coolify (Nixpacks) — current setup
+
+The app is deployed via [Coolify](https://coolify.io) using Nixpacks as the build system. The config lives in `nixpacks.toml` and `start.sh`.
+
+### How it works
+
+```
+nixpacks.toml        → build phase (npm + composer install + npm run build)
+start.sh             → runtime phase (php-fpm, artisan bootstrap, nginx)
+nginx.conf           → in-container Nginx (port 80, proxied by Coolify's Traefik)
+```
+
+### Required environment variables (Coolify → Production)
+
+```ini
+APP_NAME=Fifiawoto Foundation
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:...          # generate with: php artisan key:generate --show
+APP_URL=https://your-domain.duckdns.org
+
+# Do NOT set LIVEWIRE_ASSET_URL — leave it out entirely
+# Do NOT set FORCE_HTTPS — it does nothing in Laravel
+
+DB_CONNECTION=mysql
+DB_HOST=10.0.2.1            # Coolify internal host
+DB_PORT=3306
+DB_DATABASE=fifiawoto
+DB_USERNAME=...
+DB_PASSWORD=...
+
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true
+
+LOG_CHANNEL=stderr
+LOG_LEVEL=error
+
+MAIL_FROM_ADDRESS=hello@fifiawoto.org
+MAIL_FROM_NAME=Fifiawoto Foundation
+ADMIN_NOTIFICATION_EMAIL=hello@fifiawoto.org
+
+NIXPACKS_BUILD_CMD=composer install --no-dev --optimize-autoloader --ignore-platform-reqs && npm install && npm run build
+NIXPACKS_NODE_VERSION=20
+NIXPACKS_PHP_ROOT_DIR=/app/public
+NIXPACKS_PHP_FALLBACK_PATH=/index.php
+```
+
+### HTTPS behind Coolify's reverse proxy
+
+Coolify runs Traefik in front of the container. The container's Nginx only listens on port 80. To make Laravel generate correct HTTPS URLs:
+
+1. **`bootstrap/app.php`** — `$middleware->trustProxies(at: '*')` tells Laravel to trust the `X-Forwarded-Proto: https` header from Traefik.
+2. **`app/Providers/AppServiceProvider.php`** — `URL::forceScheme('https')` runs on `production` and `staging` environments as a belt-and-suspenders fallback.
+3. **`nginx.conf`** — passes `HTTP_X_FORWARDED_PROTO` to PHP-FPM so Laravel's middleware can read it.
+
+Do **not** set `LIVEWIRE_ASSET_URL` — Livewire v4 uses published static assets (written to `public/vendor/livewire/` at container start by `start.sh`) and derives the correct HTTPS URL automatically once `trustProxies` is active.
+
+### First admin user (one-time only)
+
+After the first successful deploy, create the admin accounts by running the seeder once via Coolify's terminal:
+
+```bash
+# Coolify → your app → Terminal
+OWNER_EMAIL=owner@fifiawoto.org OWNER_PASSWORD=StrongPassword \
+ADMIN_EMAIL=admin@fifiawoto.org ADMIN_PASSWORD=StrongPassword \
+php artisan db:seed --class=AdminUserSeeder --force
+```
+
+Or add the four env vars temporarily, redeploy, then remove them. The seeder uses `firstOrCreate` — it is safe to run multiple times and will never overwrite an existing user's password.
+
+### Redeployment
+
+Push to `main` — Coolify auto-deploys. The `start.sh` sequence on every container start:
+
+```
+php-fpm (background)
+chmod storage + bootstrap/cache
+php artisan storage:link --force
+php artisan vendor:publish --tag=livewire:assets --force
+php artisan config:cache
+php artisan route:cache
+php artisan migrate --force
+nginx (foreground)
+```
+
+No downtime steps are needed for typical deploys. Migrations run automatically.
+
+### Preview deployments (dev branch)
+
+Preview deployments use the same `start.sh` but the `Preview Deployments Environment Variables` in Coolify. Set `APP_ENV=staging`, `APP_DEBUG=true`. Do **not** set `LIVEWIRE_ASSET_URL`.
+
+---
+
+## VPS / Laravel Forge — traditional setup
+
 This document is the operator's checklist for getting the application running in production on a Linux VPS or a managed PHP host (Laravel Forge, Ploi, Vapor — all work).
 
 ---

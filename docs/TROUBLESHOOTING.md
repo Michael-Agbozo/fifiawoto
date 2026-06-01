@@ -74,7 +74,64 @@ lsof -iTCP:8000 -sTCP:LISTEN
 
 ---
 
-## Production
+## Production (Coolify)
+
+### Mixed content — forms or assets load over HTTP despite the site being HTTPS
+
+The container's Nginx only listens on port 80; Coolify's Traefik terminates TLS and passes `X-Forwarded-Proto: https`. Laravel doesn't know it's behind HTTPS unless you tell it.
+
+**Root cause checklist:**
+1. `bootstrap/app.php` must have `$middleware->trustProxies(at: '*')` inside `->withMiddleware(...)`.
+2. `app/Providers/AppServiceProvider.php` must call `URL::forceScheme('https')` for `production` and `staging` environments.
+3. `nginx.conf` must pass `fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;` to PHP-FPM.
+4. `APP_ENV` in Coolify must be `production` (not `local`) for the `AppServiceProvider` check to fire.
+
+**Do not** use Nginx `map` blocks to derive `$forwarded_scheme` — this caused a 502 (see below). Let Laravel's `trustProxies` middleware handle it.
+
+---
+
+### 502 Bad Gateway (nginx/1.18.0 Ubuntu)
+
+This comes from Coolify's host proxy, meaning the container's Nginx failed to start. Common causes:
+
+- Syntax error in `nginx.conf` — Nginx `map` block with single-quoted empty string (`default '';`) is invalid in some builds. Use `""` or avoid map blocks entirely.
+- An artisan command in `start.sh` crashing before `nginx` is reached. Add `|| true` to non-critical commands so the script continues.
+
+To debug: check Coolify's container logs immediately after a failed deploy.
+
+---
+
+### Livewire script loads as HTML — `Refused to execute script … MIME type 'text/html'`
+
+The browser console shows something like:
+```
+Refused to execute script from 'https://your-domain.org/?id=ab6b028c'
+because its MIME type ('text/html') is not executable
+```
+
+**Root cause:** `LIVEWIRE_ASSET_URL` is set in Coolify to the app URL (e.g. `https://your-domain.org`). Livewire v4 appends `?id=HASH` directly to that value, producing `https://your-domain.org?id=HASH`. The browser requests the homepage instead of the JS file.
+
+**Fix:**
+1. Remove `LIVEWIRE_ASSET_URL` from Coolify environment variables entirely.
+2. Ensure `config/livewire.php` has `'asset_url' => null` (not `env('LIVEWIRE_ASSET_URL', null)`).
+3. Ensure `start.sh` runs `php artisan vendor:publish --tag=livewire:assets --force` before `config:cache`. This publishes Livewire's JS to `public/vendor/livewire/` and Livewire uses that static path automatically.
+
+---
+
+### Alpine.js not working — header transparent, carousels show all slides
+
+**Symptom:** The sticky header has no background (hero image bleeds through), the testimonial carousel shows all cards at once instead of paginating.
+
+**Root cause:** Alpine.js is bundled inside Livewire's script. If that script fails to load (see above), Alpine never initialises, so `x-data` / `x-show` / `:class` bindings don't apply.
+
+**Mitigation already in place:** Components have server-side CSS fallbacks so the page is usable without JS:
+- The header has `bg-white` in its static `class` attribute; the `:class` scrolled overrides use `!important` (`!bg-brand-900`) to win over the static value once Alpine loads.
+- Non-active carousel slides have `style="display:none;"` set by PHP so only the first page is visible without JS.
+- `[x-cloak] { display: none !important; }` is in `app.css` so elements marked `x-cloak` hide correctly before Alpine initialises.
+
+Fix the Livewire script URL (above) and all interactivity returns automatically.
+
+---
 
 ### Emails not sending
 
