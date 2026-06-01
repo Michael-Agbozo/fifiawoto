@@ -18,20 +18,24 @@ new #[Title('Password settings')] class extends Component
 
     public function updatePassword(): void
     {
+        $forced = Auth::user()->force_password_change;
+
+        $rules = $forced
+            ? ['password' => $this->passwordRules()]
+            : ['current_password' => $this->currentPasswordRules(), 'password' => $this->passwordRules()];
+
         try {
-            $validated = $this->validate([
-                'current_password' => $this->currentPasswordRules(),
-                'password' => $this->passwordRules(),
-            ]);
+            $validated = $this->validate($rules);
         } catch (ValidationException $e) {
             $this->reset('current_password', 'password', 'password_confirmation');
 
             throw $e;
         }
 
-        Auth::user()->update([
+        Auth::user()->forceFill([
             'password' => $validated['password'],
-        ]);
+            'force_password_change' => false,
+        ])->save();
 
         $this->reset('current_password', 'password', 'password_confirmation');
 
@@ -44,18 +48,24 @@ new #[Title('Password settings')] class extends Component
 
     <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-5">
-            <div>
-                <label for="current-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Current password') }}</label>
-                <input
-                    id="current-password"
-                    wire:model="current_password"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
-                >
-                @error('current_password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
-            </div>
+            @if (session('force_password_change') || Auth::user()->force_password_change)
+                <div class="rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+                    Your password was reset by an administrator. Please set a new password to continue.
+                </div>
+            @else
+                <div>
+                    <label for="current-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Current password') }}</label>
+                    <input
+                        id="current-password"
+                        wire:model="current_password"
+                        type="password"
+                        required
+                        autocomplete="current-password"
+                        class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                    >
+                    @error('current_password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            @endif
 
             <div>
                 <label for="new-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('New password') }}</label>

@@ -26,6 +26,16 @@ new class extends Component
 
     public ?string $generatedPassword = null;
 
+    public bool $showResetPasswordForm = false;
+
+    public int $resetPasswordUserId = 0;
+
+    public string $newPassword = '';
+
+    public string $newPasswordConfirm = '';
+
+    public bool $forcePasswordChange = false;
+
     public string $search = '';
 
     public string $roleFilter = '';
@@ -170,10 +180,50 @@ new class extends Component
 
         $user = User::query()->findOrFail($id);
         $newPassword = Str::password(14);
-        $user->update(['password' => Hash::make($newPassword)]);
+        $user->forceFill(['password' => Hash::make($newPassword)])->save();
 
         $this->generatedPassword = $newPassword;
         $this->flashMessage = "Password reset for {$user->name}. Share securely.";
+    }
+
+    public function startResetPassword(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $this->resetPasswordUserId = $id;
+        $this->reset('newPassword', 'newPasswordConfirm');
+        $this->resetErrorBag();
+        $this->showResetPasswordForm = true;
+    }
+
+    public function saveResetPassword(): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+
+        $this->validate([
+            'newPassword'        => ['required', 'string', 'min:8', 'max:128'],
+            'newPasswordConfirm' => ['required', 'same:newPassword'],
+        ]);
+
+        $user = User::query()->findOrFail($this->resetPasswordUserId);
+        $user->forceFill([
+            'password' => Hash::make($this->newPassword),
+            'force_password_change' => $this->forcePasswordChange,
+        ])->save();
+
+        $this->cancelResetPassword();
+        $this->flashMessage = "Password updated for {$user->name}."
+            .($this->forcePasswordChange ? ' They will be asked to set a new password on next login.' : '');
+    }
+
+    public function cancelResetPassword(): void
+    {
+        $this->showResetPasswordForm = false;
+        $this->resetPasswordUserId = 0;
+        $this->forcePasswordChange = false;
+        $this->reset('newPassword', 'newPasswordConfirm');
+        $this->resetErrorBag();
     }
 
     public function askDelete(int $id): void
@@ -373,6 +423,56 @@ new class extends Component
         </form>
     </x-admin.modal>
 
+    <x-admin.modal :show="$showResetPasswordForm" title="Set password" subtitle="Type a specific password for this user. They will not be notified." onClose="cancelResetPassword">
+        <form wire:submit="saveResetPassword" class="space-y-5">
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">New password</label>
+                <input
+                    type="password"
+                    wire:model="newPassword"
+                    autocomplete="new-password"
+                    minlength="8"
+                    required
+                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                >
+                @error('newPassword') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Confirm password</label>
+                <input
+                    type="password"
+                    wire:model="newPasswordConfirm"
+                    autocomplete="new-password"
+                    required
+                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                >
+                @error('newPasswordConfirm') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <label class="flex cursor-pointer items-start gap-3">
+                <input
+                    type="checkbox"
+                    wire:model="forcePasswordChange"
+                    class="mt-0.5 size-4 rounded border-cream-300 text-gold-500 focus:ring-gold-500"
+                >
+                <span class="text-sm text-ink-700">
+                    Require password change on next login
+                    <span class="block text-xs text-ink-500">The user will be redirected to change their password as soon as they log in. They won't need to enter the current password.</span>
+                </span>
+            </label>
+
+            <div class="flex flex-wrap gap-3 pt-1">
+                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                    Set password
+                </button>
+                <button type="button" wire:click="cancelResetPassword" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </x-admin.modal>
+
     <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->users->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No users match these filters.</div>
@@ -455,6 +555,12 @@ new class extends Component
                                                 <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a4 4 0 1 1-4 4M7 11h.01M11 11h.01M3 11l8 0M3 11l3 3M3 11l3-3"/></svg>
                                                 Reset password
                                             </button>
+                                            @if ($user->id !== auth()->id())
+                                            <button type="button" wire:click="startResetPassword({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                                                Set password
+                                            </button>
+                                            @endif
                                             <button type="button" wire:click="askDelete({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete

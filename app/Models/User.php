@@ -31,6 +31,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'avatar_path',
+        'force_password_change',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'permissions' => 'array',
+            'force_password_change' => 'boolean',
         ];
     }
 
