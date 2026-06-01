@@ -33,6 +33,7 @@ class User extends Authenticatable
         'avatar_path',
         'force_password_change',
         'requires_two_factor',
+        'is_active',
     ];
 
     /**
@@ -57,6 +58,7 @@ class User extends Authenticatable
             'permissions' => 'array',
             'force_password_change' => 'boolean',
             'requires_two_factor' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 

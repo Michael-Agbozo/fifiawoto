@@ -42,6 +42,8 @@ new class extends Component
 
     public string $roleFilter = '';
 
+    public string $activeFilter = '';
+
     #[Validate('required|string|max:120')]
     public string $name = '';
 
@@ -229,6 +231,19 @@ new class extends Component
         $this->resetErrorBag();
     }
 
+    public function toggleActive(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $user = User::query()->findOrFail($id);
+        $user->forceFill(['is_active' => ! $user->is_active])->save();
+
+        $this->flashMessage = $user->is_active
+            ? "{$user->name}'s account is now active."
+            : "{$user->name}'s account has been deactivated.";
+    }
+
     public function confirmDisable2fa(int $id): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
@@ -306,6 +321,11 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedActiveFilter(): void
+    {
+        $this->resetPage();
+    }
+
     protected function resetForm(): void
     {
         $this->reset(['name', 'email', 'phone']);
@@ -328,6 +348,12 @@ new class extends Component
 
         if (filled($this->roleFilter)) {
             $query->where('role', $this->roleFilter);
+        }
+
+        if ($this->activeFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->activeFilter === 'inactive') {
+            $query->where('is_active', false);
         }
 
         if (filled($this->search)) {
@@ -381,6 +407,23 @@ new class extends Component
                 :palette="$roleMeta[$r->value]['palette'] ?? 'brand'"
             />
         @endforeach
+
+        <x-admin.stat-card
+            wire:click="$set('activeFilter', 'active')"
+            icon="users"
+            label="Active"
+            :value="(string) \App\Models\User::where('is_active', true)->count()"
+            :active="$activeFilter === 'active'"
+            palette="green"
+        />
+        <x-admin.stat-card
+            wire:click="$set('activeFilter', 'inactive')"
+            icon="users"
+            label="Inactive"
+            :value="(string) \App\Models\User::where('is_active', false)->count()"
+            :active="$activeFilter === 'inactive'"
+            palette="gray"
+        />
     </div>
 
     <x-admin.section-header
@@ -393,9 +436,9 @@ new class extends Component
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Invite teammate
             </button>
-            @if (filled($roleFilter) || filled($search))
+            @if (filled($roleFilter) || filled($search) || filled($activeFilter))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$reset('roleFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('roleFilter','search','activeFilter')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -582,6 +625,10 @@ new class extends Component
                                             :palette="$rolePalettes[$user->role?->value] ?? 'gray'"
                                             :label="$user->role?->label() ?? 'Member'"
                                         />
+                                        <x-admin.status-pill
+                                            :palette="$user->is_active ? 'green' : 'gray'"
+                                            :label="$user->is_active ? 'Active' : 'Inactive'"
+                                        />
                                         @if ($user->hasEnabledTwoFactorAuthentication())
                                             <x-admin.status-pill palette="green" label="2FA on" />
                                         @elseif ($user->requires_two_factor)
@@ -634,6 +681,20 @@ new class extends Component
                                                 {{ $user->requires_two_factor ? 'Remove 2FA requirement' : 'Require 2FA' }}
                                             </button>
                                             @endif
+                                            <button
+                                                type="button"
+                                                wire:click="toggleActive({{ $user->id }})"
+                                                @click="open = false"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition {{ $user->is_active ? 'text-ink-700 hover:bg-cream-100 hover:text-brand-900' : 'text-green-700 hover:bg-green-50' }}"
+                                            >
+                                                @if ($user->is_active)
+                                                    <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                    Deactivate account
+                                                @else
+                                                    <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                                    Activate account
+                                                @endif
+                                            </button>
                                             <button type="button" wire:click="askDelete({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete
