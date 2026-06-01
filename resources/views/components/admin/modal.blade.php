@@ -16,7 +16,14 @@
 @endphp
 
 @if ($show)
-    <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+    <div
+        x-data
+        x-init="document.body.classList.add('overflow-hidden'); return () => document.body.classList.remove('overflow-hidden')"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-modal-heading"
+    >
         <button
             type="button"
             wire:click="{{ $onClose }}"
@@ -33,7 +40,7 @@
                 {{-- Header (fixed) --}}
                 <div class="flex shrink-0 items-start justify-between gap-4 border-b border-cream-200 bg-cream-50 px-6 py-5">
                     <div class="min-w-0 flex-1">
-                        <h3 class="font-serif text-xl font-bold text-ink-900">{{ $title }}</h3>
+                        <h3 id="admin-modal-heading" class="font-serif text-xl font-bold text-ink-900">{{ $title }}</h3>
                         @if (filled($subtitle))
                             <p class="mt-1 text-xs text-ink-500">{{ $subtitle }}</p>
                         @endif
