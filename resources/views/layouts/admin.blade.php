@@ -89,7 +89,7 @@
     >
         {{-- Outer wrap: light cream canvas with padding around the app card --}}
         <div class="min-h-screen p-0 sm:p-4 lg:p-6">
-            <div class="flex min-h-[calc(100vh-3rem)] overflow-hidden bg-white shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
+            <div class="flex min-h-[calc(100vh-3rem)] bg-white shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
                 {{-- SIDEBAR --}}
                 <aside
                     :class="[
@@ -257,7 +257,7 @@
 
                 {{-- MAIN --}}
                 <div class="flex min-w-0 flex-1 flex-col">
-                    <header class="flex items-center gap-4 border-b border-cream-300 bg-white px-5 py-4 sm:px-6 lg:px-8">
+                    <header class="flex items-center gap-4 border-b border-cream-300 bg-white px-5 py-4 sm:rounded-tr-3xl sm:px-6 lg:px-8">
                         <button
                             type="button"
                             @click="sidebarOpen = true"
@@ -312,7 +312,7 @@
                         </div>
                     </header>
 
-                    <main class="flex-1 overflow-x-hidden bg-white px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
+                    <main class="flex-1 bg-white px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
                         @if ($title)
                             <div class="mb-6">
                                 <h1 class="font-serif text-2xl font-bold text-ink-900 sm:text-3xl">{{ $title }}</h1>
