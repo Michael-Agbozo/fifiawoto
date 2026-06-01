@@ -3,20 +3,32 @@
     'align' => 'right',
 ])
 
-@php
-    $alignmentClasses = $align === 'left'
-        ? 'left-0 origin-top-left'
-        : 'right-0 origin-top-right';
-@endphp
-
 <div
-    x-data="{ open: false }"
+    x-data="{
+        open: false,
+        x: 0,
+        y: 0,
+        toggle() {
+            const rect = this.$refs.btn.getBoundingClientRect();
+            this.y = rect.bottom + 6;
+            @if ($align === 'left')
+            this.x = rect.left;
+            @else
+            this.x = rect.right - 240;
+            @endif
+            if (this.x < 8) this.x = 8;
+            if (this.x + 240 > window.innerWidth - 8) this.x = window.innerWidth - 248;
+            this.open = !this.open;
+        }
+    }"
     @keydown.escape.window="open = false"
-    {{ $attributes->class(['relative inline-block text-left']) }}
+    @scroll.window="open = false"
+    {{ $attributes->class(['inline-block text-left']) }}
 >
     <button
+        x-ref="btn"
         type="button"
-        @click="open = !open"
+        @click="toggle()"
         :aria-expanded="open"
         class="grid aspect-square size-9 place-items-center rounded-xl border border-cream-300 bg-white text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
         aria-label="{{ $label }}"
@@ -38,8 +50,9 @@
         x-transition:leave="transition ease-in duration-75"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
+        :style="`top: ${y}px; left: ${x}px`"
         @click.outside="open = false"
-        class="absolute {{ $alignmentClasses }} z-30 mt-2 w-60 overflow-hidden rounded-2xl border border-cream-300 bg-white shadow-[0_20px_60px_-20px_rgba(0,4,78,0.25)]"
+        class="fixed z-50 w-60 overflow-hidden rounded-2xl border border-cream-300 bg-white shadow-[0_20px_60px_-20px_rgba(0,4,78,0.25)]"
         role="menu"
     >
         <div class="py-1.5">

@@ -377,6 +377,7 @@ new class extends Component
         @if ($this->users->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No users match these filters.</div>
         @else
+            <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-cream-100/60 text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
                     <tr class="transition hover:bg-cream-100/40">
@@ -466,6 +467,7 @@ new class extends Component
                     @endforeach
                 </tbody>
             </table>
+            </div>
         @endif
     </div>
 
