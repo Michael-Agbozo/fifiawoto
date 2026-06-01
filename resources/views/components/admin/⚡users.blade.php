@@ -22,6 +22,8 @@ new class extends Component
 
     public ?int $confirmDeleteId = null;
 
+    public ?int $confirmDisable2faId = null;
+
     public ?string $flashMessage = null;
 
     public ?string $generatedPassword = null;
@@ -225,6 +227,44 @@ new class extends Component
         $this->forcePasswordChange = false;
         $this->reset('newPassword', 'newPasswordConfirm');
         $this->resetErrorBag();
+    }
+
+    public function confirmDisable2fa(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $this->confirmDisable2faId = $id;
+    }
+
+    public function cancelDisable2fa(): void
+    {
+        $this->confirmDisable2faId = null;
+    }
+
+    public function disableTwoFactor(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $user = User::query()->findOrFail($id);
+        app(\Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class)($user);
+
+        $this->confirmDisable2faId = null;
+        $this->flashMessage = "2FA has been disabled for {$user->name}.";
+    }
+
+    public function toggleRequireTwoFactor(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $user = User::query()->findOrFail($id);
+        $user->forceFill(['requires_two_factor' => ! $user->requires_two_factor])->save();
+
+        $this->flashMessage = $user->requires_two_factor
+            ? "2FA is now required for {$user->name}."
+            : "2FA requirement removed for {$user->name}.";
     }
 
     public function askDelete(int $id): void
@@ -474,6 +514,21 @@ new class extends Component
         </form>
     </x-admin.modal>
 
+    <x-admin.modal :show="(bool) $confirmDisable2faId" title="Disable 2FA" subtitle="This will remove the user's two-factor authentication. They can re-enable it from their settings." onClose="cancelDisable2fa">
+        @if ($confirmDisable2faId)
+            @php $d2faUser = \App\Models\User::find($confirmDisable2faId); @endphp
+            <p class="text-sm text-ink-700">Are you sure you want to disable 2FA for <strong>{{ $d2faUser?->name }}</strong>? They will be able to log in with just their password until they re-enrol.</p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button type="button" wire:click="disableTwoFactor({{ $confirmDisable2faId }})" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                    Yes, disable 2FA
+                </button>
+                <button type="button" wire:click="cancelDisable2fa" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                    Cancel
+                </button>
+            </div>
+        @endif
+    </x-admin.modal>
+
     <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->users->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No users match these filters.</div>
@@ -522,10 +577,17 @@ new class extends Component
                                             'volunteer'             => 'green',
                                         ];
                                     @endphp
-                                    <x-admin.status-pill
-                                        :palette="$rolePalettes[$user->role?->value] ?? 'gray'"
-                                        :label="$user->role?->label() ?? 'Member'"
-                                    />
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <x-admin.status-pill
+                                            :palette="$rolePalettes[$user->role?->value] ?? 'gray'"
+                                            :label="$user->role?->label() ?? 'Member'"
+                                        />
+                                        @if ($user->hasEnabledTwoFactorAuthentication())
+                                            <x-admin.status-pill palette="green" label="2FA on" />
+                                        @elseif ($user->requires_two_factor)
+                                            <x-admin.status-pill palette="amber" label="2FA req." />
+                                        @endif
+                                    </div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-xs text-ink-500">{{ $user->created_at?->format('M j, Y') }}</td>
@@ -560,6 +622,16 @@ new class extends Component
                                             <button type="button" wire:click="startResetPassword({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
                                                 Set password
+                                            </button>
+                                            @if ($user->hasEnabledTwoFactorAuthentication())
+                                            <button type="button" wire:click="confirmDisable2fa({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                Disable 2FA
+                                            </button>
+                                            @endif
+                                            <button type="button" wire:click="toggleRequireTwoFactor({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>
+                                                {{ $user->requires_two_factor ? 'Remove 2FA requirement' : 'Require 2FA' }}
                                             </button>
                                             @endif
                                             <button type="button" wire:click="askDelete({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">

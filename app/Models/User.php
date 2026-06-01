@@ -32,6 +32,7 @@ class User extends Authenticatable
         'phone',
         'avatar_path',
         'force_password_change',
+        'requires_two_factor',
     ];
 
     /**
@@ -55,6 +56,7 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'permissions' => 'array',
             'force_password_change' => 'boolean',
+            'requires_two_factor' => 'boolean',
         ];
     }
 
