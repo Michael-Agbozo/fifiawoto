@@ -86,6 +86,7 @@ new class extends Component
 
     public function cancelInvite(): void
     {
+        $this->showInviteForm = false;
         $this->resetForm();
     }
 
