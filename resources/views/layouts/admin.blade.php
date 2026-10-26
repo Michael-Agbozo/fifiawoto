@@ -221,9 +221,7 @@
                     @if ($user)
                         <div class="border-t border-cream-300 p-3">
                             <div :class="sidebarCollapsed ? 'lg:justify-center' : ''" class="flex items-center gap-3 rounded-2xl bg-cream-100 px-3 py-2.5">
-                                <span class="grid aspect-square size-9 shrink-0 place-items-center rounded-full bg-brand-900 text-xs font-bold text-white">
-                                    {{ $user->initials() }}
-                                </span>
+                                <x-admin.avatar :src="$user->avatar_path" :name="$user->name" size="sm" class="size-9! shrink-0" />
                                 <div x-show="!sidebarCollapsed" class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-semibold text-ink-900">{{ $user->name }}</p>
                                     <p class="truncate text-[11px] text-ink-500">{{ $role?->label() ?? 'Member' }}</p>

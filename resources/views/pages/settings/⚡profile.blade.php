@@ -2,19 +2,25 @@
 
 use App\Concerns\ProfileValidationRules;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 new #[Title('Profile settings')] class extends Component
 {
-    use ProfileValidationRules;
+    use ProfileValidationRules, WithFileUploads;
 
     public string $name = '';
 
     public string $email = '';
+
+    public ?TemporaryUploadedFile $photo = null;
 
     public function mount(): void
     {
@@ -26,9 +32,18 @@ new #[Title('Profile settings')] class extends Component
     {
         $user = Auth::user();
 
-        $validated = $this->validate($this->profileRules($user->id));
+        $validated = $this->validate([
+            ...$this->profileRules($user->id),
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
 
-        $user->fill($validated);
+        if ($this->photo) {
+            $this->deleteStoredAvatar($user->avatar_path);
+            $user->avatar_path = $this->photo->store('avatars', 'public');
+            $this->photo = null;
+        }
+
+        $user->fill(Arr::except($validated, 'photo'));
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
@@ -37,6 +52,26 @@ new #[Title('Profile settings')] class extends Component
         $user->save();
 
         $this->dispatch('profile-updated', name: $user->name);
+    }
+
+    public function removeAvatar(): void
+    {
+        $user = Auth::user();
+
+        $this->deleteStoredAvatar($user->avatar_path);
+        $user->forceFill(['avatar_path' => null])->save();
+
+        $this->dispatch('profile-updated', name: $user->name);
+    }
+
+    /**
+     * Remove a previously uploaded avatar; remote URLs (seeded/external) are left alone.
+     */
+    protected function deleteStoredAvatar(?string $path): void
+    {
+        if (filled($path) && ! str_starts_with($path, 'http')) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     public function resendVerificationNotification(): void
@@ -59,13 +94,6 @@ new #[Title('Profile settings')] class extends Component
     {
         return Auth::user() instanceof MustVerifyEmail && ! Auth::user()->hasVerifiedEmail();
     }
-
-    #[Computed]
-    public function showDeleteUser(): bool
-    {
-        return ! Auth::user() instanceof MustVerifyEmail
-            || (Auth::user() instanceof MustVerifyEmail && Auth::user()->hasVerifiedEmail());
-    }
 }; ?>
 
 <section class="w-full">
@@ -73,6 +101,34 @@ new #[Title('Profile settings')] class extends Component
 
     <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-5">
+            <div class="flex items-center gap-5">
+                @if ($photo && $photo->isPreviewable())
+                    <img src="{{ $photo->temporaryUrl() }}" alt="{{ __('New profile picture preview') }}" class="size-20 shrink-0 rounded-full object-cover ring-2 ring-cream-200">
+                @else
+                    <x-admin.avatar :src="Auth::user()->avatar_path" :name="Auth::user()->name" size="xl" class="shrink-0" />
+                @endif
+
+                <div class="space-y-2">
+                    <label for="profile-photo" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Profile picture') }}</label>
+                    <input
+                        id="profile-photo"
+                        wire:model="photo"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        class="block text-sm text-ink-700 file:mr-3 file:rounded-full file:border-0 file:bg-gold-500 file:px-4 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-brand-900"
+                    >
+                    <p class="text-xs text-ink-500" wire:loading.remove wire:target="photo">{{ __('JPG, PNG or WebP, up to 2 MB. Saved when you click Save.') }}</p>
+                    <p class="text-xs text-ink-500" wire:loading wire:target="photo">{{ __('Uploading…') }}</p>
+                    @error('photo') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+
+                    @if (Auth::user()->avatar_path && ! $photo)
+                        <button type="button" wire:click="removeAvatar" class="text-xs font-semibold text-red-600 hover:text-red-700">
+                            {{ __('Remove photo') }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+
             <div>
                 <label for="profile-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Name') }}</label>
                 <input
@@ -129,9 +185,5 @@ new #[Title('Profile settings')] class extends Component
                 </x-action-message>
             </div>
         </form>
-
-        @if ($this->showDeleteUser)
-            <livewire:pages::settings.delete-user-form />
-        @endif
     </x-pages::settings.layout>
 </section>

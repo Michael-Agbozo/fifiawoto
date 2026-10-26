@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 test('profile page is displayed', function () {
@@ -72,4 +74,57 @@ test('correct password must be provided to delete account', function () {
     $response->assertHasErrors(['password']);
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('profile picture can be uploaded and replaces the old one', function () {
+    Storage::fake('public');
+    $user = User::factory()->create(['avatar_path' => 'avatars/old.jpg']);
+    Storage::disk('public')->put('avatars/old.jpg', 'old');
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')
+        ->set('photo', UploadedFile::fake()->image('me.png'))
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    $user->refresh();
+    expect($user->avatar_path)->toStartWith('avatars/')->not->toBe('avatars/old.jpg');
+    Storage::disk('public')->assertExists($user->avatar_path);
+    Storage::disk('public')->assertMissing('avatars/old.jpg');
+});
+
+test('profile picture must be a small image', function () {
+    Storage::fake('public');
+    $this->actingAs(User::factory()->create());
+
+    Livewire::test('pages::settings.profile')
+        ->set('photo', UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'))
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['photo' => 'image']);
+
+    Livewire::test('pages::settings.profile')
+        ->set('photo', UploadedFile::fake()->image('huge.jpg')->size(3000))
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['photo' => 'max']);
+});
+
+test('profile picture can be removed', function () {
+    Storage::fake('public');
+    $user = User::factory()->create(['avatar_path' => 'avatars/me.jpg']);
+    Storage::disk('public')->put('avatars/me.jpg', 'me');
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')->call('removeAvatar');
+
+    expect($user->refresh()->avatar_path)->toBeNull();
+    Storage::disk('public')->assertMissing('avatars/me.jpg');
+});
+
+test('profile page no longer offers account deletion', function () {
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('profile.edit'))
+        ->assertOk()
+        ->assertDontSee('data-test="delete-user-button"', false)
+        ->assertDontSee('Delete account');
 });
