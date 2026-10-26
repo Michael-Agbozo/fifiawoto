@@ -36,6 +36,16 @@ class User extends Authenticatable
     ];
 
     /**
+     * Mirrors the column defaults so freshly created, not-yet-refreshed instances
+     * (e.g. the one put on the session at sign-up) read as active.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
+    /**
      * @var list<string>
      */
     protected $hidden = [
@@ -57,6 +67,7 @@ class User extends Authenticatable
             'permissions' => 'array',
             'force_password_change' => 'boolean',
             'requires_two_factor' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 

@@ -6,7 +6,9 @@ use App\Models\User;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -41,6 +43,8 @@ new class extends Component
     public string $search = '';
 
     public string $roleFilter = '';
+
+    public string $activeFilter = '';
 
     #[Validate('required|string|max:120')]
     public string $name = '';
@@ -83,6 +87,7 @@ new class extends Component
         $filtered = Permissions::sanitize($this->editPermissionsValues);
 
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $user->forceFill(['permissions' => $filtered ?: null])->save();
 
         $this->editPermissionsId = null;
@@ -170,6 +175,7 @@ new class extends Component
         }
 
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $user->forceFill(['role' => $this->editRoleValue])->save();
 
         $this->editRoleId = null;
@@ -182,11 +188,32 @@ new class extends Component
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
 
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $newPassword = Str::password(14);
         $user->forceFill(['password' => Hash::make($newPassword)])->save();
 
         $this->generatedPassword = $newPassword;
         $this->flashMessage = "Password reset for {$user->name}. Share securely.";
+    }
+
+    public function sendPasswordReset(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+
+        $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
+
+        if ($user->id === auth()->id()) {
+            return;
+        }
+
+        $status = Password::broker(config('fortify.passwords'))->sendResetLink(['email' => $user->email]);
+
+        $this->flashMessage = match ($status) {
+            Password::RESET_LINK_SENT => "Password reset link sent to {$user->name}.",
+            Password::RESET_THROTTLED => "A reset link was sent to {$user->name} recently — please wait before sending another.",
+            default => 'Could not send reset link — please try again.',
+        };
     }
 
     public function startResetPassword(int $id): void
@@ -210,6 +237,7 @@ new class extends Component
         ]);
 
         $user = User::query()->findOrFail($this->resetPasswordUserId);
+        $this->ensureCanManage($user);
         $user->forceFill([
             'password' => Hash::make($this->newPassword),
             'force_password_change' => $this->forcePasswordChange,
@@ -229,6 +257,20 @@ new class extends Component
         $this->resetErrorBag();
     }
 
+    public function toggleActive(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
+        $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
+        $user->forceFill(['is_active' => ! $user->is_active])->save();
+
+        $this->flashMessage = $user->is_active
+            ? "{$user->name}'s account is now active."
+            : "{$user->name}'s account has been deactivated.";
+    }
+
     public function confirmDisable2fa(int $id): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
@@ -242,13 +284,14 @@ new class extends Component
         $this->confirmDisable2faId = null;
     }
 
-    public function disableTwoFactor(int $id): void
+    public function disableTwoFactor(int $id, DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
         abort_if(auth()->id() === $id, 403);
 
         $user = User::query()->findOrFail($id);
-        app(\Laravel\Fortify\Actions\DisableTwoFactorAuthentication::class)($user);
+        $this->ensureCanManage($user);
+        $disableTwoFactorAuthentication($user);
 
         $this->confirmDisable2faId = null;
         $this->flashMessage = "2FA has been disabled for {$user->name}.";
@@ -260,6 +303,7 @@ new class extends Component
         abort_if(auth()->id() === $id, 403);
 
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $user->forceFill(['requires_two_factor' => ! $user->requires_two_factor])->save();
 
         $this->flashMessage = $user->requires_two_factor
@@ -289,6 +333,7 @@ new class extends Component
         }
 
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $name = $user->name;
         $user->delete();
 
@@ -306,11 +351,33 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedActiveFilter(): void
+    {
+        $this->resetPage();
+    }
+
     protected function resetForm(): void
     {
         $this->reset(['name', 'email', 'phone']);
         $this->role = 'foundation_staff';
         $this->resetErrorBag();
+    }
+
+    /**
+     * Only the Owner may change the Owner's account — otherwise a Super Admin could
+     * deactivate, demote or lock out the one account that can recover everything.
+     */
+    protected function ensureCanManage(User $target): void
+    {
+        abort_if($target->role === UserRole::Owner && auth()->user()?->role !== UserRole::Owner, 403);
+    }
+
+    #[Computed]
+    public function disablingTwoFactorUser(): ?User
+    {
+        return $this->confirmDisable2faId
+            ? User::query()->find($this->confirmDisable2faId)
+            : null;
     }
 
     #[Computed]
@@ -328,6 +395,12 @@ new class extends Component
 
         if (filled($this->roleFilter)) {
             $query->where('role', $this->roleFilter);
+        }
+
+        if ($this->activeFilter === 'active') {
+            $query->where('is_active', true);
+        } elseif ($this->activeFilter === 'inactive') {
+            $query->where('is_active', false);
         }
 
         if (filled($this->search)) {
@@ -381,6 +454,23 @@ new class extends Component
                 :palette="$roleMeta[$r->value]['palette'] ?? 'brand'"
             />
         @endforeach
+
+        <x-admin.stat-card
+            wire:click="$set('activeFilter', 'active')"
+            icon="users"
+            label="Active"
+            :value="(string) \App\Models\User::where('is_active', true)->count()"
+            :active="$activeFilter === 'active'"
+            palette="green"
+        />
+        <x-admin.stat-card
+            wire:click="$set('activeFilter', 'inactive')"
+            icon="users"
+            label="Inactive"
+            :value="(string) \App\Models\User::where('is_active', false)->count()"
+            :active="$activeFilter === 'inactive'"
+            palette="gray"
+        />
     </div>
 
     <x-admin.section-header
@@ -393,9 +483,9 @@ new class extends Component
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Invite teammate
             </button>
-            @if (filled($roleFilter) || filled($search))
+            @if (filled($roleFilter) || filled($search) || filled($activeFilter))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$reset('roleFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('roleFilter','search','activeFilter')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -516,8 +606,7 @@ new class extends Component
 
     <x-admin.modal :show="(bool) $confirmDisable2faId" title="Disable 2FA" subtitle="This will remove the user's two-factor authentication. They can re-enable it from their settings." onClose="cancelDisable2fa">
         @if ($confirmDisable2faId)
-            @php $d2faUser = \App\Models\User::find($confirmDisable2faId); @endphp
-            <p class="text-sm text-ink-700">Are you sure you want to disable 2FA for <strong>{{ $d2faUser?->name }}</strong>? They will be able to log in with just their password until they re-enrol.</p>
+            <p class="text-sm text-ink-700">Are you sure you want to disable 2FA for <strong>{{ $this->disablingTwoFactorUser?->name }}</strong>? They will be able to log in with just their password until they re-enrol.</p>
             <div class="mt-6 flex flex-wrap gap-3">
                 <button type="button" wire:click="disableTwoFactor({{ $confirmDisable2faId }})" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
                     Yes, disable 2FA
@@ -547,16 +636,21 @@ new class extends Component
                     @foreach ($this->users as $user)
                         <tr class="transition hover:bg-cream-100/40">
                             <td class="px-6 py-4">
-                                <p class="font-semibold text-ink-900">
-                                    {{ $user->name }}
-                                    @if ($user->id === auth()->id())
-                                        <span class="ml-1 text-xs text-ink-500">(you)</span>
-                                    @endif
-                                </p>
-                                <p class="text-xs text-ink-500">{{ $user->email }}</p>
-                                @if ($user->phone)
-                                    <p class="text-xs text-ink-500">{{ $user->phone }}</p>
-                                @endif
+                                <div class="flex items-center gap-3">
+                                    <x-admin.avatar :src="$user->avatar_path" :name="$user->name" size="sm" class="shrink-0" />
+                                    <div class="min-w-0">
+                                        <p class="font-semibold text-ink-900">
+                                            {{ $user->name }}
+                                            @if ($user->id === auth()->id())
+                                                <span class="ml-1 text-xs text-ink-500">(you)</span>
+                                            @endif
+                                        </p>
+                                        <p class="text-xs text-ink-500">{{ $user->email }}</p>
+                                        @if ($user->phone)
+                                            <p class="text-xs text-ink-500">{{ $user->phone }}</p>
+                                        @endif
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 @if ($editRoleId === $user->id)
@@ -581,6 +675,10 @@ new class extends Component
                                         <x-admin.status-pill
                                             :palette="$rolePalettes[$user->role?->value] ?? 'gray'"
                                             :label="$user->role?->label() ?? 'Member'"
+                                        />
+                                        <x-admin.status-pill
+                                            :palette="$user->is_active ? 'green' : 'gray'"
+                                            :label="$user->is_active ? 'Active' : 'Inactive'"
                                         />
                                         @if ($user->hasEnabledTwoFactorAuthentication())
                                             <x-admin.status-pill palette="green" label="2FA on" />
@@ -619,6 +717,10 @@ new class extends Component
                                                 Reset password
                                             </button>
                                             @if ($user->id !== auth()->id())
+                                            <button type="button" wire:click="sendPasswordReset({{ $user->id }})" wire:confirm="Send a password reset email to {{ $user->name }}?" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+                                                Send reset link
+                                            </button>
                                             <button type="button" wire:click="startResetPassword({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
                                                 Set password
@@ -634,6 +736,20 @@ new class extends Component
                                                 {{ $user->requires_two_factor ? 'Remove 2FA requirement' : 'Require 2FA' }}
                                             </button>
                                             @endif
+                                            <button
+                                                type="button"
+                                                wire:click="toggleActive({{ $user->id }})"
+                                                @click="open = false"
+                                                class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition {{ $user->is_active ? 'text-ink-700 hover:bg-cream-100 hover:text-brand-900' : 'text-green-700 hover:bg-green-50' }}"
+                                            >
+                                                @if ($user->is_active)
+                                                    <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                                    Deactivate account
+                                                @else
+                                                    <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                                    Activate account
+                                                @endif
+                                            </button>
                                             <button type="button" wire:click="askDelete({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete
