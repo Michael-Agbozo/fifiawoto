@@ -11,6 +11,7 @@ beforeEach(function () {
     RateLimiter::clear('public-form:volunteer:127.0.0.1');
     RateLimiter::clear('public-form:contact:127.0.0.1');
     RateLimiter::clear('public-form:newsletter:127.0.0.1');
+    RateLimiter::clear('public-form:beneficiary-application:127.0.0.1');
 });
 
 it('throttles repeated volunteer applications from the same IP', function () {

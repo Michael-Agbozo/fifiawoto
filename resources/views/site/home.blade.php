@@ -150,10 +150,16 @@
                     <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What we do</p>
                     <h2 id="programs-heading" class="reveal mt-3 font-serif text-3xl text-ink-900 sm:text-4xl" style="transition-delay: 120ms">Our Programs and Initiatives</h2>
                 </div>
-                <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
-                    Read more about our mission
-                    <span aria-hidden="true">→</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
+                        Read more about our mission
+                        <span aria-hidden="true">→</span>
+                    </a>
+                    <a href="{{ route('apply-for-support') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-500 hover:text-brand-900" wire:navigate>
+                        Need support? Apply
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
             </div>
 
             <x-site.feature-carousel

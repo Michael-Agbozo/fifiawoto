@@ -26,6 +26,7 @@
                     <li><a href="{{ route('about') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>About</a></li>
                     <li><a href="{{ route('events.index') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Events</a></li>
                     <li><a href="{{ route('volunteer') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Volunteer</a></li>
+                    <li><a href="{{ route('apply-for-support') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Apply for Support</a></li>
                     <li><a href="{{ route('testimonials') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Stories of Impact</a></li>
                     <li><a href="{{ route('media') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Media Gallery</a></li>
                     <li><a href="{{ route('contact') }}" class="text-ink-500 hover:text-gold-500" wire:navigate>Contact</a></li>

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/volunteer', [PageController::class, 'volunteer'])->name('volunteer');
+Route::get('/apply-for-support', [PageController::class, 'applyForSupport'])->name('apply-for-support');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 Route::get('/testimonials', [PageController::class, 'testimonials'])->name('testimonials');

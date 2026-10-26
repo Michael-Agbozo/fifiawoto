@@ -7,10 +7,14 @@ use App\Enums\SupportStatus;
 use App\Enums\TimelineEntryType;
 use App\Mail\BeneficiaryApplicationConverted;
 use App\Models\Beneficiary;
+use App\Http\Controllers\Admin\DocumentDownloadController;
 use App\Models\BeneficiaryApplication;
+use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -29,6 +33,11 @@ new class extends Component
     public ?int $viewingId = null;
 
     public ?string $flashMessage = null;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiary_applications', 'view'), 403);
+    }
 
     public function viewApplication(int $id): void
     {
@@ -66,69 +75,111 @@ new class extends Component
             403,
         );
 
-        $app = BeneficiaryApplication::query()->findOrFail($id);
+        // Locked so a double-click can't convert the same application twice.
+        $beneficiary = DB::transaction(function () use ($id, &$app): ?Beneficiary {
+            $app = BeneficiaryApplication::query()->with('documents')->lockForUpdate()->findOrFail($id);
 
-        if ($app->converted_beneficiary_id) {
+            if ($app->converted_beneficiary_id) {
+                return null;
+            }
+
+            $category = match ($app->assistance_type) {
+                AssistanceType::Widow => SupportCategory::WidowSupport,
+                AssistanceType::Education => SupportCategory::ChildEducation,
+                AssistanceType::Medical => SupportCategory::Medical,
+                AssistanceType::Disability => SupportCategory::Disability,
+                AssistanceType::Community => SupportCategory::Community,
+                default => SupportCategory::Other,
+            };
+
+            $beneficiary = Beneficiary::query()->create([
+                'full_name' => $app->full_name,
+                'phone' => $app->phone,
+                'email' => $app->email,
+                'country' => $app->country,
+                'region' => $app->region,
+                'category' => $category->value,
+                'description' => $app->situation,
+                'status' => SupportStatus::Approved->value,
+                'assigned_to_user_id' => auth()->id(),
+                'source_application_id' => $app->id,
+            ]);
+
+            // Default folders
+            $folders = [];
+            foreach (['Medical Records', 'School Documents', 'Photos', 'Support Reports', 'Identification Documents'] as $name) {
+                $folders[$name] = BeneficiaryFolder::query()->create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'name' => $name,
+                    'slug' => Str::slug($name),
+                    'created_by' => auth()->id(),
+                ]);
+            }
+
+            // Carry the applicant's uploads over into the new profile (copied, so the application keeps its own record).
+            foreach ($app->documents as $applicationDocument) {
+                $source = Storage::disk($applicationDocument->disk ?: 'beneficiaries');
+
+                if (! $source->exists($applicationDocument->path)) {
+                    continue;
+                }
+
+                $path = "{$beneficiary->id}/documents/".basename($applicationDocument->path);
+                $stream = $source->readStream($applicationDocument->path);
+
+                // The disk doesn't throw — skip rather than record a document whose file never landed.
+                if (! $stream || ! Storage::disk('beneficiaries')->writeStream($path, $stream)) {
+                    report(new RuntimeException("Could not copy application document #{$applicationDocument->id} to beneficiary #{$beneficiary->id}."));
+
+                    continue;
+                }
+
+                BeneficiaryDocument::query()->create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'folder_id' => $folders['Identification Documents']->id,
+                    'disk' => 'beneficiaries',
+                    'path' => $path,
+                    'original_name' => $applicationDocument->original_name,
+                    'mime_type' => $applicationDocument->mime_type,
+                    'size_bytes' => $applicationDocument->size_bytes,
+                    'description' => 'Submitted with the public application',
+                    'uploaded_by' => null,
+                    'scan_status' => 'pending',
+                ]);
+            }
+
+            // Timeline entries
+            BeneficiaryTimelineEntry::query()->create([
+                'beneficiary_id' => $beneficiary->id,
+                'type' => TimelineEntryType::ApplicationReceived->value,
+                'description' => 'Public application received '.($app->created_at?->format('M j, Y') ?? 'recently'),
+                'occurred_at' => $app->created_at ?? now(),
+                'recorded_by' => auth()->id(),
+            ]);
+
+            BeneficiaryTimelineEntry::query()->create([
+                'beneficiary_id' => $beneficiary->id,
+                'type' => TimelineEntryType::SupportApproved->value,
+                'description' => 'Converted from application by '.auth()->user()?->name,
+                'occurred_at' => now(),
+                'recorded_by' => auth()->id(),
+            ]);
+
+            $app->update([
+                'status' => BeneficiaryApplicationStatus::Approved->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+                'converted_beneficiary_id' => $beneficiary->id,
+            ]);
+
+            return $beneficiary;
+        });
+
+        if (! $beneficiary) {
             $this->flashMessage = 'Application already converted.';
 
             return;
         }
-
-        $category = match ($app->assistance_type) {
-            AssistanceType::Widow => SupportCategory::WidowSupport,
-            AssistanceType::Education => SupportCategory::ChildEducation,
-            AssistanceType::Medical => SupportCategory::Medical,
-            AssistanceType::Disability => SupportCategory::Disability,
-            AssistanceType::Community => SupportCategory::Community,
-            default => SupportCategory::Other,
-        };
-
-        $beneficiary = Beneficiary::query()->create([
-            'full_name' => $app->full_name,
-            'phone' => $app->phone,
-            'email' => $app->email,
-            'country' => $app->country,
-            'region' => $app->region,
-            'category' => $category->value,
-            'description' => $app->situation,
-            'status' => SupportStatus::Approved->value,
-            'assigned_to_user_id' => auth()->id(),
-            'source_application_id' => $app->id,
-        ]);
-
-        // Default folders
-        foreach (['Medical Records', 'School Documents', 'Photos', 'Support Reports', 'Identification Documents'] as $name) {
-            BeneficiaryFolder::query()->create([
-                'beneficiary_id' => $beneficiary->id,
-                'name' => $name,
-                'slug' => Str::slug($name),
-                'created_by' => auth()->id(),
-            ]);
-        }
-
-        // Timeline entries
-        BeneficiaryTimelineEntry::query()->create([
-            'beneficiary_id' => $beneficiary->id,
-            'type' => TimelineEntryType::ApplicationReceived->value,
-            'description' => 'Public application received '.($app->created_at?->format('M j, Y') ?? 'recently'),
-            'occurred_at' => $app->created_at ?? now(),
-            'recorded_by' => auth()->id(),
-        ]);
-
-        BeneficiaryTimelineEntry::query()->create([
-            'beneficiary_id' => $beneficiary->id,
-            'type' => TimelineEntryType::SupportApproved->value,
-            'description' => 'Converted from application by '.auth()->user()?->name,
-            'occurred_at' => now(),
-            'recorded_by' => auth()->id(),
-        ]);
-
-        $app->update([
-            'status' => BeneficiaryApplicationStatus::Approved->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-            'converted_beneficiary_id' => $beneficiary->id,
-        ]);
 
         if (filled($app->email)) {
             Mail::send(new BeneficiaryApplicationConverted($app));
@@ -153,7 +204,13 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('beneficiary_applications', 'delete'), 403);
 
-        BeneficiaryApplication::query()->whereKey($id)->delete();
+        $app = BeneficiaryApplication::query()->with('documents')->findOrFail($id);
+
+        foreach ($app->documents as $document) {
+            Storage::disk($document->disk ?: 'beneficiaries')->delete($document->path);
+        }
+
+        $app->delete();
         $this->confirmDeleteId = null;
         $this->flashMessage = 'Application removed.';
     }
@@ -194,7 +251,7 @@ new class extends Component
     public function viewingApplication(): ?BeneficiaryApplication
     {
         return $this->viewingId
-            ? BeneficiaryApplication::query()->with('convertedBeneficiary', 'reviewer')->find($this->viewingId)
+            ? BeneficiaryApplication::query()->with('convertedBeneficiary', 'reviewer', 'documents')->find($this->viewingId)
             : null;
     }
 
@@ -391,6 +448,28 @@ new class extends Component
             <section class="mt-6">
                 <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Situation described</h3>
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->situation }}</p>
+            </section>
+
+            <section class="mt-5">
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Supporting documents</h3>
+                @if ($app->documents->isEmpty())
+                    <p class="mt-2 text-sm text-ink-500">No documents attached.</p>
+                @else
+                    <ul class="mt-2 divide-y divide-cream-200 rounded-2xl border border-cream-300">
+                        @foreach ($app->documents as $document)
+                            <li class="flex items-center justify-between gap-3 px-4 py-2.5" wire:key="app-doc-{{ $document->id }}">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium text-ink-900">{{ $document->original_name }}</p>
+                                    <p class="text-xs text-ink-500">{{ number_format($document->size_bytes / 1024, 1) }} KB</p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-3 text-xs font-semibold">
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document) }}" target="_blank" rel="noopener" class="text-brand-700 hover:text-gold-500">Open</a>
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document, download: true) }}" class="text-brand-700 hover:text-gold-500">Download</a>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
             </section>
 
             <section class="mt-5">

@@ -12,6 +12,7 @@ it('renders every public page with the brand name', function (string $route) {
     'volunteer',
     'contact',
     'donate',
+    'apply-for-support',
 ]);
 
 it('renders the home hero copy', function () {

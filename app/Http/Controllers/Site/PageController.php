@@ -48,6 +48,11 @@ class PageController extends Controller
         return view('site.volunteer');
     }
 
+    public function applyForSupport(): View
+    {
+        return view('site.apply-for-support');
+    }
+
     public function contact(): View
     {
         return view('site.contact');
