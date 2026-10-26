@@ -5,6 +5,7 @@ use App\Mail\ContactMessageReply as ContactMessageReplyMail;
 use App\Models\ContactMessage;
 use App\Models\ContactMessageReply;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -108,7 +109,16 @@ new class extends Component
             return;
         }
 
-        Mail::send(new ContactMessageReplyMail(
+        // Guards against double-submits sending the same reply twice.
+        $key = 'admin-mail:inbox-reply:'.auth()->id().':'.$msg->id;
+        if (RateLimiter::tooManyAttempts($key, 1)) {
+            $this->addError('reply', 'That reply was just sent — wait a few seconds before sending another.');
+
+            return;
+        }
+        RateLimiter::hit($key, 10);
+
+        Mail::queue(new ContactMessageReplyMail(
             recipientName: $msg->full_name,
             recipientEmail: $msg->email,
             subjectLine: $data['replySubject'],
@@ -204,7 +214,7 @@ new class extends Component
     }
 
     #[Computed]
-    public function messages()
+    public function inboxMessages()
     {
         $q = ContactMessage::query()->withCount('replies');
 
@@ -289,11 +299,11 @@ new class extends Component
             <div class="border-b border-cream-200 p-3">
                 <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, message…" class="w-full rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
             </div>
-            @if ($this->messages->isEmpty())
+            @if ($this->inboxMessages->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No messages in this view.</div>
             @else
                 <ul class="max-h-[70vh] divide-y divide-cream-200 overflow-y-auto">
-                    @foreach ($this->messages as $msg)
+                    @foreach ($this->inboxMessages as $msg)
                         <li>
                             <button
                                 type="button"
@@ -326,7 +336,7 @@ new class extends Component
                         </li>
                     @endforeach
                 </ul>
-                <div class="border-t border-cream-200 px-4 py-2">{{ $this->messages->links() }}</div>
+                <div class="border-t border-cream-200 px-4 py-2">{{ $this->inboxMessages->links() }}</div>
             @endif
         </div>
 
@@ -407,6 +417,10 @@ new class extends Component
                 @endif
 
                 @if ($canReply)
+                    @error('reply')
+                        <div role="alert" class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
+                    @enderror
+
                     @if (! $showReplyForm)
                         <div class="mt-6 border-t border-cream-200 pt-4">
                             <button type="button" wire:click="startReply" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">

@@ -47,7 +47,7 @@
                             </blockquote>
                             <figcaption class="mt-5 flex items-center gap-3 border-t border-cream-300 pt-4">
                                 @if (filled($photo))
-                                    <img src="{{ str_starts_with($photo, 'http') ? $photo : asset('storage/'.ltrim($photo, '/')) }}" alt="{{ $t->author_name }}" class="aspect-square size-12 rounded-full object-cover" loading="lazy">
+                                    <img src="{{ \App\Support\MediaUrl::for($photo) }}" alt="{{ $t->author_name }}" class="aspect-square size-12 rounded-full object-cover" loading="lazy">
                                 @else
                                     <span class="grid aspect-square size-12 place-items-center rounded-full bg-brand-50 font-bold text-brand-700">{{ $initials ?: mb_substr((string) $t->author_role, 0, 1) }}</span>
                                 @endif

@@ -308,7 +308,7 @@ new class extends Component
             @foreach ($this->items as $m)
                 <article class="rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                     <div class="aspect-[4/3] overflow-hidden rounded-t-3xl bg-cream-200">
-                        <img src="{{ str_starts_with($m->path, 'http') ? $m->path : asset($m->path) }}" alt="{{ $m->caption ?? $m->category->label() }}" class="h-full w-full object-cover" loading="lazy">
+                        <img src="{{ \App\Support\MediaUrl::for($m->path) }}" alt="{{ $m->caption ?? $m->category->label() }}" class="h-full w-full object-cover" loading="lazy">
                     </div>
                     <div class="p-4">
                         <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">{{ $m->category->label() }} · {{ $m->type->label() }}</p>

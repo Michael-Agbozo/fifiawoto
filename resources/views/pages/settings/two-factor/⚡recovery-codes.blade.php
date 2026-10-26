@@ -111,6 +111,18 @@ new class extends Component
                     </div>
                 @endforeach
             </div>
+            <div x-data="{ copied: false, codes: @js(implode("\n", $recoveryCodes)) }">
+                <button
+                    type="button"
+                    data-test="copy-recovery-codes"
+                    @click="navigator.clipboard.writeText(codes).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                >
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z"/></svg>
+                    <span x-text="copied ? '{{ __('Copied') }}' : '{{ __('Copy all') }}'">{{ __('Copy all') }}</span>
+                </button>
+                <span class="sr-only" role="status" x-text="copied ? '{{ __('Recovery codes copied to clipboard') }}' : ''"></span>
+            </div>
             <p class="text-xs text-ink-500">
                 {{ __('Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate codes above.') }}
             </p>

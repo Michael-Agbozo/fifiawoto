@@ -124,7 +124,7 @@
                                     ])>
                                         @if (filled($photo))
                                             <img
-                                                src="{{ str_starts_with($photo, 'http') ? $photo : asset('storage/'.ltrim($photo, '/')) }}"
+                                                src="{{ \App\Support\MediaUrl::for($photo) }}"
                                                 alt="{{ $testimonial->author_name }}"
                                                 class="aspect-square size-12 rounded-full object-cover"
                                                 loading="lazy"

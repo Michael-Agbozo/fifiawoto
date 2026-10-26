@@ -3,9 +3,7 @@
     $goal = (int) ($event->goal_cents ?? 0);
     $percent = $event->progressPercent();
     $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp'];
-    $heroImage = $event->hero_image_path
-        ? asset('storage/'.$event->hero_image_path)
-        : asset($fallbacks[(int) abs(crc32($event->slug)) % count($fallbacks)]);
+    $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[(int) abs(crc32($event->slug)) % count($fallbacks)]);
 @endphp
 
 <x-layouts::site :title="$event->title">
@@ -91,7 +89,7 @@
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                             @foreach ($event->images as $image)
                                 <figure class="aspect-square overflow-hidden rounded-xl bg-cream-200">
-                                    <img src="{{ asset('storage/'.$image->path) }}" alt="{{ $image->caption ?? $event->title }}" class="h-full w-full object-cover">
+                                    <img src="{{ \App\Support\MediaUrl::for($image->path) }}" alt="{{ $image->caption ?? $event->title }}" class="h-full w-full object-cover">
                                 </figure>
                             @endforeach
                         </div>

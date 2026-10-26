@@ -74,7 +74,7 @@ new class extends Component
         ]);
 
         Mail::to(config('notifications.admin_email'))
-            ->send(new ContactFormReceived(
+            ->queue(new ContactFormReceived(
                 senderName: $data['full_name'],
                 senderEmail: $data['email'],
                 senderPhone: $data['phone'] ?? '',

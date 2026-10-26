@@ -91,9 +91,7 @@
                             $goal = (int) ($event->goal_cents ?? 0);
                             $percent = $goal > 0 ? min(100, (int) round($raised / $goal * 100)) : 0;
                             $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp', 'images/foundation/community-1.jpg'];
-                            $heroImage = $event->hero_image_path
-                                ? asset('storage/'.$event->hero_image_path)
-                                : asset($fallbacks[$loop->index % count($fallbacks)]);
+                            $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
                         <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 3) * 100 }}ms">
                             <div class="relative aspect-[5/3] overflow-hidden">
@@ -164,9 +162,7 @@
                             $goal = (int) ($event->goal_cents ?? 0);
                             $percent = $goal > 0 ? min(100, (int) round($raised / $goal * 100)) : 0;
                             $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp', 'images/foundation/community-1.jpg'];
-                            $heroImage = $event->hero_image_path
-                                ? asset('storage/'.$event->hero_image_path)
-                                : asset($fallbacks[$loop->index % count($fallbacks)]);
+                            $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
                         <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 2) * 120 }}ms">
                             <a href="{{ route('events.show', $event) }}" class="relative block aspect-[16/9] overflow-hidden" wire:navigate>

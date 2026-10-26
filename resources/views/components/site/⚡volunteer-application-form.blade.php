@@ -94,7 +94,7 @@ new class extends Component
         ]);
 
         Mail::to(config('notifications.admin_email'))
-            ->send(new VolunteerApplicationReceived($application));
+            ->queue(new VolunteerApplicationReceived($application));
 
         $this->reset([
             'full_name', 'email', 'phone', 'country', 'interests',

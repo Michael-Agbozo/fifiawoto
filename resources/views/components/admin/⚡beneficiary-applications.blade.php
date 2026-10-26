@@ -182,7 +182,7 @@ new class extends Component
         }
 
         if (filled($app->email)) {
-            Mail::send(new BeneficiaryApplicationConverted($app));
+            Mail::queue(new BeneficiaryApplicationConverted($app));
         }
 
         $this->flashMessage = "Created beneficiary record for {$app->full_name}.";

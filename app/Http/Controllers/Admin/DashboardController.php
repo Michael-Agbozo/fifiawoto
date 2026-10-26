@@ -26,6 +26,8 @@ class DashboardController extends Controller
 
     public function exportActivity(Request $request, ImpactMetricService $metrics): StreamedResponse
     {
+        abort_unless($request->user()?->canDo('reports', 'export'), 403);
+
         $tab = $request->query('tab', 'all');
         $rows = collect($metrics->recentActivity(200));
 

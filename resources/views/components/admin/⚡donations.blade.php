@@ -117,8 +117,9 @@ new class extends Component
             $donation = Donation::query()->create($payload);
             $this->flashMessage = "Recorded gift from {$data['donor_name']}.";
 
-            if (filled($donation->donor_email)) {
-                Mail::send(new DonationReceipt($donation->fresh('event')));
+            // Never email a receipt for a zero/missing amount (e.g. a malformed import).
+            if (filled($donation->donor_email) && $donation->amount_cents > 0) {
+                Mail::queue(new DonationReceipt($donation->fresh('event')));
                 $this->flashMessage .= ' Receipt emailed.';
             }
         }
@@ -399,7 +400,7 @@ new class extends Component
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 disabled:opacity-60">
                     {{ $editingId ? 'Save changes' : 'Record donation' }}
                 </button>
                 <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">

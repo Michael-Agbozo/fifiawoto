@@ -121,7 +121,7 @@ new class extends Component
 
         unset($this->applicationRoleChoice[$applicationId]);
 
-        Mail::send(new VolunteerApplicationDecision(
+        Mail::queue(new VolunteerApplicationDecision(
             $application,
             approved: true,
             roleLabel: VolunteerRole::from($roleValue)->label(),
@@ -136,13 +136,18 @@ new class extends Component
 
         $application = VolunteerApplication::query()->findOrFail($applicationId);
 
+        // Idempotent: a double-click must not email the applicant twice.
+        if ($application->status === VolunteerApplicationStatus::Rejected) {
+            return;
+        }
+
         $application->update([
             'status' => VolunteerApplicationStatus::Rejected->value,
             'reviewer_id' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        Mail::send(new VolunteerApplicationDecision($application, approved: false));
+        Mail::queue(new VolunteerApplicationDecision($application, approved: false));
 
         $this->flashMessage = "Application from {$application->full_name} marked as rejected. Notification email sent.";
     }

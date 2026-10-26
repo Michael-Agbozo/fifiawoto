@@ -395,9 +395,7 @@ new class extends Component
                         if ($hero_image_upload) {
                             $previewUrl = $hero_image_upload->temporaryUrl();
                         } elseif (filled($hero_image_path) && ! $remove_hero_image) {
-                            $previewUrl = str_starts_with($hero_image_path, 'http')
-                                ? $hero_image_path
-                                : asset('storage/'.ltrim($hero_image_path, '/'));
+                            $previewUrl = \App\Support\MediaUrl::for($hero_image_path);
                         }
                     @endphp
                     <div class="grid size-32 place-items-center overflow-hidden rounded-2xl border border-dashed border-cream-300 bg-cream-100 text-ink-500">
@@ -496,7 +494,7 @@ new class extends Component
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     @if (filled($event->hero_image_path))
-                                        <img src="{{ asset('storage/'.ltrim($event->hero_image_path, '/')) }}" alt="" class="size-12 rounded-xl object-cover ring-1 ring-cream-200" loading="lazy">
+                                        <img src="{{ \App\Support\MediaUrl::for($event->hero_image_path) }}" alt="" class="size-12 rounded-xl object-cover ring-1 ring-cream-200" loading="lazy">
                                     @else
                                         <div class="grid size-12 place-items-center rounded-xl bg-cream-100 text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-500">No image</div>
                                     @endif

@@ -4,12 +4,16 @@ namespace App\Mail;
 
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class TeamInvitation extends Mailable
+/**
+ * Carries a plaintext temporary password, so the queued payload is encrypted at rest.
+ */
+class TeamInvitation extends Mailable implements ShouldBeEncrypted
 {
     use Queueable;
     use SerializesModels;

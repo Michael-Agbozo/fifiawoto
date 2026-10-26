@@ -1,13 +1,34 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 new class extends Component
 {
     public string $tab = 'app';
 
+    #[Locked]
     public int $tailLines = 200;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('system_logs', 'view'), 403);
+    }
+
+    public function downloadLog(): ?BinaryFileResponse
+    {
+        abort_unless(auth()->user()?->canDo('system_logs', 'view'), 403);
+
+        $path = storage_path('logs/laravel.log');
+
+        if (! file_exists($path)) {
+            return null;
+        }
+
+        return response()->download($path, 'laravel-'.now()->format('Y-m-d-His').'.log');
+    }
 
     public function switchTab(string $tab): void
     {
@@ -167,7 +188,10 @@ new class extends Component
         <div class="rounded-3xl border border-cream-300 bg-ink-900 p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <div class="mb-3 flex items-center justify-between">
                 <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-cream-200">Tail · last {{ $tailLines }} lines</p>
-                <button type="button" wire:click="$refresh" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-cream-200 transition hover:border-cream-300 hover:text-white">Refresh</button>
+                <div class="flex items-center gap-2">
+                    <button type="button" wire:click="downloadLog" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-cream-200 transition hover:border-cream-300 hover:text-white">Download full log</button>
+                    <button type="button" wire:click="$refresh" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-cream-200 transition hover:border-cream-300 hover:text-white">Refresh</button>
+                </div>
             </div>
             <pre class="max-h-[60vh] overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-cream-200">{{ $this->tail() }}</pre>
         </div>

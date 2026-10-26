@@ -20,7 +20,7 @@
 
     $resolvedSrc = null;
     if (filled($src)) {
-        $resolvedSrc = str_starts_with($src, 'http') ? $src : asset('storage/'.ltrim($src, '/'));
+        $resolvedSrc = \App\Support\MediaUrl::for($src);
     }
 @endphp
 

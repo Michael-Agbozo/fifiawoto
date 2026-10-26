@@ -225,13 +225,7 @@
                                 ->take(2)
                                 ->implode('');
                             $photo = $leader->photo_path;
-                            $photoSrc = filled($photo)
-                                ? (str_starts_with($photo, 'http')
-                                    ? $photo
-                                    : (str_starts_with($photo, 'leaders/')
-                                        ? asset('storage/'.$photo)
-                                        : asset($photo)))
-                                : null;
+                            $photoSrc = \App\Support\MediaUrl::for($photo);
                         @endphp
                         <figure class="reveal group" style="transition-delay: {{ ($i % 4) * 80 }}ms">
                             <div class="relative aspect-square overflow-hidden rounded-2xl bg-cream-200">

@@ -212,18 +212,7 @@ new class extends Component
 
     public function photoSrc(?string $path): ?string
     {
-        if (! filled($path)) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        // Seeded assets live under public/images/...; admin uploads live under storage/app/public.
-        return str_starts_with($path, 'leaders/')
-            ? asset('storage/'.$path)
-            : asset($path);
+        return \App\Support\MediaUrl::for($path);
     }
 }; ?>
 

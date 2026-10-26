@@ -219,6 +219,7 @@
                 <p class="mt-0.5 text-xs text-ink-500">Submissions and gifts across every channel</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                @if (auth()->user()?->canDo('reports', 'export'))
                 <a
                     :href="'{{ route('admin.dashboard.export') }}?tab=' + tab"
                     class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-900"
@@ -226,6 +227,7 @@
                     <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Export CSV
                 </a>
+                @endif
                 <a
                     href="{{ route('admin.volunteers.index') }}"
                     x-show="tab === 'volunteer'"
@@ -336,10 +338,12 @@
 
         <footer class="flex items-center justify-between border-t border-cream-200 px-6 py-4 text-xs text-ink-500">
             <span>Showing {{ count($activity) }} most recent entries</span>
+            @if (auth()->user()?->canDo('reports', 'export'))
             <a href="{{ route('admin.dashboard.export') }}" class="inline-flex items-center gap-1.5 rounded-md border border-cream-300 px-2.5 py-1 font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
                 <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                 Download all as CSV
             </a>
+            @endif
         </footer>
     </article>
 </x-layouts::admin>

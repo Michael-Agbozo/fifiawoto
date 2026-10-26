@@ -130,7 +130,7 @@ new class extends Component
             'email_verified_at' => now(),
         ]);
 
-        Mail::send(new TeamInvitation($user, $generated));
+        Mail::queue(new TeamInvitation($user, $generated));
 
         $this->generatedPassword = $generated;
         $this->flashMessage = "Account created for {$data['name']}. Invitation email sent.";
