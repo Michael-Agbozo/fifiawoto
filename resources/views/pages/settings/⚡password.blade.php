@@ -49,7 +49,7 @@ new #[Title('Password settings')] class extends Component
     <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-5">
             @if (session('force_password_change') || Auth::user()->force_password_change)
-                <div class="rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-gold-800">
+                <div class="rounded-xl border border-gold-300 bg-cream-100 px-4 py-3 text-sm text-brand-900">
                     Your password was reset by an administrator. Please set a new password to continue.
                 </div>
             @else

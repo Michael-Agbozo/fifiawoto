@@ -48,6 +48,12 @@ new #[Title('Two-factor authentication')] class extends Component
         :subheading="__('Manage your two-factor authentication settings')"
     >
         <div class="space-y-6 text-sm" wire:cloak>
+            @if (! $twoFactorEnabled && (session('status') === 'two-factor-required' || auth()->user()->requires_two_factor))
+                <div class="rounded-xl border border-gold-300 bg-cream-100 px-4 py-3 text-sm text-brand-900">
+                    {{ __('An administrator requires two-factor authentication on your account. Please enable it to continue.') }}
+                </div>
+            @endif
+
             @if ($twoFactorEnabled)
                 <div class="space-y-5">
                     <span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-green-700">
