@@ -38,6 +38,7 @@
                 ['label' => 'Testimonials',             'route' => 'admin.testimonials.index',              'icon' => 'quote',     'show' => $user?->canDo('testimonials', 'view') ?? false],
                 ['label' => 'Leadership team',          'route' => 'admin.leaders.index',                   'icon' => 'users',     'show' => $user?->canDo('leaders', 'view') ?? false],
                 ['label' => 'Newsletter subscribers',   'route' => 'admin.newsletter.index',                'icon' => 'sparkles',  'show' => $user?->canDo('newsletter', 'view') ?? false],
+                ['label' => 'Popup settings',           'route' => 'admin.settings.popup',                  'icon' => 'sparkles',  'show' => $user?->canDo('site_popup', 'view') ?? false],
             ],
         ],
         [

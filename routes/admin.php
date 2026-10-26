@@ -88,10 +88,13 @@ Route::middleware('role:owner,super_admin,foundation_staff,volunteer_coordinator
         ->name('inbox.index');
 });
 
-// User management (Owner · Admin)
+// User management · Website popup (Owner · Admin)
 Route::middleware('role:owner,super_admin')->group(function () {
     Route::view('/users', 'admin.users.index')
         ->name('users.index');
+
+    Route::view('/settings/popup', 'admin.settings.popup')
+        ->name('settings.popup');
 });
 
 // System logs (Owner only — top-level super admin access)

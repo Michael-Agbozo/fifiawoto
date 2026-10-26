@@ -17,9 +17,13 @@ new class extends Component
 
     public bool $submitted = false;
 
-    public function mount(string $source = 'home'): void
+    /** Form only, without the section wrapper and heading — used inside the site popup. */
+    public bool $compact = false;
+
+    public function mount(string $source = 'home', bool $compact = false): void
     {
         $this->source = $source;
+        $this->compact = $compact;
     }
 
     public function subscribe(): void
@@ -52,18 +56,20 @@ new class extends Component
     }
 }; ?>
 
-<section class="bg-cream-100 py-20">
-    <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
-        <h2 class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Stay Connected</h2>
-        <p class="mt-4 text-sm leading-relaxed text-ink-500">
-            Subscribe to receive updates about our programs, events, and community initiatives.
-        </p>
+<section @class(['bg-cream-100 py-20' => ! $compact])>
+    <div @class(['mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8' => ! $compact])>
+        @unless ($compact)
+            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
+            <h2 class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Stay Connected</h2>
+            <p class="mt-4 text-sm leading-relaxed text-ink-500">
+                Subscribe to receive updates about our programs, events, and community initiatives.
+            </p>
+        @endunless
 
         @if ($submitted)
             <div
                 role="status"
-                class="mx-auto mt-8 max-w-xl rounded-2xl border border-brand-200 bg-white p-6 text-sm text-brand-800"
+                @class(['rounded-2xl border border-brand-200 bg-white p-6 text-sm text-brand-800', 'mx-auto mt-8 max-w-xl' => ! $compact])
             >
                 <p class="font-semibold text-brand-900">Thank you for subscribing.</p>
                 <p class="mt-1 text-ink-500">
@@ -73,20 +79,20 @@ new class extends Component
         @else
             <form
                 wire:submit="subscribe"
-                class="mx-auto mt-8 grid max-w-xl gap-3 text-left sm:grid-cols-[1fr_1.4fr_auto]"
+                @class(['grid gap-3 text-left', 'mx-auto mt-8 max-w-xl sm:grid-cols-[1fr_1.4fr_auto]' => ! $compact])
             >
-                <label class="sr-only" for="newsletter-name">Name</label>
+                <label class="sr-only" for="newsletter-name-{{ $this->getId() }}">Name</label>
                 <input
-                    id="newsletter-name"
+                    id="newsletter-name-{{ $this->getId() }}"
                     type="text"
                     wire:model="name"
                     placeholder="Name"
                     class="rounded-md border border-brand-200 bg-white px-4 py-2.5 text-sm text-brand-900 placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
 
-                <label class="sr-only" for="newsletter-email">Email address</label>
+                <label class="sr-only" for="newsletter-email-{{ $this->getId() }}">Email address</label>
                 <input
-                    id="newsletter-email"
+                    id="newsletter-email-{{ $this->getId() }}"
                     type="email"
                     wire:model="email"
                     placeholder="Email address"
@@ -104,13 +110,13 @@ new class extends Component
                 </button>
 
                 @error('rate')
-                    <p class="sm:col-span-3 text-sm text-red-600">{{ $message }}</p>
+                    <p @class(['text-sm text-red-600', 'sm:col-span-3' => ! $compact])>{{ $message }}</p>
                 @enderror
                 @error('email')
-                    <p class="sm:col-span-3 text-sm text-red-600">{{ $message }}</p>
+                    <p @class(['text-sm text-red-600', 'sm:col-span-3' => ! $compact])>{{ $message }}</p>
                 @enderror
                 @error('name')
-                    <p class="sm:col-span-3 text-sm text-red-600">{{ $message }}</p>
+                    <p @class(['text-sm text-red-600', 'sm:col-span-3' => ! $compact])>{{ $message }}</p>
                 @enderror
             </form>
         @endif

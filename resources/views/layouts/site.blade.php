@@ -20,6 +20,8 @@
             </div>
         </div>
 
+        <x-site.popup />
+
         @livewireScripts
     </body>
 </html>

@@ -1,3 +1,5 @@
+import './popup'
+
 /**
  * Site-wide motion helpers.
  *

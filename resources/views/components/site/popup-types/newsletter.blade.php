@@ -1,0 +1,6 @@
+<p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
+<h2 id="site-popup-heading" class="mt-2 pr-8 font-serif text-2xl text-brand-900 sm:text-3xl">Stay connected</h2>
+<p class="mt-3 text-sm leading-relaxed text-ink-500">Get updates on our programs, events and the families we walk alongside. No spam — unsubscribe any time.</p>
+<div class="mt-5">
+    <livewire:site.newsletter-signup source="popup" :compact="true" />
+</div>

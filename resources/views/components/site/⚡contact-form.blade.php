@@ -30,6 +30,12 @@ new class extends Component
 
     public bool $submitted = false;
 
+    /** Pre-select the subject from links like /contact?subject=donation. */
+    public function mount(): void
+    {
+        $this->subject = ContactSubject::tryFrom((string) request()->query('subject'))?->value ?? '';
+    }
+
     /**
      * @return array<string, array<int, string>>
      */

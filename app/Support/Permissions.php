@@ -37,6 +37,7 @@ class Permissions
             'media' => ['label' => 'Media library', 'actions' => $crud],
             'instagram' => ['label' => 'Instagram', 'actions' => $crud],
             'newsletter' => ['label' => 'Newsletter subscribers', 'actions' => $crud],
+            'site_popup' => ['label' => 'Website popup', 'actions' => ['view' => 'View', 'update' => 'Update']],
             'inbox' => ['label' => 'Email inbox', 'actions' => ['view' => 'View', 'reply' => 'Reply', 'delete' => 'Delete']],
             'reports' => ['label' => 'Reports', 'actions' => ['view' => 'View', 'export' => 'Export']],
             'users' => ['label' => 'User accounts', 'actions' => $crud],
