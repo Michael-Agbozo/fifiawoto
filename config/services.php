@@ -18,6 +18,13 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    // Instagram Graph API auto-pull. `instagram:sync` is a no-op until a token is set.
+    'instagram' => [
+        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+        'user_id' => env('INSTAGRAM_USER_ID', 'me'),
+        'graph_url' => env('INSTAGRAM_GRAPH_URL', 'https://graph.instagram.com'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],
