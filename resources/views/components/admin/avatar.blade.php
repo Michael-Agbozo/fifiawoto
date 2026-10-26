@@ -33,7 +33,7 @@
     >
 @else
     <span
-        {{ $attributes->class(['inline-flex aspect-square items-center justify-center rounded-full bg-brand-50 font-semibold text-brand-700 ring-2 ring-cream-200', $sizeClasses]) }}
+        {{ $attributes->class(['inline-flex aspect-square items-center justify-center rounded-full bg-brand-50 font-semibold text-label ring-2 ring-cream-200', $sizeClasses]) }}
         aria-hidden="true"
     >
         {{ $initials ?: '?' }}

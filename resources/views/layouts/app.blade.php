@@ -16,7 +16,7 @@
 
         <header
             x-data="{ menuOpen: false, userMenu: false }"
-            class="sticky top-0 z-40 bg-white shadow-sm"
+            class="sticky top-0 z-40 bg-surface shadow-sm"
         >
             <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
                 <a href="{{ route('dashboard') }}" class="flex items-center" aria-label="Fifiawoto Foundation" wire:navigate>
@@ -46,7 +46,7 @@
                             <button
                                 type="button"
                                 @click="userMenu = !userMenu"
-                                class="flex items-center gap-3 rounded-full border border-cream-300 bg-white px-3 py-1.5 text-sm text-ink-700 hover:border-gold-500"
+                                class="flex items-center gap-3 rounded-full border border-cream-300 bg-surface px-3 py-1.5 text-sm text-ink-700 hover:border-gold-500"
                             >
                                 <span class="flex aspect-square size-8 items-center justify-center rounded-full bg-brand-900 text-xs font-bold text-white">
                                     {{ $user->initials() }}
@@ -61,7 +61,7 @@
                                 x-show="userMenu"
                                 x-cloak
                                 x-transition.opacity
-                                class="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-cream-300 bg-white py-2 shadow-lg"
+                                class="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-cream-300 bg-surface py-2 shadow-lg"
                             >
                                 <div class="border-b border-cream-200 px-4 py-3">
                                     <p class="text-sm font-semibold text-ink-900">{{ $user->name }}</p>
@@ -101,7 +101,7 @@
             </div>
 
             <div x-show="menuOpen" x-cloak class="lg:hidden">
-                <nav class="space-y-1 border-t border-cream-300 bg-white px-4 pb-6 pt-2 sm:px-6">
+                <nav class="space-y-1 border-t border-cream-300 bg-surface px-4 pb-6 pt-2 sm:px-6">
                     @foreach ($navItems as $item)
                         @php $isCurrent = request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'); @endphp
                         <a

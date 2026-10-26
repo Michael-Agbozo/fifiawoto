@@ -149,9 +149,9 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-cream-300 bg-white p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-cream-300 bg-surface p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         <div>
-            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Log location</p>
+            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Log location</p>
             <p class="mt-1 font-mono text-sm text-ink-900">{{ storage_path('logs/laravel.log') }}</p>
             <p class="mt-1 text-xs text-ink-500">Mailer is set to <code class="rounded bg-cream-100 px-1.5">{{ config('mail.default') }}</code>. In log mode, every email lands here as a rendered MIME message.</p>
         </div>
@@ -177,7 +177,7 @@ new class extends Component
                 wire:click="switchTab('{{ $key }}')"
                 @class([
                     'font-sans -mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] transition',
-                    'border-brand-900 text-brand-900' => $tab === $key,
+                    'border-heading text-heading' => $tab === $key,
                     'border-transparent text-ink-500 hover:text-ink-900' => $tab !== $key,
                 ])
             >{{ $label }}</button>
@@ -185,21 +185,21 @@ new class extends Component
     </div>
 
     @if ($tab === 'app')
-        <div class="rounded-3xl border border-cream-300 bg-ink-900 p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="rounded-3xl border border-cream-300 bg-night p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <div class="mb-3 flex items-center justify-between">
-                <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-cream-200">Tail · last {{ $tailLines }} lines</p>
+                <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-paper-dim">Tail · last {{ $tailLines }} lines</p>
                 <div class="flex items-center gap-2">
-                    <button type="button" wire:click="downloadLog" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-cream-200 transition hover:border-cream-300 hover:text-white">Download full log</button>
-                    <button type="button" wire:click="$refresh" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-cream-200 transition hover:border-cream-300 hover:text-white">Refresh</button>
+                    <button type="button" wire:click="downloadLog" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-paper-dim transition hover:border-cream-300 hover:text-white">Download full log</button>
+                    <button type="button" wire:click="$refresh" class="rounded-full border border-cream-300/30 px-3 py-1 text-xs font-semibold text-paper-dim transition hover:border-cream-300 hover:text-white">Refresh</button>
                 </div>
             </div>
-            <pre class="max-h-[60vh] overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-cream-200">{{ $this->tail() }}</pre>
+            <pre class="max-h-[60vh] overflow-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-paper-dim">{{ $this->tail() }}</pre>
         </div>
     @else
         @php $entries = $this->mailEntries(); @endphp
         <div class="space-y-3">
             @forelse ($entries as $i => $entry)
-                <article x-data="{ open: false }" class="rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+                <article x-data="{ open: false }" class="rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                     <button type="button" @click="open = ! open" class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
                         <div class="min-w-0">
                             <p class="truncate font-semibold text-ink-900">{{ $entry['subject'] }}</p>
@@ -212,7 +212,7 @@ new class extends Component
                     </div>
                 </article>
             @empty
-                <div class="rounded-3xl border border-dashed border-cream-300 bg-white p-10 text-center text-sm text-ink-500">
+                <div class="rounded-3xl border border-dashed border-cream-300 bg-surface p-10 text-center text-sm text-ink-500">
                     No emails have been sent yet. When the log mailer fires, entries appear here.
                 </div>
             @endforelse

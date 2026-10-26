@@ -26,14 +26,14 @@
             <div class="reveal mt-8 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-10 sm:w-auto sm:gap-4" style="transition-delay: 400ms">
                 <a
                     href="{{ route('donate') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-gold-600 shadow-lg transition hover:bg-gold-500 hover:text-white sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
+                    class="inline-flex w-full items-center justify-center rounded-2xl bg-surface px-6 py-3.5 text-sm font-bold text-gold-600 shadow-lg transition hover:bg-gold-500 hover:text-white sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
                     wire:navigate
                 >
                     Donate
                 </a>
                 <a
                     href="{{ route('contact') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-gold-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-white hover:text-gold-600 sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
+                    class="inline-flex w-full items-center justify-center rounded-2xl bg-gold-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-surface hover:text-gold-600 sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
                     wire:navigate
                 >
                     Get In Touch
@@ -43,7 +43,7 @@
     </section>
 
     {{-- LEGACY / FOUNDATION STORY, 2-column with photo collage --}}
-    <section class="relative overflow-hidden bg-white py-20 lg:py-28" aria-labelledby="legacy-heading">
+    <section class="relative overflow-hidden bg-surface py-20 lg:py-28" aria-labelledby="legacy-heading">
         {{-- Soft cream organic shape behind the collage --}}
         <div class="pointer-events-none absolute -right-24 top-12 -z-10 hidden h-[70%] w-[55%] rounded-l-[200px] bg-cream-100 lg:block"></div>
 
@@ -66,7 +66,7 @@
                     <a href="{{ route('donate') }}" class="inline-flex min-w-[140px] items-center justify-center rounded-2xl bg-gold-500 px-7 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900" wire:navigate>
                         Donate
                     </a>
-                    <a href="{{ route('volunteer') }}" class="inline-flex min-w-[160px] items-center justify-center rounded-2xl border-2 border-ink-900 px-7 py-3 text-sm font-bold text-ink-900 transition hover:bg-ink-900 hover:text-white" wire:navigate>
+                    <a href="{{ route('volunteer') }}" class="inline-flex min-w-[160px] items-center justify-center rounded-2xl border-2 border-night px-7 py-3 text-sm font-bold text-ink-900 transition hover:bg-night hover:text-white" wire:navigate>
                         Volunteer with Us
                     </a>
                 </div>
@@ -130,7 +130,7 @@
                 ] as $index => [$value, $suffix, $label])
                     <div class="reveal" style="transition-delay: {{ $index * 160 }}ms">
                         <p
-                            class="font-serif text-6xl font-bold text-brand-900 sm:text-7xl"
+                            class="font-serif text-6xl font-bold text-heading sm:text-7xl"
                             data-counter="{{ $value }}"
                             data-suffix="{{ $suffix }}"
                             data-duration="3200"
@@ -151,11 +151,11 @@
                     <h2 id="programs-heading" class="reveal mt-3 font-serif text-3xl text-ink-900 sm:text-4xl" style="transition-delay: 120ms">Our Programs and Initiatives</h2>
                 </div>
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
+                    <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
                         Read more about our mission
                         <span aria-hidden="true">→</span>
                     </a>
-                    <a href="{{ route('apply-for-support') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-500 hover:text-brand-900" wire:navigate>
+                    <a href="{{ route('apply-for-support') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-500 hover:text-heading" wire:navigate>
                         Need support? Apply
                         <span aria-hidden="true">→</span>
                     </a>
@@ -178,14 +178,14 @@
     </section>
 
     {{-- JOIN US CTA --}}
-    <section class="bg-white py-12" aria-label="Get involved">
+    <section class="bg-surface py-12" aria-label="Get involved">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12">
                 <div class="text-center sm:text-left">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">Get involved</p>
                     <h2 class="mt-2 font-serif text-3xl sm:text-4xl">Join us, and be part of the impact.</h2>
                 </div>
-                <a href="{{ route('volunteer') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-white px-7 py-3.5 text-sm font-bold text-gold-600 shadow-sm transition hover:bg-brand-900 hover:text-white" wire:navigate>
+                <a href="{{ route('volunteer') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-surface px-7 py-3.5 text-sm font-bold text-gold-600 shadow-sm transition hover:bg-brand-900 hover:text-white" wire:navigate>
                     Volunteer with us
                 </a>
             </div>
@@ -198,12 +198,12 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Media Gallery</p>
-                    <h2 id="gallery-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Our Work in Action</h2>
+                    <h2 id="gallery-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Our Work in Action</h2>
                     <p class="mt-3 max-w-2xl text-sm text-ink-500">
                         Moments from outreach programs, volunteer initiatives, and community activities organized by the foundation.
                     </p>
                 </div>
-                <a href="{{ route('media') }}" class="text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>View all →</a>
+                <a href="{{ route('media') }}" class="text-sm font-semibold text-label hover:text-gold-500" wire:navigate>View all →</a>
             </div>
 
             <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -263,10 +263,10 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Instagram</p>
-                    <h2 id="instagram-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Follow Our Journey</h2>
-                    <p class="mt-2 text-sm text-ink-500">@<a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="font-semibold text-brand-700 hover:text-gold-500">the_fifiawotofoundation</a> · highlights from the feed</p>
+                    <h2 id="instagram-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Follow Our Journey</h2>
+                    <p class="mt-2 text-sm text-ink-500">@<a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="font-semibold text-label hover:text-gold-500">the_fifiawotofoundation</a> · highlights from the feed</p>
                 </div>
-                <a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-brand-900 px-5 py-2.5 text-sm font-semibold text-cream-50 transition hover:bg-gold-500">
+                <a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-brand-900 px-5 py-2.5 text-sm font-semibold text-paper transition hover:bg-gold-500">
                     <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.5.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.5-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.5-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.5.5-1 .9-1.4.4-.4.9-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.5-1.3.9-.4.4-.7.8-.9 1.3-.2.4-.3 1-.4 2.1-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.7.4 2.1.2.5.5.9.9 1.3.4.4.8.7 1.3.9.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.5 1.3-.9.4-.4.7-.8.9-1.3.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.5-.9-.9-1.3-.4-.4-.8-.7-1.3-.9-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1Zm0 3.1a5 5 0 1 1 0 9.9 5 5 0 0 1 0-9.9Zm0 1.8a3.2 3.2 0 1 0 0 6.3 3.2 3.2 0 0 0 0-6.3Zm5.1-2a1.2 1.2 0 1 1 0 2.3 1.2 1.2 0 0 1 0-2.3Z"/>
                     </svg>
@@ -399,7 +399,7 @@
             <x-site.testimonial-carousel :testimonials="$testimonials" :per-view="2" />
 
             <div class="mt-10 flex justify-center">
-                <a href="{{ route('testimonials') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
+                <a href="{{ route('testimonials') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
                     Read more stories
                     <span aria-hidden="true">→</span>
                 </a>
@@ -414,16 +414,16 @@
             $goal = (int) ($featuredEvent->goal_cents ?? 0);
             $percent = $featuredEvent->progressPercent();
         @endphp
-        <section class="bg-brand-900 py-20 text-cream-50" aria-labelledby="featured-event-heading">
+        <section class="bg-brand-900 py-20 text-paper" aria-labelledby="featured-event-heading">
             <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:px-8">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Upcoming Outreach</p>
                     <h2 id="featured-event-heading" class="mt-3 font-serif text-3xl sm:text-4xl">{{ $featuredEvent->title }}</h2>
-                    <p class="mt-4 max-w-xl text-sm leading-relaxed text-cream-200/80">
+                    <p class="mt-4 max-w-xl text-sm leading-relaxed text-paper-dim/80">
                         {{ \Illuminate\Support\Str::limit(strip_tags($featuredEvent->description), 220) }}
                     </p>
                     <div class="mt-8 flex flex-wrap items-center gap-3">
-                        <a href="{{ route('events.show', $featuredEvent) }}" class="rounded-full border border-cream-200/40 px-5 py-2 text-sm font-medium text-cream-50 transition hover:bg-cream-50 hover:text-brand-900" wire:navigate>Learn More</a>
+                        <a href="{{ route('events.show', $featuredEvent) }}" class="rounded-full border border-cream-200/40 px-5 py-2 text-sm font-medium text-paper transition hover:bg-cream-50 hover:text-heading" wire:navigate>Learn More</a>
                         <x-site.event-actions :event="$featuredEvent" variant="dark" />
                     </div>
                 </div>
@@ -431,25 +431,25 @@
                 <div class="rounded-2xl border border-brand-700/40 bg-brand-800/40 p-6 backdrop-blur">
                     @if ($goal > 0)
                         <div class="flex items-end justify-between text-sm">
-                            <span class="text-cream-200/80">Raised</span>
-                            <span class="font-semibold text-cream-50">${{ number_format($raised / 100) }}</span>
+                            <span class="text-paper-dim/80">Raised</span>
+                            <span class="font-semibold text-paper">${{ number_format($raised / 100) }}</span>
                         </div>
                         <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-700/60">
                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                         </div>
-                        <div class="mt-2 flex items-center justify-between text-xs text-cream-200/70">
+                        <div class="mt-2 flex items-center justify-between text-xs text-paper-dim/70">
                             <span>{{ $percent }}% funded</span>
                             <span>Goal ${{ number_format($goal / 100) }}</span>
                         </div>
                     @endif
                     <dl class="mt-6 grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <dt class="text-xs uppercase tracking-[0.2em] text-cream-200/60">Date</dt>
-                            <dd class="mt-1 text-cream-50">{{ $featuredEvent->starts_at?->format('M j, Y') }}</dd>
+                            <dt class="text-xs uppercase tracking-[0.2em] text-paper-dim/60">Date</dt>
+                            <dd class="mt-1 text-paper">{{ $featuredEvent->starts_at?->format('M j, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs uppercase tracking-[0.2em] text-cream-200/60">Location</dt>
-                            <dd class="mt-1 text-cream-50">{{ $featuredEvent->location }}, {{ $featuredEvent->country }}</dd>
+                            <dt class="text-xs uppercase tracking-[0.2em] text-paper-dim/60">Location</dt>
+                            <dd class="mt-1 text-paper">{{ $featuredEvent->location }}, {{ $featuredEvent->country }}</dd>
                         </div>
                     </dl>
                 </div>

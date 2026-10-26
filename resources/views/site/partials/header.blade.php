@@ -13,7 +13,7 @@
     x-data="{ open: false, scrolled: false }"
     x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 8)"
     :class="scrolled ? '!bg-brand-900 !text-white !shadow-lg' : ''"
-    class="sticky top-3 z-40 overflow-clip rounded-3xl bg-white text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
+    class="sticky top-3 z-40 overflow-clip rounded-3xl bg-surface text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
 >
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-5 sm:px-6 lg:px-8">
         <a href="{{ route('home') }}" class="flex items-center" aria-label="Fifiawoto Foundation home" wire:navigate>
@@ -51,10 +51,11 @@
         </nav>
 
         <div class="hidden items-center gap-3 lg:flex">
+            <x-site.theme-toggle />
             <a
                 href="{{ route('volunteer') }}"
-                :class="scrolled ? '!border-white/40 !text-white hover:!bg-white hover:!text-brand-900' : ''"
-                class="rounded-full border-2 border-brand-900 px-5 py-2.5 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-900 hover:text-white"
+                :class="scrolled ? '!border-white/40 !text-white hover:!bg-surface hover:!text-heading' : ''"
+                class="rounded-full border-2 border-heading px-5 py-2.5 text-sm font-semibold text-heading transition-colors hover:bg-brand-900 hover:text-white"
                 wire:navigate
             >
                 Get Involved
@@ -86,7 +87,7 @@
     </div>
 
     <div x-show="open" x-cloak class="lg:hidden">
-        <nav class="space-y-1 border-t border-cream-300 bg-white px-4 pb-6 pt-2 sm:px-6">
+        <nav class="space-y-1 border-t border-cream-300 bg-cream-50 px-4 pb-6 pt-2 sm:px-6">
             @foreach ($navItems as $item)
                 @php $isCurrent = request()->routeIs($item['route']); @endphp
                 <a
@@ -101,8 +102,9 @@
                     {{ $item['label'] }}
                 </a>
             @endforeach
-            <div class="mt-4 flex gap-3 pt-3">
-                <a href="{{ route('volunteer') }}" class="flex-1 rounded-full border-2 border-brand-900 px-4 py-2 text-center text-sm font-semibold text-brand-900" wire:navigate>Get Involved</a>
+            <div class="mt-4 flex items-center gap-3 pt-3">
+                <x-site.theme-toggle size="md" />
+                <a href="{{ route('volunteer') }}" class="flex-1 rounded-full border-2 border-heading px-4 py-2 text-center text-sm font-semibold text-heading" wire:navigate>Get Involved</a>
                 <a href="{{ route('donate') }}" class="flex-1 rounded-full bg-gold-500 px-4 py-2 text-center text-sm font-bold text-white" wire:navigate>Donate</a>
             </div>
         </nav>

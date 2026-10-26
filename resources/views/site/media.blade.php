@@ -82,7 +82,7 @@
                     <button
                         type="button"
                         @click="category = 'all'; applyFilter()"
-                        :class="category === 'all' ? 'border-brand-900 text-brand-900' : 'border-transparent text-ink-500 hover:text-brand-900'"
+                        :class="category === 'all' ? 'border-heading text-heading' : 'border-transparent text-ink-500 hover:text-heading'"
                         class="shrink-0 border-b-2 px-3 pb-3 pt-1 text-sm font-semibold transition"
                     >
                         All
@@ -91,7 +91,7 @@
                         <button
                             type="button"
                             @click="category = '{{ $value }}'; applyFilter()"
-                            :class="category === '{{ $value }}' ? 'border-brand-900 text-brand-900' : 'border-transparent text-ink-500 hover:text-brand-900'"
+                            :class="category === '{{ $value }}' ? 'border-heading text-heading' : 'border-transparent text-ink-500 hover:text-heading'"
                             class="shrink-0 border-b-2 px-3 pb-3 pt-1 text-sm font-semibold transition"
                         >
                             {{ $label }}
@@ -106,7 +106,7 @@
                     <span class="relative inline-flex h-5 w-9 items-center">
                         <input type="checkbox" x-model="videoOnly" @change="applyFilter()" class="peer sr-only">
                         <span class="absolute inset-0 rounded-full bg-cream-300 transition peer-checked:bg-brand-900"></span>
-                        <span class="absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow transition peer-checked:translate-x-4"></span>
+                        <span class="absolute left-0.5 top-0.5 size-4 rounded-full bg-surface shadow transition peer-checked:translate-x-4"></span>
                     </span>
                 </label>
             </div>
@@ -181,8 +181,8 @@
                 @endforeach
             </div>
 
-            <div x-ref="empty" style="display: none;" class="mt-12 rounded-3xl border border-dashed border-cream-300 bg-white p-12 text-center">
-                <p class="font-serif text-2xl text-brand-900">No media matches that filter.</p>
+            <div x-ref="empty" style="display: none;" class="mt-12 rounded-3xl border border-dashed border-cream-300 bg-surface p-12 text-center">
+                <p class="font-serif text-2xl text-heading">No media matches that filter.</p>
                 <p class="mt-2 text-sm text-ink-500">Try a different category or turn off the videos-only toggle.</p>
             </div>
         </div>
@@ -198,7 +198,7 @@
                     Follow @the_fifiawotofoundation on Instagram for fresh photos and reels as our outreach programmes happen.
                 </p>
             </div>
-            <a href="{{ config('social.instagram') }}" target="_blank" rel="noopener" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-white hover:text-brand-900">
+            <a href="{{ config('social.instagram') }}" target="_blank" rel="noopener" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading">
                 Follow on Instagram →
             </a>
         </div>

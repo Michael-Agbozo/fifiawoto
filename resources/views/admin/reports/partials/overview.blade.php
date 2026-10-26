@@ -39,9 +39,9 @@
     />
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Donations · 12-month trend</p>
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Donations · 12-month trend</p>
         <p class="text-xs text-ink-500">Each point = a calendar month</p>
     </div>
     <div class="mt-5 overflow-x-auto">
@@ -69,8 +69,8 @@
 </article>
 
 <div class="grid gap-4 lg:grid-cols-2">
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Beneficiaries by category</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Beneficiaries by category</p>
         <div class="mt-5">
             <x-admin.donut-chart
                 :segments="$analytics['beneficiary_categories'] ?? []"
@@ -80,8 +80,8 @@
         </div>
     </article>
 
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top donors</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top donors</p>
         <ul class="mt-4 space-y-3 text-sm">
             @forelse ($analytics['top_donors'] ?? [] as $donor)
                 <li class="flex items-center justify-between gap-3">
@@ -96,7 +96,7 @@
             @endforelse
         </ul>
 
-        <p class="mt-6 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top events</p>
+        <p class="mt-6 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top events</p>
         <ul class="mt-3 space-y-2 text-sm">
             @forelse ($analytics['top_events'] ?? [] as $ev)
                 <li class="flex items-center justify-between gap-3">

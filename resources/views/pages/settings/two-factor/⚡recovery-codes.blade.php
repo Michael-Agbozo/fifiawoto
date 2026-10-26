@@ -39,7 +39,7 @@ new class extends Component
 }; ?>
 
 <div
-    class="space-y-5 rounded-2xl border border-cream-300 bg-white p-6 shadow-sm"
+    class="space-y-5 rounded-2xl border border-cream-300 bg-surface p-6 shadow-sm"
     wire:cloak
     x-data="{ showRecoveryCodes: false }"
 >
@@ -69,7 +69,7 @@ new class extends Component
             @click="showRecoveryCodes = false"
             aria-expanded="true"
             aria-controls="recovery-codes-section"
-            class="inline-flex items-center justify-center rounded-2xl border-2 border-brand-900 px-5 py-2.5 text-sm font-bold text-brand-900 transition hover:bg-brand-900 hover:text-white"
+            class="inline-flex items-center justify-center rounded-2xl border-2 border-heading px-5 py-2.5 text-sm font-bold text-heading transition hover:bg-brand-900 hover:text-white"
         >
             {{ __('Hide recovery codes') }}
         </button>
@@ -80,7 +80,7 @@ new class extends Component
                 x-show="showRecoveryCodes"
                 x-cloak
                 wire:click="regenerateRecoveryCodes"
-                class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading"
             >
                 {{ __('Regenerate codes') }}
             </button>
@@ -116,7 +116,7 @@ new class extends Component
                     type="button"
                     data-test="copy-recovery-codes"
                     @click="navigator.clipboard.writeText(codes).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading"
                 >
                     <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2m-6 12h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z"/></svg>
                     <span x-text="copied ? '{{ __('Copied') }}' : '{{ __('Copy all') }}'">{{ __('Copy all') }}</span>

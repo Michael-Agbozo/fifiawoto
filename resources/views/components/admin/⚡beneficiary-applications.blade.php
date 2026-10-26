@@ -294,16 +294,16 @@ new class extends Component
         :subtitle="$this->applications->total().' application(s) in view'"
     >
         <x-slot:actions>
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, phone, country" class="w-72 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, phone, country" class="w-72 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             <x-admin.actions-menu>
                 @if (filled($statusFilter))
-                    <button type="button" wire:click="$set('statusFilter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$set('statusFilter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
                         Show all statuses
                     </button>
                 @endif
                 @if (filled($search))
-                    <button type="button" wire:click="$set('search', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$set('search', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear search
                     </button>
@@ -322,7 +322,7 @@ new class extends Component
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->applications->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No beneficiary applications match these filters.</div>
         @else
@@ -350,7 +350,7 @@ new class extends Component
                             <td class="px-6 py-4">
                                 <x-admin.status-pill :palette="$app->status->palette()" :label="$app->status->label()" />
                                 @if ($app->convertedBeneficiary)
-                                    <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" class="mt-2 inline-flex text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-500 hover:text-brand-900" wire:navigate>Open beneficiary →</a>
+                                    <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" class="mt-2 inline-flex text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-500 hover:text-heading" wire:navigate>Open beneficiary →</a>
                                 @endif
                             </td>
                             <td class="px-6 py-4">
@@ -358,25 +358,25 @@ new class extends Component
                                     @if ($confirmDeleteId === $app->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $app->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
-                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 View details
                                             </button>
                                             @if (! $app->converted_beneficiary_id)
-                                                <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Convert to beneficiary
                                                 </button>
                                             @endif
-                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                                 Mark in review
                                             </button>
-                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                                                 Reject
                                             </button>
@@ -401,7 +401,7 @@ new class extends Component
         @if ($app = $this->viewingApplication)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Phone</dt>
@@ -423,7 +423,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Workflow</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Workflow</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Type of assistance</dt>
@@ -446,12 +446,12 @@ new class extends Component
             </div>
 
             <section class="mt-6">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Situation described</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Situation described</h3>
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->situation }}</p>
             </section>
 
             <section class="mt-5">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Supporting documents</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Supporting documents</h3>
                 @if ($app->documents->isEmpty())
                     <p class="mt-2 text-sm text-ink-500">No documents attached.</p>
                 @else
@@ -463,8 +463,8 @@ new class extends Component
                                     <p class="text-xs text-ink-500">{{ number_format($document->size_bytes / 1024, 1) }} KB</p>
                                 </div>
                                 <div class="flex shrink-0 items-center gap-3 text-xs font-semibold">
-                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document) }}" target="_blank" rel="noopener" class="text-brand-700 hover:text-gold-500">Open</a>
-                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document, download: true) }}" class="text-brand-700 hover:text-gold-500">Download</a>
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document) }}" target="_blank" rel="noopener" class="text-label hover:text-gold-500">Open</a>
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document, download: true) }}" class="text-label hover:text-gold-500">Download</a>
                                 </div>
                             </li>
                         @endforeach
@@ -473,10 +473,10 @@ new class extends Component
             </section>
 
             <section class="mt-5">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Converted record</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Converted record</h3>
                 <p class="mt-2 text-sm text-ink-900">
                     @if ($app->convertedBeneficiary)
-                        <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" wire:navigate class="font-semibold text-gold-500 hover:text-brand-900">Open beneficiary profile →</a>
+                        <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" wire:navigate class="font-semibold text-gold-500 hover:text-heading">Open beneficiary profile →</a>
                     @else
                         Not converted yet
                     @endif
@@ -485,10 +485,10 @@ new class extends Component
 
             @if (! $app->converted_beneficiary_id)
                 <section class="mt-6 rounded-2xl border border-cream-300 bg-cream-50 p-4">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Quick actions</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Quick actions</h3>
                     <div class="mt-3 flex flex-wrap gap-2">
                         <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-900">Convert to beneficiary</button>
-                        <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Mark in review</button>
+                        <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Mark in review</button>
                         <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-red-500 hover:text-red-600">Reject</button>
                     </div>
                 </section>

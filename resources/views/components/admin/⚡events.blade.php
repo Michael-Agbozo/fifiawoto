@@ -326,14 +326,14 @@ new class extends Component
         :subtitle="$this->events->total().' programme(s) in view'"
     >
         <x-slot:actions>
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search title, location, country" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search title, location, country" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 New event
             </button>
             @if (filled($statusFilter) || filled($search))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$reset('statusFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('statusFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -352,43 +352,43 @@ new class extends Component
     <x-admin.modal :show="$showForm" :title="$editingId ? 'Edit event' : 'New event'" size="xl" onClose="cancel">
         <form wire:submit="save" class="space-y-5">
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Title</label>
-                <input type="text" wire:model="title" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Title</label>
+                <input type="text" wire:model="title" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 @error('title') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Start date</label>
-                    <input type="date" wire:model="starts_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Start date</label>
+                    <input type="date" wire:model="starts_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('starts_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">End date <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                    <input type="date" wire:model="ends_at" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">End date <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input type="date" wire:model="ends_at" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Location</label>
-                    <input type="text" wire:model="location" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Location</label>
+                    <input type="text" wire:model="location" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Country</label>
-                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country</label>
+                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Description</label>
-                <textarea wire:model="description" rows="4" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Description</label>
+                <textarea wire:model="description" rows="4" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 @error('description') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Program image <span class="font-normal normal-case tracking-normal text-red-600">required · 1080×1080</span></label>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Program image <span class="font-normal normal-case tracking-normal text-red-600">required · 1080×1080</span></label>
                 <div class="mt-2 flex flex-wrap items-center gap-4">
                     @php
                         $previewUrl = null;
@@ -409,7 +409,7 @@ new class extends Component
                         @endif
                     </div>
                     <div class="flex flex-col gap-2">
-                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 20h16"/></svg>
                             {{ $hero_image_upload || filled($hero_image_path) ? 'Replace image' : 'Upload image' }}
                             <input type="file" wire:model="hero_image_upload" accept="image/png,image/jpeg,image/webp" class="hidden">
@@ -418,10 +418,10 @@ new class extends Component
                             <button type="button" wire:click="$set('remove_hero_image', true)" class="text-left text-xs font-semibold text-red-600 hover:text-red-700">Remove current image</button>
                         @endif
                         @if ($remove_hero_image)
-                            <p class="text-xs text-red-600">Image will be removed on save. <button type="button" wire:click="$set('remove_hero_image', false)" class="font-semibold text-brand-700 hover:text-brand-900">Undo</button></p>
+                            <p class="text-xs text-red-600">Image will be removed on save. <button type="button" wire:click="$set('remove_hero_image', false)" class="font-semibold text-label hover:text-heading">Undo</button></p>
                         @endif
                         <p class="text-xs text-ink-500">PNG, JPEG, or WebP. Must be exactly 1080×1080 pixels.</p>
-                        <div wire:loading wire:target="hero_image_upload" class="text-xs text-brand-700">Uploading…</div>
+                        <div wire:loading wire:target="hero_image_upload" class="text-xs text-label">Uploading…</div>
                     </div>
                 </div>
                 @error('hero_image_upload') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -429,28 +429,28 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Activities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
-                    <textarea wire:model="activities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Activities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
+                    <textarea wire:model="activities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Volunteer opportunities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
-                    <textarea wire:model="volunteer_opportunities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Volunteer opportunities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
+                    <textarea wire:model="volunteer_opportunities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Expected impact</label>
-                <textarea wire:model="expected_impact" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Expected impact</label>
+                <textarea wire:model="expected_impact" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Fundraising goal (USD)</label>
-                    <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Fundraising goal (USD)</label>
+                    <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Status</label>
-                    <select wire:model="status" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Status</label>
+                    <select wire:model="status" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @foreach ($statusOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -462,14 +462,14 @@ new class extends Component
                 <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
                     {{ $editingId ? 'Save changes' : 'Create event' }}
                 </button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
                     Cancel
                 </button>
             </div>
         </form>
     </x-admin.modal>
 
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->events->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No events match these filters yet.</div>
         @else
@@ -522,22 +522,22 @@ new class extends Component
                                     @if ($confirmDeleteId === $event->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $event->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
                                             @if ($event->status !== EventStatus::Published)
-                                                <button type="button" wire:click="publish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="publish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
                                                     Publish
                                                 </button>
                                             @else
-                                                <button type="button" wire:click="unpublish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="unpublish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21V9m0 0 4 4m-4-4-4 4M5 3h14"/></svg>
                                                     Unpublish
                                                 </button>
                                             @endif
-                                            <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>

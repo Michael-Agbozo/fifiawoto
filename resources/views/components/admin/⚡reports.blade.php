@@ -174,23 +174,23 @@ new class extends Component
         :subtitle="$categoryLabel = $this->categoryLabel().' · '.($this->fromDate ?: 'beginning').' → '.($this->toDate ?: 'today')"
     >
         <x-slot:actions>
-            <input type="date" wire:model.live="fromDate" title="From date" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-700 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-700 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <input type="date" wire:model.live="fromDate" title="From date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             <button type="button" wire:click="downloadPdf" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>
                 Download PDF
             </button>
             <x-admin.actions-menu>
-                <button type="button" wire:click="downloadCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                    <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
+                <button type="button" wire:click="downloadCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                    <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Download CSV
                 </button>
-                <button type="button" wire:click="downloadPdf" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                <button type="button" wire:click="downloadPdf" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                     <svg class="size-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>
                     Download PDF
                 </button>
                 @if (filled($fromDate) || filled($toDate))
-                    <button type="button" wire:click="$reset('fromDate','toDate')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('fromDate','toDate')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear date range
                     </button>
@@ -207,7 +207,7 @@ new class extends Component
                 wire:click="$set('category', '{{ $value }}')"
                 @class([
                     'font-sans -mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition',
-                    'border-brand-900 text-brand-900' => $category === $value,
+                    'border-heading text-heading' => $category === $value,
                     'border-transparent text-ink-500 hover:text-ink-900' => $category !== $value,
                 ])
             >{{ $label }}</button>
@@ -232,7 +232,7 @@ new class extends Component
 
     {{-- Detail table (skipped on overview) --}}
     @if ($category !== 'overview')
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <header class="border-b border-cream-200 px-6 py-4">
                 <h3 class="font-serif text-lg font-bold text-ink-900">Detail table</h3>
                 <p class="mt-0.5 text-xs text-ink-500">{{ count($this->rows) }} row(s) in this view · export via the actions menu</p>

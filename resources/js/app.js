@@ -122,3 +122,74 @@ document.addEventListener('DOMContentLoaded', init)
 // Re-run after Livewire `wire:navigate` swaps a new page in — without this
 // the next page's reveal targets never get observed.
 document.addEventListener('livewire:navigated', init)
+
+/* ------------------------------------------------------------------
+ * Theme store
+ *
+ * Backs the public site + admin <x-*.theme-toggle> components.
+ * The initial value is read from the same `data-theme` attribute that
+ * the inline script in partials/head.blade.php sets before paint, so
+ * Alpine never disagrees with what's already on screen.
+ * ------------------------------------------------------------------ */
+document.addEventListener('alpine:init', () => {
+    const root = document.documentElement
+
+    function paint(mode) {
+        root.setAttribute('data-theme', mode)
+        root.classList.toggle('dark', mode === 'dark')
+    }
+
+    function applyMode(mode) {
+        paint(mode)
+        try {
+            localStorage.setItem('theme', mode)
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    window.Alpine.store('theme', {
+        mode: root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
+
+        isDark() {
+            return this.mode === 'dark'
+        },
+
+        toggle() {
+            this.setMode(this.mode === 'dark' ? 'light' : 'dark')
+        },
+
+        setMode(mode) {
+            this.mode = mode === 'dark' ? 'dark' : 'light'
+            applyMode(this.mode)
+        },
+
+        /* 'light' | 'dark' when the user picked one, 'system' when following the OS. */
+        preference() {
+            try {
+                return localStorage.getItem('theme') || 'system'
+            } catch (e) {
+                return 'system'
+            }
+        },
+
+        followSystem() {
+            try { localStorage.removeItem('theme') } catch (e) { /* ignore */ }
+            this.mode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            paint(this.mode)
+        },
+    })
+
+    /* wire:navigate can swap <html> attributes for the next page's — repaint
+       from the store without touching localStorage (keeps OS-tracking intact). */
+    document.addEventListener('livewire:navigated', () => paint(window.Alpine.store('theme').mode))
+
+    /* Follow OS changes whenever the user hasn't explicitly picked a theme
+       (no `theme` key) — checked at change time so switching back to
+       "System" in Appearance settings starts tracking immediately. */
+    window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (window.Alpine.store('theme').preference() === 'system') {
+            window.Alpine.store('theme').followSystem()
+        }
+    })
+})

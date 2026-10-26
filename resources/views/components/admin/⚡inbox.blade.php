@@ -277,7 +277,7 @@ new class extends Component
                 wire:click="$set('statusFilter', '{{ $value }}')"
                 @class([
                     'font-sans -mb-px inline-flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition',
-                    'border-brand-900 text-brand-900' => $statusFilter === $value,
+                    'border-heading text-heading' => $statusFilter === $value,
                     'border-transparent text-ink-500 hover:text-ink-900' => $statusFilter !== $value,
                 ])
             >
@@ -295,9 +295,9 @@ new class extends Component
 
     <div class="grid gap-4 lg:grid-cols-[2fr_3fr]">
         {{-- Message list --}}
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <div class="border-b border-cream-200 p-3">
-                <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, message…" class="w-full rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+                <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, message…" class="w-full rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             </div>
             @if ($this->inboxMessages->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No messages in this view.</div>
@@ -317,7 +317,7 @@ new class extends Component
                                 <div class="flex items-center justify-between gap-2">
                                     <p @class([
                                         'truncate font-semibold text-ink-900',
-                                        'text-brand-900' => $msg->status === \App\Enums\ContactMessageStatus::New,
+                                        'text-heading' => $msg->status === \App\Enums\ContactMessageStatus::New,
                                     ])>{{ $msg->full_name }}</p>
                                     <span class="shrink-0 text-[10px] uppercase tracking-[0.18em] text-ink-500">{{ $msg->created_at?->diffForHumans(short: true) }}</span>
                                 </div>
@@ -326,7 +326,7 @@ new class extends Component
                                 <div class="mt-1 flex items-center gap-2">
                                     <x-admin.status-pill :palette="$msg->status->palette()" :label="$msg->status->label()" />
                                     @if ($msg->replies_count > 0)
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-label">
                                             <svg class="size-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h11c.55 0 1-.45 1-1z"/></svg>
                                             {{ $msg->replies_count }}
                                         </span>
@@ -341,11 +341,11 @@ new class extends Component
         </div>
 
         {{-- Reader pane --}}
-        <div class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             @if ($msg = $this->message)
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-700">
+                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-label">
                             {{ $msg->subject?->label() }} · received {{ $msg->created_at?->format('M j, Y · g:i A') }}
                         </p>
                         <h2 class="mt-1 font-serif text-xl font-bold text-ink-900">{{ $msg->full_name }}</h2>
@@ -358,24 +358,24 @@ new class extends Component
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <a href="mailto:{{ $msg->email }}" class="grid size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" title="Open in mail client">
+                        <a href="mailto:{{ $msg->email }}" class="grid size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" title="Open in mail client">
                             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3l-9 9M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
                         </a>
                         <x-admin.actions-menu>
                             @if ($msg->status !== \App\Enums\ContactMessageStatus::Resolved)
-                                <button type="button" wire:click="markResolved({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                <button type="button" wire:click="markResolved({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                     Mark resolved
                                 </button>
                             @endif
                             @if ($msg->status !== \App\Enums\ContactMessageStatus::New)
-                                <button type="button" wire:click="markNew({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                <button type="button" wire:click="markNew({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                     Mark as new
                                 </button>
                             @endif
                             @if ($msg->status !== \App\Enums\ContactMessageStatus::Archived)
-                                <button type="button" wire:click="archive({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                <button type="button" wire:click="archive({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8h18M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M9 12h6"/></svg>
                                     Archive
                                 </button>
@@ -394,9 +394,9 @@ new class extends Component
 
                 @if ($msg->replies->count() > 0)
                     <div class="mt-5 space-y-3">
-                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-700">Replies sent</p>
+                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-label">Replies sent</p>
                         @foreach ($msg->replies as $reply)
-                            <article class="rounded-2xl border border-cream-200 bg-white p-4">
+                            <article class="rounded-2xl border border-cream-200 bg-surface p-4">
                                 <div class="flex items-center justify-between gap-2 text-xs text-ink-500">
                                     <span><strong class="text-ink-900">{{ $reply->repliedBy?->name ?? 'Someone' }}</strong> → {{ $reply->to_email }}</span>
                                     <span>{{ $reply->sent_at?->format('M j, Y · g:i A') }}</span>
@@ -431,13 +431,13 @@ new class extends Component
                     @else
                         <form wire:submit="sendReply" class="mt-6 space-y-3 border-t border-cream-200 pt-4">
                             <div>
-                                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Subject</label>
-                                <input type="text" wire:model="replySubject" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Subject</label>
+                                <input type="text" wire:model="replySubject" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                                 @error('replySubject') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Your reply to {{ $msg->email }}</label>
-                                <textarea wire:model="replyBody" rows="6" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm leading-relaxed focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Your reply to {{ $msg->email }}</label>
+                                <textarea wire:model="replyBody" rows="6" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm leading-relaxed focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                                 @error('replyBody') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div class="flex flex-wrap items-center gap-2">

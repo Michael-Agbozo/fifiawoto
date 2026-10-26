@@ -40,8 +40,8 @@
     />
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Application status funnel</p>
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Application status funnel</p>
     <div class="mt-5 space-y-3">
         @forelse ($funnel as $row)
             @php $pct = round(($row['count'] / $funnelMax) * 100, 1); @endphp
@@ -61,8 +61,8 @@
 </article>
 
 <div class="grid gap-4 lg:grid-cols-2">
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Interest areas</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Interest areas</p>
         <div class="mt-4 space-y-2.5">
             @forelse ($analytics['interests'] ?? [] as $row)
                 @php $pct = round(($row['count'] / $interestMax) * 100, 1); @endphp
@@ -81,8 +81,8 @@
         </div>
     </article>
 
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Availability mix</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Availability mix</p>
         <div class="mt-4">
             <x-admin.donut-chart
                 :segments="$analytics['availability'] ?? []"
@@ -93,8 +93,8 @@
     </article>
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top countries by applications</p>
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top countries by applications</p>
     <div class="mt-4 space-y-2.5">
         @forelse ($analytics['top_countries'] ?? [] as $row)
             @php $pct = round(($row['count'] / $countryMax) * 100, 1); @endphp

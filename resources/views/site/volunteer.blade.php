@@ -13,7 +13,7 @@
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-8">
             <div class="reveal-left">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Why volunteer with us</p>
-                <h2 id="why-volunteer-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl lg:text-[44px]">A small commitment, a real-world impact.</h2>
+                <h2 id="why-volunteer-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl lg:text-[44px]">A small commitment, a real-world impact.</h2>
                 <p class="mt-5 text-sm leading-relaxed text-ink-500 sm:text-base">
                     The foundation runs lean by design. Most of our work is delivered by volunteers — community members, students, professionals, and diaspora supporters — coordinated by a small core team. That means every hour you give is felt directly in the lives of the families we walk alongside.
                 </p>
@@ -48,7 +48,7 @@
                 ] as $i => [$value, $suffix, $label])
                     <div class="rounded-3xl bg-cream-100 p-6 ring-1 ring-brand-100 sm:p-7">
                         <p
-                            class="font-serif text-4xl font-bold text-brand-900 sm:text-5xl"
+                            class="font-serif text-4xl font-bold text-heading sm:text-5xl"
                             data-counter="{{ $value }}"
                             data-suffix="{{ $suffix }}"
                             data-duration="2800"
@@ -65,7 +65,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Where you fit in</p>
-                <h2 id="opportunities-heading" class="reveal mt-3 font-serif text-3xl text-brand-900 sm:text-4xl" style="transition-delay: 120ms">Volunteer opportunities</h2>
+                <h2 id="opportunities-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Volunteer opportunities</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Five tracks, each tied to a specific area of foundation work. You can express interest in more than one — we'll match you to what's needed when you apply.
                 </p>
@@ -105,10 +105,10 @@
                             </div>
                         </article>
                     @else
-                        <article class="reveal group flex flex-col justify-between rounded-3xl bg-white p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200" style="transition-delay: {{ $i * 100 }}ms">
+                        <article class="reveal group flex flex-col justify-between rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200" style="transition-delay: {{ $i * 100 }}ms">
                             <div>
                                 <div class="flex items-center justify-between">
-                                    <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                                    <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-label ring-1 ring-brand-100">
                                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $opportunityIcons[$opportunity['icon']] !!}</svg>
                                     </div>
                                     <span class="rounded-full bg-cream-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500">{{ $opportunity['tag'] }}</span>
@@ -128,7 +128,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">How it works</p>
-                <h2 id="how-volunteer-heading" class="reveal mt-3 font-serif text-3xl text-brand-900 sm:text-4xl" style="transition-delay: 120ms">From application to first shift</h2>
+                <h2 id="how-volunteer-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">From application to first shift</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Four short steps — typically takes a week from when we receive your application.
                 </p>
@@ -141,9 +141,9 @@
                     ['Orientation', 'Short onboarding (in-person or video) covering programmes, safeguarding, and what to expect on-site.'],
                     ['First role',  'You\'re matched to an active programme. The team supports you through your first shift and every shift after.'],
                 ] as $i => [$step, $copy])
-                    <li class="reveal relative flex h-full flex-col rounded-3xl bg-white p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: {{ $i * 100 }}ms">
+                    <li class="reveal relative flex h-full flex-col rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: {{ $i * 100 }}ms">
                         <span class="grid size-10 place-items-center rounded-2xl bg-gold-500 font-serif text-base font-bold text-white">{{ $i + 1 }}</span>
-                        <h3 class="mt-5 font-serif text-lg font-bold text-brand-900">{{ $step }}</h3>
+                        <h3 class="mt-5 font-serif text-lg font-bold text-heading">{{ $step }}</h3>
                         <p class="mt-2 flex-1 text-sm leading-relaxed text-ink-500">{{ $copy }}</p>
                     </li>
                 @endforeach
@@ -166,7 +166,7 @@
                     We host group volunteer days for companies, student societies, and faith communities. Tell us your group size and what you'd like to do; we'll design something meaningful.
                 </p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-white hover:text-brand-900" wire:navigate>
+            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading" wire:navigate>
                 Plan a group day
                 <span aria-hidden="true">→</span>
             </a>

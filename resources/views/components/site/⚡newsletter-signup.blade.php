@@ -60,7 +60,7 @@ new class extends Component
     <div @class(['mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8' => ! $compact])>
         @unless ($compact)
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
-            <h2 class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Stay Connected</h2>
+            <h2 class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Stay Connected</h2>
             <p class="mt-4 text-sm leading-relaxed text-ink-500">
                 Subscribe to receive updates about our programs, events, and community initiatives.
             </p>
@@ -69,9 +69,9 @@ new class extends Component
         @if ($submitted)
             <div
                 role="status"
-                @class(['rounded-2xl border border-brand-200 bg-white p-6 text-sm text-brand-800', 'mx-auto mt-8 max-w-xl' => ! $compact])
+                @class(['rounded-2xl border border-brand-200 bg-surface p-6 text-sm text-heading-soft', 'mx-auto mt-8 max-w-xl' => ! $compact])
             >
-                <p class="font-semibold text-brand-900">Thank you for subscribing.</p>
+                <p class="font-semibold text-heading">Thank you for subscribing.</p>
                 <p class="mt-1 text-ink-500">
                     We'll keep you posted on the foundation's work, you can unsubscribe at any time.
                 </p>
@@ -87,7 +87,7 @@ new class extends Component
                     type="text"
                     wire:model="name"
                     placeholder="Name"
-                    class="rounded-md border border-brand-200 bg-white px-4 py-2.5 text-sm text-brand-900 placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    class="rounded-md border border-brand-200 bg-surface px-4 py-2.5 text-sm text-heading placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
 
                 <label class="sr-only" for="newsletter-email-{{ $this->getId() }}">Email address</label>
@@ -97,7 +97,7 @@ new class extends Component
                     wire:model="email"
                     placeholder="Email address"
                     required
-                    class="rounded-md border border-brand-200 bg-white px-4 py-2.5 text-sm text-brand-900 placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    class="rounded-md border border-brand-200 bg-surface px-4 py-2.5 text-sm text-heading placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
 
                 <button

@@ -116,10 +116,10 @@ new class extends Component
     @if (! $compact)
         <section class="py-20" aria-labelledby="volunteer-form-heading">
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-                <div class="rounded-3xl border border-brand-100 bg-white p-8 shadow-sm sm:p-10">
+                <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
                     <div class="text-center">
                         <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Application</p>
-                        <h2 id="volunteer-form-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Apply to Volunteer</h2>
+                        <h2 id="volunteer-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Apply to Volunteer</h2>
                         <p class="mt-3 text-sm text-ink-500">
                             Tell us a little about yourself and how you'd like to contribute. Our volunteer coordinator will be in touch.
                         </p>
@@ -130,8 +130,8 @@ new class extends Component
         </section>
     @else
         @if ($contextEventTitle)
-            <p class="mb-5 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
-                Volunteering for: <strong class="font-semibold text-brand-900">{{ $contextEventTitle }}</strong>
+            <p class="mb-5 rounded-xl bg-brand-50 px-4 py-3 text-sm text-heading-soft">
+                Volunteering for: <strong class="font-semibold text-heading">{{ $contextEventTitle }}</strong>
             </p>
         @endif
         @include('components.site.partials.volunteer-form-body')

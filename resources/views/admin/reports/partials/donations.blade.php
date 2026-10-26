@@ -40,9 +40,9 @@
     />
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Daily donation trend</p>
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Daily donation trend</p>
         <p class="text-xs text-ink-500">{{ count($daily) }} days · peak ${{ number_format($maxDaily / 100) }}</p>
     </div>
     <div class="mt-5 overflow-x-auto">
@@ -70,8 +70,8 @@
 </article>
 
 <div class="grid gap-4 lg:grid-cols-2">
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">By payment method</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">By payment method</p>
         <div class="mt-5 space-y-3">
             @forelse ($analytics['by_method'] ?? [] as $row)
                 @php $pct = round(($row['cents'] / $totalMethod) * 100, 1); @endphp
@@ -90,8 +90,8 @@
         </div>
     </article>
 
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top 10 donors</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top 10 donors</p>
         <ol class="mt-3 space-y-2 text-sm">
             @forelse ($analytics['top_donors'] ?? [] as $i => $donor)
                 <li class="flex items-center justify-between gap-3">
@@ -111,8 +111,8 @@
     </article>
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top events by revenue</p>
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top events by revenue</p>
     <ul class="mt-3 space-y-2 text-sm">
         @forelse ($analytics['top_events'] ?? [] as $ev)
             @php $pct = ($ev['goal_cents'] ?? 0) > 0 ? min(100, (int) round(($ev['raised_cents'] / $ev['goal_cents']) * 100)) : 0; @endphp

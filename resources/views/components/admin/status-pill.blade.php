@@ -19,7 +19,7 @@
         'blue'  => 'text-blue-600',
         'green' => 'text-green-600',
         'red'   => 'text-red-600',
-        'brand' => 'text-brand-700',
+        'brand' => 'text-label',
         'gold'  => 'text-gold-600',
         'gray'  => 'text-ink-500',
     ];

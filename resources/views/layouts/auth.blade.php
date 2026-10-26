@@ -12,7 +12,7 @@
                     </a>
                 </div>
 
-                <div class="rounded-3xl border border-cream-300 bg-white p-8 shadow-sm sm:p-10">
+                <div class="rounded-3xl border border-cream-300 bg-surface p-8 shadow-sm sm:p-10">
                     {{ $slot }}
                 </div>
 

@@ -39,7 +39,7 @@
 @endphp
 
 @if ($items->isEmpty())
-    <div class="rounded-3xl border border-dashed border-brand-100 bg-white p-10 text-center text-sm text-ink-500">Nothing here yet.</div>
+    <div class="rounded-3xl border border-dashed border-brand-100 bg-surface p-10 text-center text-sm text-ink-500">Nothing here yet.</div>
 @elseif ($perPage === 1)
     {{-- Single big-card slideshow (used by Volunteer Opportunities, etc.) --}}
     <div
@@ -153,11 +153,11 @@
                         class="{{ $widthClass }} shrink-0 px-2.5"
                         :class="(active <= {{ $i }} && {{ $i }} < active + perPage) ? 'opacity-100' : 'opacity-60'"
                     >
-                        <article class="group relative h-full overflow-hidden rounded-3xl bg-white shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200">
+                        <article class="group relative h-full overflow-hidden rounded-3xl bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200">
                             <div class="relative flex h-full flex-col p-7">
                                 <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-900 via-brand-500 to-gold-500"></div>
 
-                                <div class="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 text-brand-700 ring-1 ring-brand-100 transition group-hover:from-brand-900 group-hover:to-brand-700 group-hover:text-white">
+                                <div class="grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 text-label ring-1 ring-brand-100 transition group-hover:from-brand-900 group-hover:to-brand-700 group-hover:text-white">
                                     <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">{!! $iconSvg !!}</svg>
                                 </div>
 
@@ -165,7 +165,7 @@
                                 <p class="mt-3 flex-1 text-sm leading-relaxed text-ink-500">{{ $item['copy'] }}</p>
 
                                 @if ($cta)
-                                    <a href="{{ $cta[1] }}" class="mt-6 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-brand-700 transition group-hover:text-gold-500" wire:navigate>
+                                    <a href="{{ $cta[1] }}" class="mt-6 inline-flex items-center gap-1.5 self-start text-sm font-semibold text-label transition group-hover:text-gold-500" wire:navigate>
                                         {{ $cta[0] }}
                                         <span aria-hidden="true" class="transition group-hover:translate-x-0.5">→</span>
                                     </a>

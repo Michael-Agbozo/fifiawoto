@@ -13,7 +13,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Reach the right team</p>
-                <h2 id="directory-heading" class="reveal mt-3 font-serif text-3xl text-brand-900 sm:text-4xl" style="transition-delay: 120ms">Channels and offices</h2>
+                <h2 id="directory-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Channels and offices</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Most enquiries are routed through the address below. For media requests, partnerships, or country-specific questions, use the dedicated channels.
                 </p>
@@ -45,7 +45,7 @@
                 ] as $i => $channel)
                     <a
                         href="{{ $channel['href'] }}"
-                        class="reveal group flex h-full flex-col rounded-3xl bg-white p-6 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200"
+                        class="reveal group flex h-full flex-col rounded-3xl bg-surface p-6 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200"
                         style="transition-delay: {{ $i * 100 }}ms"
                     >
                         <div class="flex items-center gap-3">
@@ -54,7 +54,7 @@
                             </span>
                             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">{{ $channel['label'] }}</p>
                         </div>
-                        <p class="mt-5 break-words font-serif text-lg font-bold text-brand-900 group-hover:text-gold-500">{{ $channel['value'] }}</p>
+                        <p class="mt-5 break-words font-serif text-lg font-bold text-heading group-hover:text-gold-500">{{ $channel['value'] }}</p>
                         <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ $channel['note'] }}</p>
                     </a>
                 @endforeach
@@ -67,7 +67,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Where we work</p>
-                <h2 id="offices-heading" class="reveal mt-3 font-serif text-3xl text-brand-900 sm:text-4xl" style="transition-delay: 120ms">Foundation offices</h2>
+                <h2 id="offices-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Foundation offices</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Programme staff and volunteers operate across four countries. Drop in by appointment.
                 </p>
@@ -104,12 +104,12 @@
                         'flag'    => '🇺🇸',
                     ],
                 ] as $i => $office)
-                    <div class="reveal flex h-full flex-col rounded-3xl bg-white p-6 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: {{ $i * 100 }}ms">
+                    <div class="reveal flex h-full flex-col rounded-3xl bg-surface p-6 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: {{ $i * 100 }}ms">
                         <div class="flex items-center gap-3">
                             <span class="text-2xl" aria-hidden="true">{{ $office['flag'] }}</span>
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">{{ $office['country'] }}</p>
-                                <p class="font-serif text-lg font-bold text-brand-900">{{ $office['city'] }}</p>
+                                <p class="font-serif text-lg font-bold text-heading">{{ $office['city'] }}</p>
                             </div>
                         </div>
                         <p class="mt-5 text-sm font-medium text-ink-900">{{ $office['address'] }}</p>
@@ -125,18 +125,18 @@
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-16 lg:px-8">
             <div class="reveal-left">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What to expect</p>
-                <h2 id="response-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">A quick reply, every time.</h2>
+                <h2 id="response-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">A quick reply, every time.</h2>
                 <p class="mt-5 text-sm leading-relaxed text-ink-500 sm:text-base">
                     A small team reads every message that comes in. We acknowledge new enquiries within 24 hours on weekdays — most get a real reply the same day.
                 </p>
                 <div class="mt-7 grid gap-4 sm:grid-cols-2">
                     <div class="rounded-2xl bg-cream-100 p-5 ring-1 ring-brand-100">
                         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Typical response</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-brand-900">&lt; 24 hours</p>
+                        <p class="mt-2 font-serif text-2xl font-bold text-heading">&lt; 24 hours</p>
                     </div>
                     <div class="rounded-2xl bg-cream-100 p-5 ring-1 ring-brand-100">
                         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Weekly volume</p>
-                        <p class="mt-2 font-serif text-2xl font-bold text-brand-900">
+                        <p class="mt-2 font-serif text-2xl font-bold text-heading">
                             <span data-counter="40" data-suffix="+" data-duration="2800">0+</span>
                         </p>
                     </div>
@@ -162,9 +162,9 @@
                         'Every newsletter has an unsubscribe link in the footer. You can also email the team and we\'ll remove you immediately.',
                     ],
                 ] as $i => [$q, $a])
-                    <details class="group rounded-2xl bg-white p-5 ring-1 ring-brand-100 transition open:shadow-[0_4px_20px_-10px_rgba(0,4,78,0.18)]">
+                    <details class="group rounded-2xl bg-surface p-5 ring-1 ring-brand-100 transition open:shadow-[0_4px_20px_-10px_rgba(0,4,78,0.18)]">
                         <summary class="flex cursor-pointer items-start justify-between gap-4 text-left list-none">
-                            <span class="font-serif text-base font-bold text-brand-900 sm:text-lg">{{ $q }}</span>
+                            <span class="font-serif text-base font-bold text-heading sm:text-lg">{{ $q }}</span>
                             <svg class="mt-1 size-5 shrink-0 text-gold-500 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                         </summary>
                         <p class="mt-3 text-sm leading-relaxed text-ink-500">{{ $a }}</p>

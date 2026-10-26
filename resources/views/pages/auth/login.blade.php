@@ -8,7 +8,7 @@
             @csrf
 
             <div>
-                <label for="login-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Email address') }}</label>
+                <label for="login-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Email address') }}</label>
                 <input
                     id="login-email"
                     name="email"
@@ -18,7 +18,7 @@
                     autofocus
                     autocomplete="email"
                     placeholder="email@example.com"
-                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                 >
                 @error('email')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -27,9 +27,9 @@
 
             <div x-data="{ show: false }">
                 <div class="flex items-center justify-between">
-                    <label for="login-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Password') }}</label>
+                    <label for="login-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Password') }}</label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-xs font-semibold text-gold-500 hover:text-brand-900" wire:navigate>
+                        <a href="{{ route('password.request') }}" class="text-xs font-semibold text-gold-500 hover:text-heading" wire:navigate>
                             {{ __('Forgot password?') }}
                         </a>
                     @endif
@@ -42,7 +42,7 @@
                         required
                         autocomplete="current-password"
                         placeholder="{{ __('Password') }}"
-                        class="block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                        class="block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 pr-10 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     >
                     <button
                         type="button"

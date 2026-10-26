@@ -90,14 +90,14 @@
     >
         {{-- Outer wrap: light cream canvas with padding around the app card --}}
         <div class="min-h-screen p-0 sm:p-4 lg:p-6">
-            <div class="flex min-h-[calc(100vh-3rem)] bg-white shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
+            <div class="flex min-h-[calc(100vh-3rem)] bg-surface shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
                 {{-- SIDEBAR --}}
                 <aside
                     :class="[
                         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
                         sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
                     ]"
-                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-white transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
+                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-surface transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
                 >
                     <div
                         :class="sidebarCollapsed ? 'lg:justify-center lg:px-3' : 'lg:px-5'"
@@ -195,15 +195,15 @@
                                                     :class="sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''"
                                                     @class([
                                                         'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                                                        'bg-cream-100 font-semibold text-brand-900' => $isCurrent,
-                                                        'text-ink-700 hover:bg-cream-100 hover:text-brand-900' => ! $isCurrent,
+                                                        'bg-cream-100 font-semibold text-heading' => $isCurrent,
+                                                        'text-ink-700 hover:bg-cream-100 hover:text-heading' => ! $isCurrent,
                                                     ])
                                                     :title="sidebarCollapsed ? @js($item['label']) : null"
                                                 >
                                                     <span @class([
                                                         'grid aspect-square size-7 shrink-0 place-items-center rounded-lg transition-colors',
                                                         'bg-brand-900 text-white' => $isCurrent,
-                                                        'bg-cream-100 text-ink-500 group-hover:bg-white group-hover:text-brand-900' => ! $isCurrent,
+                                                        'bg-cream-100 text-ink-500 group-hover:bg-surface group-hover:text-heading' => ! $isCurrent,
                                                     ])>
                                                         <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$item['icon']] ?? $icons['cog'] }}"/>
@@ -232,7 +232,7 @@
                                     <button
                                         type="submit"
                                         data-test="logout-button"
-                                        class="grid aspect-square size-8 place-items-center rounded-lg text-ink-500 transition hover:bg-white hover:text-gold-500"
+                                        class="grid aspect-square size-8 place-items-center rounded-lg text-ink-500 transition hover:bg-surface hover:text-gold-500"
                                         title="Log out"
                                         aria-label="Log out"
                                     >
@@ -256,7 +256,7 @@
 
                 {{-- MAIN --}}
                 <div class="flex min-w-0 flex-1 flex-col">
-                    <header class="flex items-center gap-4 border-b border-cream-300 bg-white px-5 py-4 sm:rounded-tr-3xl sm:px-6 lg:px-8">
+                    <header class="flex items-center gap-4 border-b border-cream-300 bg-surface px-5 py-4 sm:rounded-tr-3xl sm:px-6 lg:px-8">
                         <button
                             type="button"
                             @click="sidebarOpen = true"
@@ -270,10 +270,10 @@
 
                         {{-- Breadcrumbs --}}
                         <div class="hidden items-center gap-2 sm:flex">
-                            <button type="button" onclick="history.back()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Back">
+                            <button type="button" onclick="history.back()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Back">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7"/></svg>
                             </button>
-                            <button type="button" onclick="history.forward()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Forward">
+                            <button type="button" onclick="history.forward()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Forward">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg>
                             </button>
                             <nav class="ml-1 flex items-center gap-1 text-sm" aria-label="Breadcrumb">
@@ -296,22 +296,39 @@
                                 <span class="absolute inset-y-0 left-3 grid place-items-center text-ink-500">
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>
                                 </span>
-                                <input type="search" name="q" placeholder="Search beneficiaries, events, donors…" class="w-full rounded-full border border-cream-300 bg-cream-100 py-2 pl-9 pr-4 text-sm text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+                                <input type="search" name="q" placeholder="Search beneficiaries, events, donors…" class="w-full rounded-full border border-cream-300 bg-cream-100 py-2 pl-9 pr-4 text-sm text-ink-900 placeholder-ink-500/70 focus:border-heading focus:bg-surface focus:outline-none focus:ring-2 focus:ring-heading/15">
                             </label>
                         </form>
 
                         <div class="ml-auto flex items-center gap-2 md:ml-0">
-                            <button type="button" class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Help">
+                            <x-admin.theme-toggle class="hidden sm:inline-flex" />
+                            {{-- Compact icon-only toggle on mobile to save room next to the help/notifications buttons --}}
+                            <button
+                                type="button"
+                                @click="$store.theme.toggle()"
+                                :aria-label="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                :title="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading sm:hidden"
+                            >
+                                <svg x-cloak x-show="$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                                </svg>
+                                <svg x-cloak x-show="!$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Help">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>
                             </button>
-                            <button type="button" class="relative grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Notifications">
+                            <button type="button" class="relative grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Notifications">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
                                 <span class="absolute right-1.5 top-1.5 size-2 rounded-full bg-gold-500"></span>
                             </button>
                         </div>
                     </header>
 
-                    <main class="flex-1 bg-white px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
+                    <main class="flex-1 bg-surface px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
                         @if ($title)
                             <div class="mb-6">
                                 <h1 class="font-serif text-2xl font-bold text-ink-900 sm:text-3xl">{{ $title }}</h1>

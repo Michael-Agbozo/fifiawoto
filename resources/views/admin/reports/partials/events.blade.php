@@ -27,8 +27,8 @@
 </div>
 
 <div class="grid gap-4 lg:grid-cols-2">
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">By status</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">By status</p>
         <div class="mt-5">
             <x-admin.donut-chart
                 :segments="$analytics['status_breakdown'] ?? []"
@@ -38,8 +38,8 @@
         </div>
     </article>
 
-    <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Top events by revenue</p>
+    <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top events by revenue</p>
         <ul class="mt-3 space-y-3 text-sm">
             @forelse ($analytics['top_by_raised'] ?? [] as $i => $ev)
                 @php $pct = ($ev['goal_cents'] ?? 0) > 0 ? min(100, (int) round(($ev['raised_cents'] / $ev['goal_cents']) * 100)) : 0; @endphp
@@ -66,8 +66,8 @@
     </article>
 </div>
 
-<article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
-    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Goal achievement leaderboard</p>
+<article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Goal achievement leaderboard</p>
     <p class="mt-1 text-xs text-ink-500">% of fundraising goal reached — only events with a stated goal.</p>
     <ul class="mt-4 space-y-3 text-sm">
         @forelse ($analytics['top_by_goal_pct'] ?? [] as $ev)

@@ -327,7 +327,7 @@ new class extends Component
             <label class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Filter</label>
             <select
                 wire:model.live="applicationFilter"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
                 <option value="">All applications</option>
                 @foreach ($statusOptions as $value => $label)
@@ -336,7 +336,7 @@ new class extends Component
             </select>
         </div>
 
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             @if ($this->applications->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No applications match this filter yet.</div>
             @else
@@ -369,12 +369,12 @@ new class extends Component
                                 <td class="px-6 py-4">
                                     <div class="flex items-center justify-end gap-2">
                                         <x-admin.actions-menu>
-                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 View details
                                             </button>
                                             @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
-                                                <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Review &amp; approve
                                                 </button>
@@ -408,7 +408,7 @@ new class extends Component
             <label class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Role</label>
             <select
                 wire:model.live="rosterFilter"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
                 <option value="">All roles</option>
                 @foreach ($roleOptions as $value => $label)
@@ -421,11 +421,11 @@ new class extends Component
                 type="search"
                 wire:model.live.debounce.300ms="rosterSearch"
                 placeholder="Name, email, or country"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
         </div>
 
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             @if ($this->volunteers->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No active volunteers match this filter.</div>
             @else
@@ -454,7 +454,7 @@ new class extends Component
                                     @if ($editingVolunteerId === $volunteer->id)
                                         <select
                                             wire:model="editingRole"
-                                            class="rounded-lg border border-cream-300 bg-white px-2 py-1.5 text-xs text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                            class="rounded-lg border border-cream-300 bg-surface px-2 py-1.5 text-xs text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                                         >
                                             @foreach ($roleOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -473,20 +473,20 @@ new class extends Component
                                         @if ($editingVolunteerId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="saveRole({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-900">Save role</button>
-                                                <button type="button" wire:click="cancelEditRole" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                                <button type="button" wire:click="cancelEditRole" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
                                             </div>
                                         @elseif ($confirmRemoveId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="remove({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm remove</button>
-                                                <button type="button" wire:click="cancelRemove" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                                <button type="button" wire:click="cancelRemove" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
                                             </div>
                                         @else
                                             <x-admin.actions-menu>
-                                                <button type="button" wire:click="viewVolunteer({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                    <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                <button type="button" wire:click="viewVolunteer({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                    <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                     View details
                                                 </button>
-                                                <button type="button" wire:click="startEditRole({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="startEditRole({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                     Edit role
                                                 </button>
@@ -512,7 +512,7 @@ new class extends Component
         @if ($app = $this->viewingApplication)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Email</dt>
@@ -530,7 +530,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Workflow</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Workflow</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Submitted</dt>
@@ -553,7 +553,7 @@ new class extends Component
             </div>
 
             <section class="mt-6">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Availability &amp; interests</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Availability &amp; interests</h3>
                 <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                         <dt class="text-xs text-ink-500">Availability</dt>
@@ -564,7 +564,7 @@ new class extends Component
                         <dd class="mt-1 flex flex-wrap gap-1.5">
                             @foreach (($app->interests ?? []) as $interest)
                                 @php $enum = \App\Enums\VolunteerInterest::tryFrom($interest); @endphp
-                                <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{{ $enum?->label() ?? $interest }}</span>
+                                <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-label">{{ $enum?->label() ?? $interest }}</span>
                             @endforeach
                             @if (empty($app->interests))
                                 <span class="text-sm text-ink-500">None listed</span>
@@ -576,22 +576,22 @@ new class extends Component
 
             @if (filled($app->skills))
                 <section class="mt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Skills</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Skills</h3>
                     <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->skills }}</p>
                 </section>
             @endif
 
             <section class="mt-5">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Why they want to help</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Why they want to help</h3>
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->motivation }}</p>
             </section>
 
             @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
                 <section class="mt-6 rounded-2xl border border-cream-300 bg-cream-50 p-4">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Approve into roster</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Approve into roster</h3>
                     <p class="mt-1 text-xs text-ink-500">Pick a starting role for {{ $app->full_name }} and approve. A welcome email will be sent.</p>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <select wire:model="applicationRoleChoice.{{ $app->id }}" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                        <select wire:model="applicationRoleChoice.{{ $app->id }}" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                             <option value="">Assign role…</option>
                             @foreach ($roleOptions as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -615,7 +615,7 @@ new class extends Component
         @if ($volunteer = $this->viewingVolunteer)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Email</dt>
@@ -633,7 +633,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Assignment</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Assignment</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Role</dt>
@@ -649,14 +649,14 @@ new class extends Component
 
             @if (filled($volunteer->notes))
                 <section class="mt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Notes</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Notes</h3>
                     <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $volunteer->notes }}</p>
                 </section>
             @endif
 
             @if ($volunteer->application)
                 <section class="mt-5 border-t border-cream-200 pt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Original application</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Original application</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Availability</dt>
@@ -667,7 +667,7 @@ new class extends Component
                             <dd class="mt-1 flex flex-wrap gap-1.5">
                                 @foreach (($volunteer->application->interests ?? []) as $interest)
                                     @php $enum = \App\Enums\VolunteerInterest::tryFrom($interest); @endphp
-                                    <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{{ $enum?->label() ?? $interest }}</span>
+                                    <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-label">{{ $enum?->label() ?? $interest }}</span>
                                 @endforeach
                                 @if (empty($volunteer->application->interests))
                                     <span class="text-sm text-ink-500">None listed</span>

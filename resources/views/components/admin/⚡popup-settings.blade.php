@@ -124,7 +124,7 @@ new class extends Component
     @endif
 
     <form wire:submit="save" class="space-y-6">
-        <section class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <section class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <label class="flex items-start justify-between gap-6">
                 <span>
                     <span class="block font-serif text-xl font-bold text-ink-900">Show the popup</span>
@@ -134,14 +134,14 @@ new class extends Component
             </label>
         </section>
 
-        <section class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <section class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <h2 class="font-serif text-xl font-bold text-ink-900">Content</h2>
 
             <fieldset class="mt-4">
-                <legend class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Type</legend>
+                <legend class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Type</legend>
                 <div class="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
                     @foreach ($typeOptions as $value => $label)
-                        <label class="cursor-pointer rounded-2xl border border-cream-300 px-4 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 has-checked:border-gold-500 has-checked:bg-cream-100 has-checked:text-brand-900">
+                        <label class="cursor-pointer rounded-2xl border border-cream-300 px-4 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading has-checked:border-gold-500 has-checked:bg-cream-100 has-checked:text-heading">
                             <input type="radio" wire:model.live="type" value="{{ $value }}" class="sr-only">
                             {{ $label }}
                         </label>
@@ -152,8 +152,8 @@ new class extends Component
 
             @if ($type === 'event')
                 <div class="mt-5">
-                    <label for="popup-event" class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Event to promote</label>
-                    <select id="popup-event" wire:model="event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label for="popup-event" class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Event to promote</label>
+                    <select id="popup-event" wire:model="event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         <option value="">Choose an upcoming event…</option>
                         @foreach ($this->upcomingEvents as $event)
                             <option value="{{ $event->id }}">{{ $event->title }} — {{ $event->starts_at?->format('M j, Y') }}</option>
@@ -170,23 +170,23 @@ new class extends Component
             @if ($type === 'announcement')
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">
                     <div class="sm:col-span-2">
-                        <label for="popup-heading" class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Heading</label>
-                        <input id="popup-heading" type="text" wire:model="announcement_heading" maxlength="120" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                        <label for="popup-heading" class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Heading</label>
+                        <input id="popup-heading" type="text" wire:model="announcement_heading" maxlength="120" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @error('announcement_heading') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="popup-body" class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Body</label>
-                        <textarea id="popup-body" wire:model="announcement_body" rows="4" maxlength="600" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                        <label for="popup-body" class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Body</label>
+                        <textarea id="popup-body" wire:model="announcement_body" rows="4" maxlength="600" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                         @error('announcement_body') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="popup-cta-label" class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Button label <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
-                        <input id="popup-cta-label" type="text" wire:model="announcement_cta_label" maxlength="40" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                        <label for="popup-cta-label" class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Button label <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                        <input id="popup-cta-label" type="text" wire:model="announcement_cta_label" maxlength="40" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @error('announcement_cta_label') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="popup-cta-url" class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Button link</label>
-                        <input id="popup-cta-url" type="text" wire:model="announcement_cta_url" placeholder="/events or https://…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                        <label for="popup-cta-url" class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Button link</label>
+                        <input id="popup-cta-url" type="text" wire:model="announcement_cta_url" placeholder="/events or https://…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @error('announcement_cta_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -194,7 +194,7 @@ new class extends Component
         </section>
 
         <section class="grid gap-6 lg:grid-cols-3">
-            <div class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+            <div class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                 <h2 class="font-serif text-xl font-bold text-ink-900">Trigger</h2>
                 <div class="mt-4 space-y-2">
                     @foreach ($triggerOptions as $value => $label)
@@ -205,19 +205,19 @@ new class extends Component
                     @endforeach
                 </div>
                 @if ($trigger === 'delay')
-                    <label for="popup-delay" class="mt-4 block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Seconds after page load</label>
-                    <input id="popup-delay" type="number" min="0" max="120" wire:model="trigger_delay_seconds" class="mt-2 block w-28 rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label for="popup-delay" class="mt-4 block text-xs font-semibold uppercase tracking-[0.22em] text-label">Seconds after page load</label>
+                    <input id="popup-delay" type="number" min="0" max="120" wire:model="trigger_delay_seconds" class="mt-2 block w-28 rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('trigger_delay_seconds') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 @elseif ($trigger === 'scroll')
-                    <label for="popup-scroll" class="mt-4 block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Percent of page scrolled</label>
-                    <input id="popup-scroll" type="number" min="1" max="100" wire:model="trigger_scroll_percent" class="mt-2 block w-28 rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label for="popup-scroll" class="mt-4 block text-xs font-semibold uppercase tracking-[0.22em] text-label">Percent of page scrolled</label>
+                    <input id="popup-scroll" type="number" min="1" max="100" wire:model="trigger_scroll_percent" class="mt-2 block w-28 rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('trigger_scroll_percent') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 @else
                     <p class="mt-4 text-xs text-ink-500">Opens when the visitor moves to leave the page (desktop only).</p>
                 @endif
             </div>
 
-            <div class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+            <div class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                 <h2 class="font-serif text-xl font-bold text-ink-900">Frequency</h2>
                 <div class="mt-4 space-y-2">
                     @foreach ($frequencyOptions as $value => $label)
@@ -230,7 +230,7 @@ new class extends Component
                 <p class="mt-4 text-xs text-ink-500">Saving changes resets this, so visitors see the updated popup.</p>
             </div>
 
-            <div class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+            <div class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                 <h2 class="font-serif text-xl font-bold text-ink-900">Pages</h2>
                 <div class="mt-4 space-y-2">
                     @foreach ($pageOptions as $value => $label)

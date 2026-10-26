@@ -14,7 +14,7 @@
             <form
                 method="get"
                 action="{{ route('events.index') }}"
-                class="mx-auto flex max-w-xl items-center gap-2 rounded-full border border-brand-100 bg-white p-1.5 shadow-sm focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/15"
+                class="mx-auto flex max-w-xl items-center gap-2 rounded-full border border-brand-100 bg-surface p-1.5 shadow-sm focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/15"
                 role="search"
             >
                 <span class="pl-3 text-ink-500">
@@ -30,10 +30,10 @@
                     value="{{ $search ?? '' }}"
                     placeholder="Search by event name, location, or country…"
                     autocomplete="off"
-                    class="flex-1 border-0 bg-transparent px-2 py-2 text-sm text-brand-900 placeholder-ink-500 focus:outline-none focus:ring-0"
+                    class="flex-1 border-0 bg-transparent px-2 py-2 text-sm text-heading placeholder-ink-500 focus:outline-none focus:ring-0"
                 >
                 @if (filled($search ?? ''))
-                    <a href="{{ route('events.index') }}" class="grid size-9 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-brand-900" title="Clear search" aria-label="Clear search">
+                    <a href="{{ route('events.index') }}" class="grid size-9 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-heading" title="Clear search" aria-label="Clear search">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                     </a>
                 @endif
@@ -44,7 +44,7 @@
 
             @if (filled($search ?? ''))
                 <p class="mt-4 text-sm text-ink-500">
-                    Showing results for <strong class="font-semibold text-brand-900">"{{ $search }}"</strong>
+                    Showing results for <strong class="font-semibold text-heading">"{{ $search }}"</strong>
                     · {{ $upcoming->count() }} upcoming, {{ $past->count() }} past
                 </p>
             @endif
@@ -55,13 +55,13 @@
     <section class="py-16" aria-labelledby="upcoming-events-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between">
-                <h2 id="upcoming-events-heading" class="reveal font-serif text-2xl text-brand-900 sm:text-3xl">Upcoming events</h2>
+                <h2 id="upcoming-events-heading" class="reveal font-serif text-2xl text-heading sm:text-3xl">Upcoming events</h2>
                 <p class="reveal text-xs uppercase tracking-[0.24em] text-gold-500" style="transition-delay: 120ms">{{ $upcoming->count() }} upcoming</p>
             </div>
 
             @if ($upcoming->isEmpty())
-                <div class="mt-8 rounded-2xl border border-dashed border-brand-200 bg-white p-12 text-center">
-                    <h3 class="font-serif text-xl text-brand-900">
+                <div class="mt-8 rounded-2xl border border-dashed border-brand-200 bg-surface p-12 text-center">
+                    <h3 class="font-serif text-xl text-heading">
                         @if (filled($search ?? ''))
                             No upcoming events match "{{ $search }}"
                         @else
@@ -71,7 +71,7 @@
                     <p class="mx-auto mt-2 max-w-xl text-sm text-ink-500">
                         @if (filled($search ?? ''))
                             Try a different keyword, or
-                            <a href="{{ route('events.index') }}" class="font-semibold text-brand-700 hover:text-gold-500">clear the search</a>
+                            <a href="{{ route('events.index') }}" class="font-semibold text-label hover:text-gold-500">clear the search</a>
                             to see everything.
                         @else
                             Check back soon, or get involved through one of the other ways below.
@@ -93,7 +93,7 @@
                             $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp', 'images/foundation/community-1.jpg'];
                             $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
-                        <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 3) * 100 }}ms">
+                        <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 3) * 100 }}ms">
                             <div class="relative aspect-[5/3] overflow-hidden">
                                 <img
                                     src="{{ $heroImage }}"
@@ -106,7 +106,7 @@
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
                                     {{ $event->starts_at?->format('M j, Y') }}
                                 </p>
-                                <h3 class="mt-2 font-serif text-xl text-brand-900">
+                                <h3 class="mt-2 font-serif text-xl text-heading">
                                     <a href="{{ route('events.show', $event) }}" class="hover:text-gold-600" wire:navigate>
                                         {{ $event->title }}
                                     </a>
@@ -132,7 +132,7 @@
                                 @endif
 
                                 <div class="mt-6 flex flex-wrap items-center gap-2 pt-auto">
-                                    <a href="{{ route('events.show', $event) }}" class="rounded-full border-2 border-brand-900 px-4 py-1.5 text-xs font-semibold text-brand-900 transition hover:bg-brand-900 hover:text-white" wire:navigate>Read More</a>
+                                    <a href="{{ route('events.show', $event) }}" class="rounded-full border-2 border-heading px-4 py-1.5 text-xs font-semibold text-heading transition hover:bg-brand-900 hover:text-white" wire:navigate>Read More</a>
                                     <x-site.event-actions :event="$event" variant="light" size="sm" />
                                 </div>
                             </div>
@@ -149,7 +149,7 @@
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-end justify-between">
                     <div class="reveal-left">
-                        <h2 id="past-events-heading" class="font-serif text-2xl text-brand-900 sm:text-3xl">Past events</h2>
+                        <h2 id="past-events-heading" class="font-serif text-2xl text-heading sm:text-3xl">Past events</h2>
                         <p class="mt-2 text-sm text-ink-500">Programmes the foundation has already delivered.</p>
                     </div>
                     <p class="reveal-right text-xs uppercase tracking-[0.24em] text-gold-500">{{ $past->count() }} completed</p>
@@ -164,7 +164,7 @@
                             $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp', 'images/foundation/community-1.jpg'];
                             $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
-                        <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 2) * 120 }}ms">
+                        <article class="reveal group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ ($i % 2) * 120 }}ms">
                             <a href="{{ route('events.show', $event) }}" class="relative block aspect-[16/9] overflow-hidden" wire:navigate>
                                 <img
                                     src="{{ $heroImage }}"
@@ -182,7 +182,7 @@
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
                                     {{ $event->starts_at?->format('M j, Y') }}
                                 </p>
-                                <h3 class="mt-2 font-serif text-xl text-brand-900 sm:text-2xl">
+                                <h3 class="mt-2 font-serif text-xl text-heading sm:text-2xl">
                                     <a href="{{ route('events.show', $event) }}" class="hover:text-gold-600" wire:navigate>
                                         {{ $event->title }}
                                     </a>
@@ -208,7 +208,7 @@
                                 @endif
 
                                 <div class="mt-6 pt-auto">
-                                    <a href="{{ route('events.show', $event) }}" class="inline-flex items-center gap-1.5 rounded-full border-2 border-brand-900 px-4 py-1.5 text-xs font-semibold text-brand-900 transition hover:bg-brand-900 hover:text-white" wire:navigate>
+                                    <a href="{{ route('events.show', $event) }}" class="inline-flex items-center gap-1.5 rounded-full border-2 border-heading px-4 py-1.5 text-xs font-semibold text-heading transition hover:bg-brand-900 hover:text-white" wire:navigate>
                                         See impact
                                         <span aria-hidden="true">→</span>
                                     </a>

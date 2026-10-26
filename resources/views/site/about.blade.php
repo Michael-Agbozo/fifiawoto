@@ -33,7 +33,7 @@
     {{-- LEGACY QUOTE BAND --}}
     <section class="bg-brand-200/80 py-16 sm:py-20" aria-label="Foundation tribute">
         <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-            <div class="reveal-down mx-auto grid size-14 place-items-center overflow-hidden rounded-full bg-white shadow-[0_10px_30px_-15px_rgba(0,4,78,0.4)] ring-4 ring-white">
+            <div class="reveal-down mx-auto grid size-14 place-items-center overflow-hidden rounded-full bg-surface shadow-[0_10px_30px_-15px_rgba(0,4,78,0.4)] ring-4 ring-white">
                 <img
                     src="{{ asset('images/foundation/about/madam-dadaa-portrait.jpg') }}"
                     alt="Portrait of Madam Dadaa Fifiawoto Nyamadi-Adabla"
@@ -48,7 +48,7 @@
     </section>
 
     {{-- MISSION + VISION --}}
-    <section class="bg-white py-20 lg:py-28" aria-labelledby="mission-vision-heading">
+    <section class="bg-surface py-20 lg:py-28" aria-labelledby="mission-vision-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
             {{-- LEFT: heading + Mission/Vision copy --}}
             <div>
@@ -88,7 +88,7 @@
                     aria-label="Watch our story on Instagram"
                     class="group absolute -bottom-6 -left-6 grid aspect-square w-32 place-items-center rounded-2xl bg-brand-200/85 backdrop-blur transition hover:bg-gold-500 sm:w-40"
                 >
-                    <span class="grid size-14 place-items-center rounded-full bg-white text-brand-900 shadow-lg transition group-hover:bg-white group-hover:text-gold-500 sm:size-16">
+                    <span class="grid size-14 place-items-center rounded-full bg-surface text-heading shadow-lg transition group-hover:bg-surface group-hover:text-gold-500 sm:size-16">
                         <svg class="size-6 translate-x-0.5 sm:size-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </span>
                 </a>
@@ -101,7 +101,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What we stand for</p>
-                <h2 id="values-heading" class="reveal mt-3 font-serif text-3xl text-brand-900 sm:text-4xl" style="transition-delay: 120ms">Core Values</h2>
+                <h2 id="values-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Core Values</h2>
             </div>
 
             @php
@@ -135,9 +135,9 @@
                             </div>
                         </article>
                     @else
-                        <article class="group flex flex-col justify-between rounded-3xl bg-white p-7 ring-1 ring-cream-300 transition hover:-translate-y-1 hover:ring-brand-200 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
+                        <article class="group flex flex-col justify-between rounded-3xl bg-surface p-7 ring-1 ring-cream-300 transition hover:-translate-y-1 hover:ring-brand-200 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
                             <div>
-                                <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100">
+                                <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-label ring-1 ring-brand-100">
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $valueIcons[$value['icon']] !!}</svg>
                                 </div>
                                 <h3 class="mt-8 font-serif text-xl font-bold leading-tight text-ink-900">{{ $value['title'] }}</h3>
@@ -151,28 +151,28 @@
     </section>
 
     {{-- GLOBAL PRESENCE --}}
-    <section class="bg-brand-900 py-20 text-cream-50" aria-labelledby="global-presence-heading">
+    <section class="bg-brand-900 py-20 text-paper" aria-labelledby="global-presence-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 md:grid-cols-2 md:items-center lg:px-8">
             <div>
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Where we work</p>
                 <h2 id="global-presence-heading" class="reveal mt-3 font-serif text-3xl sm:text-4xl" style="transition-delay: 120ms">A Global Presence</h2>
-                <p class="reveal mt-6 text-sm leading-relaxed text-cream-200/80" style="transition-delay: 240ms">
+                <p class="reveal mt-6 text-sm leading-relaxed text-paper-dim/80" style="transition-delay: 240ms">
                     The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programs where they're needed most.
                 </p>
                 <ul class="mt-8 grid grid-cols-2 gap-4 text-sm">
                     @foreach (['United States', 'Ghana', 'Togo', 'Benin'] as $country)
                         <li class="flex items-center gap-3 rounded-lg border border-brand-700/40 bg-brand-800/50 px-4 py-3">
                             <span class="size-2 rounded-full bg-gold-400"></span>
-                            <span class="text-cream-50">{{ $country }}</span>
+                            <span class="text-paper">{{ $country }}</span>
                         </li>
                     @endforeach
                 </ul>
-                <p class="mt-6 text-xs text-cream-200/60">An interactive map will replace this list in a later release.</p>
+                <p class="mt-6 text-xs text-paper-dim/60">An interactive map will replace this list in a later release.</p>
             </div>
 
             <div class="relative">
                 <div class="aspect-[4/3] overflow-hidden rounded-2xl border border-brand-700/40 bg-brand-800/40 p-6">
-                    <svg viewBox="0 0 320 220" class="h-full w-full text-brand-700" aria-hidden="true">
+                    <svg viewBox="0 0 320 220" class="h-full w-full text-label" aria-hidden="true">
                         <rect x="0" y="0" width="320" height="220" fill="none" />
                         <g fill="currentColor" opacity="0.45">
                             <circle cx="70"  cy="90"  r="46" />
@@ -203,7 +203,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Our leadership</p>
-                <h2 id="leadership-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">
+                <h2 id="leadership-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">
                     Meet the leadership team
                 </h2>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
@@ -239,11 +239,11 @@
                                     >
                                 @endif
                                 <div data-fallback class="absolute inset-0 {{ $photoSrc ? 'hidden' : 'flex' }} items-center justify-center bg-gradient-to-br from-brand-100 via-cream-200 to-brand-50">
-                                    <span class="font-serif text-4xl font-bold text-brand-900/70">{{ $initials }}</span>
+                                    <span class="font-serif text-4xl font-bold text-heading/70">{{ $initials }}</span>
                                 </div>
                             </div>
                             <figcaption class="mt-4">
-                                <p class="font-serif text-base font-bold leading-tight text-brand-900">{{ $leader->name }}</p>
+                                <p class="font-serif text-base font-bold leading-tight text-heading">{{ $leader->name }}</p>
                                 <p class="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">{{ $leader->role }}</p>
                             </figcaption>
                         </figure>
@@ -251,7 +251,7 @@
                 </div>
             @endif
 
-            <div class="mt-14 flex flex-col items-center justify-between gap-4 rounded-3xl border border-brand-100 bg-white/70 p-8 backdrop-blur sm:flex-row">
+            <div class="mt-14 flex flex-col items-center justify-between gap-4 rounded-3xl border border-brand-100 bg-surface/70 p-8 backdrop-blur sm:flex-row">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Get involved</p>
                     <p class="mt-2 max-w-xl text-sm text-ink-700">

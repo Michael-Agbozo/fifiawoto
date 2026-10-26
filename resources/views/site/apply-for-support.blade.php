@@ -12,7 +12,7 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="reveal mx-auto max-w-2xl text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">How it works</p>
-                <h2 id="how-support-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Three simple steps.</h2>
+                <h2 id="how-support-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Three simple steps.</h2>
             </div>
 
             <ol class="mt-12 grid gap-5 sm:grid-cols-3">
@@ -23,7 +23,7 @@
                 ] as $i => [$step, $copy])
                     <li class="reveal rounded-3xl bg-cream-100 p-7 ring-1 ring-brand-100" style="transition-delay: {{ $i * 120 }}ms">
                         <span class="grid size-10 place-items-center rounded-full bg-gold-500 font-serif text-lg font-bold text-white">{{ $i + 1 }}</span>
-                        <h3 class="mt-4 font-serif text-xl text-brand-900">{{ $step }}</h3>
+                        <h3 class="mt-4 font-serif text-xl text-heading">{{ $step }}</h3>
                         <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ $copy }}</p>
                     </li>
                 @endforeach
@@ -44,7 +44,7 @@
                     Community leaders, teachers and health workers can refer families to us. Get in touch and we'll guide you through the process.
                 </p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-white hover:text-brand-900" wire:navigate>
+            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading" wire:navigate>
                 Contact the team
                 <span aria-hidden="true">→</span>
             </a>

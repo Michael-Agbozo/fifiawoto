@@ -25,7 +25,7 @@
 @endphp
 
 @if ($items->isEmpty())
-    <div class="rounded-3xl border border-dashed border-brand-100 bg-white p-10 text-center text-sm text-ink-500">No testimonials yet.</div>
+    <div class="rounded-3xl border border-dashed border-brand-100 bg-surface p-10 text-center text-sm text-ink-500">No testimonials yet.</div>
 @else
     <div
         x-data="{
@@ -50,7 +50,7 @@
     >
         <div class="mx-auto max-w-2xl text-center">
             <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">{{ $kicker }}</p>
-            <h2 id="testimonials-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">{{ $heading }}</h2>
+            <h2 id="testimonials-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $heading }}</h2>
             @if ($subtitle)
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ $subtitle }}</p>
             @endif
@@ -61,7 +61,7 @@
                 type="button"
                 @click="prev()"
                 aria-label="Previous testimonials"
-                class="grid size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-white text-brand-700 shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                class="grid size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
             </button>
@@ -96,7 +96,7 @@
                                 @endphp
                                 <figure
                                     @class([
-                                        'flex h-full flex-col justify-between rounded-3xl border border-brand-100 bg-white shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
+                                        'flex h-full flex-col justify-between rounded-3xl border border-brand-100 bg-surface shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
                                         'items-center px-6 py-10 text-center sm:px-12 sm:py-12' => $perView === 1,
                                         'px-6 py-8 text-left sm:px-8 sm:py-10' => $perView > 1,
                                     ])
@@ -110,7 +110,7 @@
                                             <path d="M9 7H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2H5V9h4V7zm10 0h-4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2h-4V9h4V7z"/>
                                         </svg>
                                         <blockquote @class([
-                                            'font-serif leading-relaxed text-brand-900',
+                                            'font-serif leading-relaxed text-heading',
                                             'mt-5 text-xl sm:text-2xl' => $perView === 1,
                                             'mt-4 text-lg' => $perView > 1,
                                         ])>
@@ -130,7 +130,7 @@
                                                 loading="lazy"
                                             >
                                         @else
-                                            <span class="grid aspect-square size-12 place-items-center rounded-full bg-brand-50 font-bold text-brand-700">
+                                            <span class="grid aspect-square size-12 place-items-center rounded-full bg-brand-50 font-bold text-label">
                                                 {{ $initials ?: mb_substr((string) $testimonial->author_role, 0, 1) }}
                                             </span>
                                         @endif
@@ -153,7 +153,7 @@
                 type="button"
                 @click="next()"
                 aria-label="Next testimonials"
-                class="grid size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-white text-brand-700 shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                class="grid size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
             </button>

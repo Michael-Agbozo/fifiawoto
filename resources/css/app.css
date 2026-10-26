@@ -57,8 +57,25 @@
     --color-gold-500: #df0000;
     --color-gold-600: #a30000;
 
+    /* Role tokens. Views use these instead of raw palette steps wherever the
+       colour must flip in dark mode. Light values equal the palette step each
+       one replaced, so light mode is unchanged:
+         surface       ← bg-white            (cards, inputs, panels)
+         heading       ← text/border-brand-900 (headings, outline buttons)
+         heading-soft  ← text-brand-800
+         label         ← text-brand-700      (labels, links)
+         paper / -dim  ← text-cream-50/200   (text on navy strips — never flips)
+         night         ← bg-ink-900          (backdrops, dark panels — never flips) */
+    --color-surface: #ffffff;
+    --color-heading: #00044e;
+    --color-heading-soft: #000342;
+    --color-label: #03075e;
+    --color-paper: #ffffff;
+    --color-paper-dim: #f1f3f5;
+    --color-night: #000000;
+
     --color-accent: var(--color-gold-500);
-    --color-accent-content: var(--color-brand-900);
+    --color-accent-content: var(--color-heading);
     --color-accent-foreground: var(--color-white);
 
     /* Modal entrance — used by <x-admin.modal> so the dialog fades + lifts in
@@ -98,6 +115,74 @@
             opacity: 0;
         }
     }
+}
+
+/* ------------------------------------------------------------------
+ | Dark mode
+ |
+ | Activated by setting `data-theme="dark"` (or class `.dark`) on the
+ | <html> element. The block below overrides the same custom-property
+ | names that the light palette defines so every utility that uses a
+ | brand/cream/ink/gold token re-skins automatically — no `dark:` prefix
+ | needed in views. A blocking script in partials/head.blade.php applies
+ | the attribute before first paint to avoid flash-of-wrong-theme.
+ |
+ | Reduced-motion: the transition below is suppressed for users who
+ | request it (see the `prefers-reduced-motion` block already present).
+ ------------------------------------------------------------------ */
+:root[data-theme="dark"],
+.dark {
+    color-scheme: dark;
+
+    /* Surfaces: canvas (cream-200) darkest, cards/inputs (surface, cream-50)
+       one step up, tinted rows/hover (cream-100) slightly raised. */
+    --color-surface:   #14184a;
+    --color-cream-50:  #14184a;
+    --color-cream-100: #1a1f57;
+    --color-cream-200: #080a26;
+    --color-cream-300: #2e3470;
+
+    /* Text */
+    --color-heading:      #eef0ff;
+    --color-heading-soft: #dfe2fb;
+    --color-label:        #b8bdf0;
+    --color-ink-500: #a5a8c4;
+    --color-ink-700: #d1d4e8;
+    --color-ink-900: #ffffff;
+
+    /* Brand tints used for chips, light borders and focus rings. The deep
+       steps (600–900) stay navy so strips, buttons and overlays keep their
+       look in both modes. */
+    --color-brand-50:  #1d2160;
+    --color-brand-100: #2b3175;
+    --color-brand-200: #3d4389;
+    --color-brand-300: #6f76c1;
+    --color-brand-400: #8b91d9;
+    --color-brand-500: #9aa1e6;
+
+    /* Red accent lifted just enough for small red text to read on navy
+       (~4.3:1) while white text on red fills stays ~4:1 and on-brand. */
+    --color-gold-500: #f22b2b;
+    --color-gold-600: #ff7a7a;
+}
+
+/* Smooth theme transition on the structural surfaces that actually
+   change colour when the theme flips. Kept narrow (not a universal `*`)
+   so scroll + hover transitions on cards/buttons aren't impacted. */
+html,
+body,
+header,
+footer,
+main,
+section,
+article,
+aside,
+nav,
+figure {
+    transition:
+        background-color 220ms ease,
+        color 220ms ease,
+        border-color 220ms ease;
 }
 
 /* ------------------------------------------------------------------

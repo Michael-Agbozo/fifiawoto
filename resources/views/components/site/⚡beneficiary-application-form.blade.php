@@ -139,18 +139,18 @@ new class extends Component
 
 <section class="py-20" aria-labelledby="support-form-heading">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div class="rounded-3xl border border-brand-100 bg-white p-8 shadow-sm sm:p-10">
+        <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Application</p>
-                <h2 id="support-form-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Apply for Support</h2>
+                <h2 id="support-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Apply for Support</h2>
                 <p class="mt-3 text-sm text-ink-500">
                     Tell us about your situation. Everything you share is kept confidential and seen only by our case team.
                 </p>
             </div>
 
             @if ($submitted)
-                <div role="status" class="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-sm text-brand-800">
-                    <p class="font-semibold text-brand-900">Thank you — your application has been received.</p>
+                <div role="status" class="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-sm text-heading-soft">
+                    <p class="font-semibold text-heading">Thank you — your application has been received.</p>
                     <p class="mt-1 text-ink-500">
                         A member of our team will review it and contact you by phone or email. Reviews usually take one to two weeks.
                     </p>
@@ -163,42 +163,42 @@ new class extends Component
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label for="sup-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Full name</label>
+                            <label for="sup-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Full name</label>
                             <input id="sup-name" type="text" wire:model="full_name" required autocomplete="name"
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Phone number</label>
+                            <label for="sup-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Phone number</label>
                             <input id="sup-phone" type="tel" wire:model="phone" required autocomplete="tel"
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="sup-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Email address <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                            <label for="sup-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Email address <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
                             <input id="sup-email" type="email" wire:model="email" autocomplete="email"
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-country" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Country</label>
+                            <label for="sup-country" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country</label>
                             <input id="sup-country" type="text" wire:model="country" required autocomplete="country-name"
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('country') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-region" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Region / town <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                            <label for="sup-region" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Region / town <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
                             <input id="sup-region" type="text" wire:model="region"
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('region') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <fieldset>
-                        <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Type of support needed</legend>
+                        <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Type of support needed</legend>
                         <div class="mt-3 flex flex-wrap gap-2">
                             @foreach ($assistanceOptions as $value => $label)
-                                <label class="cursor-pointer rounded-full border border-brand-200 bg-cream-50 px-4 py-2 text-sm text-brand-800 has-checked:border-brand-700 has-checked:bg-brand-700 has-checked:text-cream-50">
+                                <label class="cursor-pointer rounded-full border border-brand-200 bg-cream-50 px-4 py-2 text-sm text-heading-soft has-checked:border-brand-700 has-checked:bg-brand-700 has-checked:text-paper">
                                     <input type="radio" name="assistance_type" value="{{ $value }}" wire:model.live="assistance_type" class="sr-only">
                                     {{ $label }}
                                 </label>
@@ -208,15 +208,15 @@ new class extends Component
                     </fieldset>
 
                     <div>
-                        <label for="sup-situation" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Your situation</label>
+                        <label for="sup-situation" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Your situation</label>
                         <textarea id="sup-situation" wire:model="situation" rows="5" required
-                            class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                             placeholder="Briefly describe your circumstances and how the foundation could help."></textarea>
                         @error('situation') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label for="sup-documents" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Supporting documents <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                        <label for="sup-documents" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Supporting documents <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
                         <p class="mt-1 text-xs text-ink-500">ID, medical or school records — up to {{ $maxDocuments }} files, 10 MB each (PDF, images, Word, Excel).</p>
                         <input id="sup-documents" type="file" wire:model="documents" multiple
                             accept=".{{ implode(',.', \App\Models\BeneficiaryDocument::ALLOWED_EXTENSIONS) }}"
@@ -231,7 +231,7 @@ new class extends Component
                             <ul class="mt-3 divide-y divide-brand-100 rounded-lg border border-brand-100 bg-cream-50 text-sm">
                                 @foreach ($documents as $index => $document)
                                     <li class="flex items-center justify-between gap-3 px-3 py-2" wire:key="sup-doc-{{ $index }}">
-                                        <span class="truncate text-brand-900">{{ $document->getClientOriginalName() }}</span>
+                                        <span class="truncate text-heading">{{ $document->getClientOriginalName() }}</span>
                                         <button type="button" wire:click="removeDocument({{ $index }})" class="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700">Remove</button>
                                     </li>
                                 @endforeach
@@ -239,11 +239,11 @@ new class extends Component
                         @endif
                     </div>
 
-                    <label class="flex items-start gap-3 text-sm text-brand-800">
-                        <input type="checkbox" wire:model.live="consent" class="mt-1 rounded border-brand-300 text-brand-700 focus:ring-brand-500" required>
+                    <label class="flex items-start gap-3 text-sm text-heading-soft">
+                        <input type="checkbox" wire:model.live="consent" class="mt-1 rounded border-brand-300 text-label focus:ring-brand-500" required>
                         <span>
                             I consent to the foundation securely storing this information and any documents to assess my application and contact me about support.
-                            See our <a href="{{ route('legal.privacy') }}" class="font-semibold text-gold-500 hover:text-brand-900" wire:navigate>privacy policy</a>.
+                            See our <a href="{{ route('legal.privacy') }}" class="font-semibold text-gold-500 hover:text-heading" wire:navigate>privacy policy</a>.
                         </span>
                     </label>
                     @error('consent') <p class="-mt-3 text-xs text-red-600">{{ $message }}</p> @enderror
