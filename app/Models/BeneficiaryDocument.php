@@ -12,6 +12,14 @@ class BeneficiaryDocument extends Model
     /** @use HasFactory<BeneficiaryDocumentFactory> */
     use HasFactory;
 
+    /**
+     * File types accepted for beneficiary + application documents. Deliberately excludes
+     * anything a browser would execute (html, svg, js).
+     *
+     * @var list<string>
+     */
+    public const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'doc', 'docx', 'xls', 'xlsx', 'txt'];
+
     protected $fillable = [
         'beneficiary_id', 'folder_id', 'disk', 'path', 'original_name',
         'mime_type', 'size_bytes', 'description', 'uploaded_by',

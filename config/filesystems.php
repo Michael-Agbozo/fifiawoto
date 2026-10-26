@@ -47,6 +47,17 @@ return [
             'report' => false,
         ],
 
+        // Beneficiary + application documents (IDs, medical records…). Never web-served:
+        // files are only streamed through the signed, permission-checked admin route.
+        'beneficiaries' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/beneficiaries'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

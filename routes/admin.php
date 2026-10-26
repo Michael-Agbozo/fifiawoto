@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DocumentDownloadController;
 use App\Models\Beneficiary;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,16 @@ Route::middleware('role:owner,super_admin,foundation_staff')->group(function () 
     Route::get('/beneficiaries/{beneficiary}', function (Beneficiary $beneficiary) {
         return view('admin.beneficiaries.show', ['beneficiary' => $beneficiary]);
     })->name('beneficiaries.show');
+
+    Route::get('/beneficiaries/{beneficiary}/documents/{document}', [DocumentDownloadController::class, 'beneficiaryDocument'])
+        ->middleware('signed')
+        ->scopeBindings()
+        ->name('beneficiaries.documents.show');
+
+    Route::get('/beneficiary-applications/{application}/documents/{document}', [DocumentDownloadController::class, 'applicationDocument'])
+        ->middleware('signed')
+        ->scopeBindings()
+        ->name('beneficiary-applications.documents.show');
 
     Route::view('/beneficiary-applications', 'admin.beneficiary-applications.index')
         ->name('beneficiary-applications.index');

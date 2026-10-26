@@ -8,7 +8,9 @@ use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -19,6 +21,8 @@ new class extends Component
 
     public Beneficiary $beneficiary;
 
+    /** Only changed server-side (openFolder/goUp/…) so it can't be pointed at another beneficiary's folder. */
+    #[Locked]
     public ?int $currentFolderId = null;
 
     public ?int $confirmDeleteFolderId = null;
@@ -53,12 +57,16 @@ new class extends Component
 
     public function mount(Beneficiary $beneficiary): void
     {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'view'), 403);
+
         $this->beneficiary = $beneficiary->load(['assignedTo', 'folders', 'timeline.recordedBy', 'documents']);
     }
 
     // ---------- Status / quick actions ----------
     public function setStatus(string $status): void
     {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
         if (! in_array($status, array_column(SupportStatus::cases(), 'value'), true)) {
             return;
         }
@@ -141,6 +149,8 @@ new class extends Component
 
     public function createFolder(): void
     {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
         $this->validateOnly('newFolderName');
 
         BeneficiaryFolder::query()->create([
@@ -159,17 +169,18 @@ new class extends Component
 
     public function startRenameFolder(int $folderId): void
     {
-        $folder = BeneficiaryFolder::query()->findOrFail($folderId);
+        $folder = $this->beneficiary->folders()->findOrFail($folderId);
         $this->renameFolderId = $folder->id;
         $this->renameFolderName = $folder->name;
     }
 
     public function saveRename(int $folderId): void
     {
-        if (! Str::length($this->renameFolderName)) {
-            return;
-        }
-        BeneficiaryFolder::query()->whereKey($folderId)->update(['name' => $this->renameFolderName]);
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
+        $this->validate(['renameFolderName' => 'required|string|max:120']);
+
+        $this->beneficiary->folders()->whereKey($folderId)->update(['name' => $this->renameFolderName]);
         $this->renameFolderId = null;
         $this->renameFolderName = '';
         $this->beneficiary->load('folders');
@@ -194,7 +205,9 @@ new class extends Component
 
     public function deleteFolder(int $folderId): void
     {
-        $folder = BeneficiaryFolder::query()->findOrFail($folderId);
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'delete'), 403);
+
+        $folder = $this->beneficiary->folders()->findOrFail($folderId);
 
         // If the deleted folder is the one we're viewing, jump back to its parent.
         if ($this->currentFolderId === $folder->id) {
@@ -246,20 +259,22 @@ new class extends Component
 
     public function uploadDocuments(): void
     {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
         $this->validate([
             'documentUploads' => 'required|array|min:1',
-            'documentUploads.*' => 'file|max:20480',
+            'documentUploads.*' => 'file|max:20480|mimes:'.implode(',', BeneficiaryDocument::ALLOWED_EXTENSIONS),
             'documentDescription' => 'nullable|string|max:255',
         ]);
 
         $saved = 0;
         foreach ($this->documentUploads as $upload) {
-            $path = $upload->store("beneficiaries/{$this->beneficiary->id}/documents", 'public');
+            $path = $upload->store("{$this->beneficiary->id}/documents", 'beneficiaries');
 
             BeneficiaryDocument::query()->create([
                 'beneficiary_id' => $this->beneficiary->id,
                 'folder_id' => $this->currentFolderId,
-                'disk' => 'public',
+                'disk' => 'beneficiaries',
                 'path' => $path,
                 'original_name' => $upload->getClientOriginalName(),
                 'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
@@ -290,7 +305,9 @@ new class extends Component
 
     public function deleteDocument(int $documentId): void
     {
-        $doc = BeneficiaryDocument::query()->findOrFail($documentId);
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'delete'), 403);
+
+        $doc = $this->beneficiary->documents()->findOrFail($documentId);
         if ($doc->path && Storage::disk($doc->disk ?: 'public')->exists($doc->path)) {
             Storage::disk($doc->disk ?: 'public')->delete($doc->path);
         }
@@ -317,8 +334,10 @@ new class extends Component
 
     public function saveTimelineEntry(): void
     {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
         $this->validate([
-            'timelineType' => 'required|string',
+            'timelineType' => ['required', Rule::enum(TimelineEntryType::class)],
             'timelineDescription' => 'nullable|string|max:1000',
         ]);
 
@@ -642,7 +661,8 @@ new class extends Component
                         <ul class="mt-2 divide-y divide-cream-200 rounded-2xl border border-cream-200 bg-white">
                             @foreach ($docs as $doc)
                                 @php
-                                    $url = $doc->path ? asset('storage/'.$doc->path) : null;
+                                    $url = $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc) : null;
+                                    $downloadUrl = $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc, download: true) : null;
                                     $mime = (string) $doc->mime_type;
                                     $iconColor = match (true) {
                                         str_starts_with($mime, 'image/') => 'text-emerald-600',
@@ -669,7 +689,7 @@ new class extends Component
                                             <a href="{{ $url }}" target="_blank" rel="noopener" class="grid size-8 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-brand-900" title="Open file">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3l-9 9M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
                                             </a>
-                                            <a href="{{ $url }}" download class="grid size-8 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-brand-900" title="Download">
+                                            <a href="{{ $downloadUrl }}" class="grid size-8 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-brand-900" title="Download">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                                             </a>
                                         @endif
