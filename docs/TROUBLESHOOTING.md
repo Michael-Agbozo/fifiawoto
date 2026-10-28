@@ -81,12 +81,12 @@ lsof -iTCP:8000 -sTCP:LISTEN
 The container's Nginx only listens on port 80; Coolify's Traefik terminates TLS and passes `X-Forwarded-Proto: https`. Laravel doesn't know it's behind HTTPS unless you tell it.
 
 **Root cause checklist:**
-1. `bootstrap/app.php` must have `$middleware->trustProxies(at: '*')` inside `->withMiddleware(...)`.
+1. `TRUSTED_PROXIES=*` must be set in Coolify's environment (read by `config/trustedproxy.php`; see `docs/DEPLOYMENT.md`).
 2. `app/Providers/AppServiceProvider.php` must call `URL::forceScheme('https')` for `production` and `staging` environments.
 3. `nginx.conf` must pass `fastcgi_param HTTP_X_FORWARDED_PROTO $http_x_forwarded_proto;` to PHP-FPM.
 4. `APP_ENV` in Coolify must be `production` (not `local`) for the `AppServiceProvider` check to fire.
 
-**Do not** use Nginx `map` blocks to derive `$forwarded_scheme` — this caused a 502 (see below). Let Laravel's `trustProxies` middleware handle it.
+**Do not** use Nginx `map` blocks to derive `$forwarded_scheme` — this caused a 502 (see below). Let Laravel's trusted-proxy middleware handle it.
 
 ---
 

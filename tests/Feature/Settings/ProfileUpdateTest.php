@@ -76,6 +76,34 @@ test('correct password must be provided to delete account', function () {
     expect($user->fresh())->not->toBeNull();
 });
 
+test('the last active owner cannot delete their own account', function () {
+    $owner = User::factory()->owner()->create();
+
+    $this->actingAs($owner);
+
+    Livewire::test('pages::settings.delete-user-modal')
+        ->set('password', 'password')
+        ->call('deleteUser')
+        ->assertHasErrors(['password']);
+
+    expect($owner->fresh())->not->toBeNull();
+    expect(auth()->check())->toBeTrue();
+});
+
+test('an owner can delete their account while another owner remains active', function () {
+    User::factory()->owner()->create();
+    $owner = User::factory()->owner()->create();
+
+    $this->actingAs($owner);
+
+    Livewire::test('pages::settings.delete-user-modal')
+        ->set('password', 'password')
+        ->call('deleteUser')
+        ->assertHasNoErrors();
+
+    expect($owner->fresh())->toBeNull();
+});
+
 test('profile picture can be uploaded and replaces the old one', function () {
     Storage::fake('public');
     $user = User::factory()->create(['avatar_path' => 'avatars/old.jpg']);

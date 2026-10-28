@@ -5,7 +5,6 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\User;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -51,9 +50,12 @@ it('rejects file types a browser would execute', function () {
     $beneficiary = Beneficiary::factory()->create();
 
     Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
+        // Rejected at temporary-upload time by config('livewire.temporary_file_upload.rules')…
         ->set('documentUploads', [UploadedFile::fake()->create('evil.html', 1, 'text/html')])
+        ->assertHasErrors('documentUploads.0')
+        // …so nothing reaches uploadDocuments() to be stored.
         ->call('uploadDocuments')
-        ->assertHasErrors('documentUploads.0');
+        ->assertHasErrors('documentUploads');
 
     expect($beneficiary->documents()->count())->toBe(0);
 });
@@ -111,11 +113,13 @@ it('only deletes documents and folders that belong to the open beneficiary', fun
         'beneficiary_id' => $otherDocument->beneficiary_id, 'name' => 'Medical', 'slug' => 'medical',
     ]);
 
-    expect(fn () => Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
-        ->call('deleteDocument', $otherDocument->id))->toThrow(ModelNotFoundException::class);
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
+        ->call('deleteDocument', $otherDocument->id)
+        ->assertNotFound();
 
-    expect(fn () => Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
-        ->call('deleteFolder', $otherFolder->id))->toThrow(ModelNotFoundException::class);
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
+        ->call('deleteFolder', $otherFolder->id)
+        ->assertNotFound();
 
     expect($otherDocument->fresh())->not->toBeNull()
         ->and($otherFolder->fresh())->not->toBeNull();
@@ -178,4 +182,30 @@ it('keeps the original when the copy to the private disk fails', function () {
 
     expect($document->refresh()->disk)->toBe('public');
     Storage::disk('public')->assertExists("beneficiaries/{$beneficiary->id}/documents/old.pdf");
+});
+
+it('accepts legitimate images and documents up to 20MB through the temporary upload', function (string $name, int $kilobytes, string $mime) {
+    $beneficiary = Beneficiary::factory()->create();
+
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
+        ->set('documentUploads', [UploadedFile::fake()->create($name, $kilobytes, $mime)])
+        ->assertHasNoErrors()
+        ->call('uploadDocuments')
+        ->assertHasNoErrors();
+
+    expect($beneficiary->documents()->count())->toBe(1);
+})->with([
+    'large pdf' => ['report.pdf', 20480, 'application/pdf'],
+    'png' => ['photo.png', 500, 'image/png'],
+    'webp' => ['photo.webp', 500, 'image/webp'],
+    'docx' => ['letter.docx', 200, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    'xlsx' => ['budget.xlsx', 200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+]);
+
+it('rejects temporary uploads over 20MB', function () {
+    $beneficiary = Beneficiary::factory()->create();
+
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
+        ->set('documentUploads', [UploadedFile::fake()->create('huge.pdf', 20481, 'application/pdf')])
+        ->assertHasErrors('documentUploads.0');
 });

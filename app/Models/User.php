@@ -85,6 +85,23 @@ class User extends Authenticatable
         return in_array($this->role, $roles, true);
     }
 
+    /**
+     * Whether this is the only active Owner left — demoting, deactivating or deleting
+     * it would leave nobody able to manage Owner-level accounts or system logs.
+     */
+    public function isLastActiveOwner(): bool
+    {
+        if ($this->role !== UserRole::Owner || ! $this->is_active) {
+            return false;
+        }
+
+        return ! static::query()
+            ->where('role', UserRole::Owner->value)
+            ->where('is_active', true)
+            ->whereKeyNot($this->getKey())
+            ->exists();
+    }
+
     public function canAccessAdmin(): bool
     {
         return $this->role?->canAccessAdmin() ?? false;

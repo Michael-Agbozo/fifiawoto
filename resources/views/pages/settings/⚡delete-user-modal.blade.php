@@ -17,6 +17,12 @@ new class extends Component
             'password' => $this->currentPasswordRules(),
         ]);
 
+        if (Auth::user()->isLastActiveOwner()) {
+            $this->addError('password', __('You are the last active Super Admin. Promote another account to Super Admin before deleting yours.'));
+
+            return;
+        }
+
         tap(Auth::user(), $logout(...))->delete();
 
         $this->redirect('/', navigate: true);

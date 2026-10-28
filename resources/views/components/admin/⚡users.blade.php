@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -18,12 +20,15 @@ new class extends Component
 {
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showInviteForm = false;
 
+    #[Locked]
     public ?int $confirmDeleteId = null;
 
+    #[Locked]
     public ?int $confirmDisable2faId = null;
 
     public ?string $flashMessage = null;
@@ -32,6 +37,7 @@ new class extends Component
 
     public bool $showResetPasswordForm = false;
 
+    #[Locked]
     public int $resetPasswordUserId = 0;
 
     public string $newPassword = '';
@@ -58,18 +64,29 @@ new class extends Component
     #[Validate('required|string')]
     public string $role = 'foundation_staff';
 
+    #[Locked]
     public ?int $editRoleId = null;
 
     public string $editRoleValue = '';
 
+    #[Locked]
     public ?int $editPermissionsId = null;
 
     /** @var array<int, string> */
     public array $editPermissionsValues = [];
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('users', 'view'), 403);
+    }
+
     public function startEditPermissions(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
+
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $this->editPermissionsId = $user->id;
         $this->editPermissionsValues = $user->permissions ?? [];
     }
@@ -83,6 +100,7 @@ new class extends Component
     public function savePermissions(int $id): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
 
         $filtered = Permissions::sanitize($this->editPermissionsValues);
 
@@ -97,6 +115,8 @@ new class extends Component
 
     public function startInvite(): void
     {
+        abort_unless(auth()->user()?->canDo('users', 'create'), 403);
+
         $this->resetForm();
         $this->showInviteForm = true;
     }
@@ -113,7 +133,7 @@ new class extends Component
 
         $data = $this->validate();
 
-        if (! in_array($data['role'], array_column(UserRole::cases(), 'value'), true)) {
+        if (! in_array($data['role'], $this->assignableRoleValues(), true)) {
             $this->addError('role', 'Pick a valid role.');
 
             return;
@@ -147,7 +167,16 @@ new class extends Component
 
     public function startEditRole(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+
+        if ($id === auth()->id()) {
+            $this->addError('role_'.$id, 'You cannot change your own role.');
+
+            return;
+        }
+
         $user = User::query()->findOrFail($id);
+        $this->ensureCanManage($user);
         $this->editRoleId = $user->id;
         $this->editRoleValue = $user->role?->value ?? UserRole::Volunteer->value;
     }
@@ -162,20 +191,27 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
 
-        if (! in_array($this->editRoleValue, array_column(UserRole::cases(), 'value'), true)) {
-            $this->addError('role_'.$id, 'Pick a valid role.');
+        if ($id === auth()->id()) {
+            $this->addError('role_'.$id, 'You cannot change your own role.');
 
             return;
         }
 
-        if ($id === auth()->id() && ! in_array($this->editRoleValue, [UserRole::Owner->value, UserRole::SuperAdmin->value], true)) {
-            $this->addError('role_'.$id, 'You cannot demote your own administrator account.');
+        if (! in_array($this->editRoleValue, $this->assignableRoleValues(), true)) {
+            $this->addError('role_'.$id, 'Pick a valid role.');
 
             return;
         }
 
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
+
+        if ($this->editRoleValue !== UserRole::Owner->value && $user->isLastActiveOwner()) {
+            $this->addError('role_'.$id, 'There must always be at least one active Super Admin account.');
+
+            return;
+        }
+
         $user->forceFill(['role' => $this->editRoleValue])->save();
 
         $this->editRoleId = null;
@@ -186,6 +222,7 @@ new class extends Component
     public function resetPassword(int $id): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $id, 403);
 
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
@@ -220,6 +257,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
         abort_if(auth()->id() === $id, 403);
+        $this->ensureCanManage(User::query()->findOrFail($id));
 
         $this->resetPasswordUserId = $id;
         $this->reset('newPassword', 'newPasswordConfirm');
@@ -230,9 +268,10 @@ new class extends Component
     public function saveResetPassword(): void
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
+        abort_if(auth()->id() === $this->resetPasswordUserId, 403);
 
         $this->validate([
-            'newPassword'        => ['required', 'string', 'min:8', 'max:128'],
+            'newPassword' => ['required', 'string', PasswordRule::default(), 'max:128'],
             'newPasswordConfirm' => ['required', 'same:newPassword'],
         ]);
 
@@ -264,6 +303,13 @@ new class extends Component
 
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
+
+        if ($user->isLastActiveOwner()) {
+            $this->flashMessage = 'The last active Super Admin account cannot be deactivated.';
+
+            return;
+        }
+
         $user->forceFill(['is_active' => ! $user->is_active])->save();
 
         $this->flashMessage = $user->is_active
@@ -275,6 +321,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('users', 'update'), 403);
         abort_if(auth()->id() === $id, 403);
+        $this->ensureCanManage(User::query()->findOrFail($id));
 
         $this->confirmDisable2faId = $id;
     }
@@ -313,6 +360,8 @@ new class extends Component
 
     public function askDelete(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('users', 'delete'), 403);
+
         $this->confirmDeleteId = $id;
     }
 
@@ -334,6 +383,13 @@ new class extends Component
 
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
+
+        if ($user->isLastActiveOwner()) {
+            $this->addError('delete_'.$id, 'The last active Super Admin account cannot be deleted.');
+
+            return;
+        }
+
         $name = $user->name;
         $user->delete();
 
@@ -370,6 +426,27 @@ new class extends Component
     protected function ensureCanManage(User $target): void
     {
         abort_if($target->role === UserRole::Owner && auth()->user()?->role !== UserRole::Owner, 403);
+    }
+
+    /**
+     * Roles the signed-in user may hand out. Only an Owner can create or promote
+     * another Owner; everyone else is capped below that.
+     *
+     * @return array<int, UserRole>
+     */
+    protected function assignableRoles(): array
+    {
+        return auth()->user()?->role === UserRole::Owner
+            ? UserRole::cases()
+            : array_values(array_filter(UserRole::cases(), fn (UserRole $role): bool => $role !== UserRole::Owner));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function assignableRoleValues(): array
+    {
+        return array_map(fn (UserRole $role): string => $role->value, $this->assignableRoles());
     }
 
     #[Computed]
@@ -427,7 +504,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'roleOptions' => collect(UserRole::cases())->mapWithKeys(fn ($r) => [$r->value => $r->label()])->all(),
+            'roleOptions' => collect($this->assignableRoles())->mapWithKeys(fn ($r) => [$r->value => $r->label()])->all(),
         ];
     }
 }; ?>
@@ -704,6 +781,7 @@ new class extends Component
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
+                                            @if ($user->id !== auth()->id())
                                             <button type="button" wire:click="startEditRole({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit role
@@ -712,6 +790,7 @@ new class extends Component
                                                 <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 11c2.21 0 4-1.79 4-4S14.21 3 12 3 8 4.79 8 7s1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Zm6 5-2 2-1.5-1.5"/></svg>
                                                 Manage permissions
                                             </button>
+                                            @endif
                                             <button type="button" wire:click="resetPassword({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a4 4 0 1 1-4 4M7 11h.01M11 11h.01M3 11l8 0M3 11l3 3M3 11l3-3"/></svg>
                                                 Reset password

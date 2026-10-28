@@ -7,6 +7,14 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Production-safe bootstrap of the Owner + Admin accounts.
+ *
+ * Reads env() directly on purpose: it is run as a one-off with the credentials passed
+ * inline (`OWNER_PASSWORD=... php artisan db:seed --class=AdminUserSeeder --force`).
+ * Real process env vars are still visible to env() when the config is cached, whereas
+ * config() values would be frozen at `config:cache` time. Existing users are never modified.
+ */
 class AdminUserSeeder extends Seeder
 {
     public function run(): void
@@ -30,6 +38,7 @@ class AdminUserSeeder extends Seeder
     {
         if (! $password) {
             $this->command->warn("Skipping {$email} — no password env var set.");
+
             return;
         }
 

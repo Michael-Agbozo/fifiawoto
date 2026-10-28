@@ -47,6 +47,9 @@ MAIL_FROM_ADDRESS=hello@fifiawoto.org
 MAIL_FROM_NAME=Fifiawoto Foundation
 ADMIN_NOTIFICATION_EMAIL=hello@fifiawoto.org
 
+# Traefik is the only way into the container, so trust the hop in front of it.
+TRUSTED_PROXIES=*
+
 NIXPACKS_BUILD_CMD=composer install --no-dev --optimize-autoloader --ignore-platform-reqs && npm install && npm run build
 NIXPACKS_NODE_VERSION=20
 NIXPACKS_PHP_ROOT_DIR=/app/public
@@ -57,7 +60,9 @@ NIXPACKS_PHP_FALLBACK_PATH=/index.php
 
 Coolify runs Traefik in front of the container. The container's Nginx only listens on port 80. To make Laravel generate correct HTTPS URLs:
 
-1. **`bootstrap/app.php`** — `$middleware->trustProxies(at: '*')` tells Laravel to trust the `X-Forwarded-Proto: https` header from Traefik.
+1. **`config/trustedproxy.php`** — `TRUSTED_PROXIES` (read by Laravel's `TrustProxies` middleware) tells Laravel which proxies may set `X-Forwarded-*` headers. Set `TRUSTED_PROXIES=*` on Coolify (the container is only reachable through Traefik) so Laravel honours `X-Forwarded-Proto: https`.
+
+> **`TRUSTED_PROXIES`** — comma-separated proxy IPs/CIDRs (e.g. `10.0.0.0/8,172.16.0.0/12`), or `*` to trust the immediate caller. **Leave it unset** when the app is reachable directly from the internet: trusting every client lets anyone spoof their IP via `X-Forwarded-For`, which defeats rate limiting and pollutes audit logs. Laravel Cloud is detected automatically, so leave it unset there. Behind Cloudflare *without* another proxy, list [Cloudflare's IP ranges](https://www.cloudflare.com/ips/) instead of `*` (or make sure the origin only accepts traffic from Cloudflare).
 2. **`app/Providers/AppServiceProvider.php`** — `URL::forceScheme('https')` runs on `production` and `staging` environments as a belt-and-suspenders fallback.
 3. **`nginx.conf`** — passes `HTTP_X_FORWARDED_PROTO` to PHP-FPM so Laravel's middleware can read it.
 
@@ -133,7 +138,11 @@ php artisan key:generate
 # Edit .env (see section 3 below)
 php artisan storage:link
 php artisan migrate --force
-php artisan db:seed --class=DatabaseSeeder --force   # only on first deploy
+# Create the Owner + Admin accounts (never run DatabaseSeeder in production —
+# it seeds demo accounts with known passwords and refuses to run when APP_ENV=production)
+OWNER_EMAIL=owner@fifiawoto.org OWNER_PASSWORD='<strong password>' \
+ADMIN_EMAIL=admin@fifiawoto.org ADMIN_PASSWORD='<strong password>' \
+php artisan db:seed --class=AdminUserSeeder --force
 
 npm ci
 npm run build
