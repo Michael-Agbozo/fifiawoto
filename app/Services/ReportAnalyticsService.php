@@ -13,6 +13,7 @@ use App\Models\Donation;
 use App\Models\Event;
 use App\Models\Volunteer;
 use App\Models\VolunteerApplication;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 class ReportAnalyticsService
@@ -27,8 +28,9 @@ class ReportAnalyticsService
     {
         $start = Carbon::parse($from)->startOfDay();
         $end = Carbon::parse($to)->endOfDay();
-        $days = max(1, $start->diffInDays($end) + 1);
+        $days = $this->dayCount($start, $end);
 
+        // Prior window has exactly the same number of whole days as the current one.
         $priorStart = $start->copy()->subDays($days);
         $priorEnd = $start->copy()->subSecond();
 
@@ -43,12 +45,33 @@ class ReportAnalyticsService
     }
 
     /**
+     * Whole calendar days covered by [$start, $end], inclusive (always >= 1).
+     * Carbon 3's diffInDays() returns a float, so normalise both ends to midnight.
+     */
+    protected function dayCount(Carbon $start, Carbon $end): int
+    {
+        return max(1, (int) round($start->copy()->startOfDay()->diffInDays($end->copy()->startOfDay())) + 1);
+    }
+
+    /**
+     * Gifts in the foundation's base currency only, so totals never mix currencies.
+     *
+     * @return Builder<Donation>
+     */
+    protected function donationQuery()
+    {
+        return Donation::query()->inBaseCurrency();
+    }
+
+    /**
+     * A percentage change is undefined when the prior value is zero, so delta is null.
+     *
      * @return array{value:int|float, delta:?float}
      */
     protected function withDelta(int|float $current, int|float $prior): array
     {
         if ($prior == 0) {
-            return ['value' => $current, 'delta' => $current > 0 ? null : 0.0];
+            return ['value' => $current, 'delta' => null];
         }
 
         return [
@@ -59,8 +82,8 @@ class ReportAnalyticsService
 
     protected function overview(Carbon $start, Carbon $end, Carbon $priorStart, Carbon $priorEnd): array
     {
-        $donationsCurrent = (int) Donation::query()->whereBetween('received_at', [$start, $end])->sum('amount_cents');
-        $donationsPrior = (int) Donation::query()->whereBetween('received_at', [$priorStart, $priorEnd])->sum('amount_cents');
+        $donationsCurrent = (int) $this->donationQuery()->whereBetween('received_at', [$start, $end])->sum('amount_cents');
+        $donationsPrior = (int) $this->donationQuery()->whereBetween('received_at', [$priorStart, $priorEnd])->sum('amount_cents');
 
         $volunteerAppsCurrent = VolunteerApplication::query()->whereBetween('created_at', [$start, $end])->count();
         $volunteerAppsPrior = VolunteerApplication::query()->whereBetween('created_at', [$priorStart, $priorEnd])->count();
@@ -80,7 +103,7 @@ class ReportAnalyticsService
             $line[] = [
                 'label' => $mStart->format('M'),
                 'sublabel' => $mStart->format('Y'),
-                'cents' => (int) Donation::query()->whereBetween('received_at', [$mStart, $mEnd])->sum('amount_cents'),
+                'cents' => (int) $this->donationQuery()->whereBetween('received_at', [$mStart, $mEnd])->sum('amount_cents'),
             ];
             $cursor->subMonth();
         }
@@ -104,8 +127,8 @@ class ReportAnalyticsService
 
     protected function donations(Carbon $start, Carbon $end, Carbon $priorStart, Carbon $priorEnd): array
     {
-        $currentRows = Donation::query()->whereBetween('received_at', [$start, $end])->get();
-        $priorRows = Donation::query()->whereBetween('received_at', [$priorStart, $priorEnd])->get();
+        $currentRows = $this->donationQuery()->whereBetween('received_at', [$start, $end])->get();
+        $priorRows = $this->donationQuery()->whereBetween('received_at', [$priorStart, $priorEnd])->get();
 
         $currentTotal = (int) $currentRows->sum('amount_cents');
         $priorTotal = (int) $priorRows->sum('amount_cents');
@@ -117,7 +140,7 @@ class ReportAnalyticsService
         $avgPrior = $priorRows->count() > 0 ? $priorTotal / $priorRows->count() : 0;
 
         // Daily series — last min(60, range_days) days
-        $days = (int) min(60, max(7, $start->diffInDays($end) + 1));
+        $days = min(60, max(7, $this->dayCount($start, $end)));
         $daily = [];
         $cursor = $end->copy()->startOfDay();
         for ($i = 0; $i < $days; $i++) {
@@ -126,7 +149,7 @@ class ReportAnalyticsService
             $daily[] = [
                 'date' => $cursor->toDateString(),
                 'label' => $cursor->format('M j'),
-                'cents' => (int) Donation::query()->whereBetween('received_at', [$dStart, $dEnd])->sum('amount_cents'),
+                'cents' => (int) $this->donationQuery()->whereBetween('received_at', [$dStart, $dEnd])->sum('amount_cents'),
             ];
             $cursor->subDay();
         }
@@ -224,9 +247,9 @@ class ReportAnalyticsService
     {
         $events = Event::query()
             ->whereBetween('starts_at', [$start, $end])
-            ->withSum(['donations as raised_cents' => function ($q) use ($start, $end) {
-                $q->whereBetween('received_at', [$start, $end]);
-            }], 'amount_cents')
+            // "Raised" = all-time total for each event (base currency), the same
+            // definition the reports detail table uses.
+            ->withSum(['donations as raised_cents' => fn ($q) => $q->inBaseCurrency()], 'amount_cents')
             ->get();
 
         $priorCount = Event::query()->whereBetween('starts_at', [$priorStart, $priorEnd])->count();
@@ -354,7 +377,7 @@ class ReportAnalyticsService
      */
     protected function topDonors(Carbon $start, Carbon $end, int $limit): array
     {
-        return Donation::query()
+        return $this->donationQuery()
             ->whereBetween('received_at', [$start, $end])
             ->selectRaw('donor_name, donor_email, SUM(amount_cents) as total_cents, COUNT(*) as gift_count')
             ->groupBy('donor_name', 'donor_email')
@@ -377,7 +400,7 @@ class ReportAnalyticsService
     {
         return Event::query()
             ->withSum(['donations as raised_cents' => function ($q) use ($start, $end) {
-                $q->whereBetween('received_at', [$start, $end]);
+                $q->inBaseCurrency()->whereBetween('received_at', [$start, $end]);
             }], 'amount_cents')
             ->orderByDesc('raised_cents')
             ->limit($limit)

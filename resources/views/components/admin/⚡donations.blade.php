@@ -4,7 +4,12 @@ use App\Enums\PaymentMethod;
 use App\Mail\DonationReceipt;
 use App\Models\Donation;
 use App\Models\Event;
+use App\Support\CsvCell;
+use App\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -42,7 +47,7 @@ new class extends Component
     #[Validate('required|numeric|min:0.01|max:1000000')]
     public string $amount = '';
 
-    #[Validate('required|string|size:3')]
+    /** Always the base currency (config "app.currency"); see rules(). */
     public string $currency = 'USD';
 
     #[Validate('required|string|max:40')]
@@ -60,8 +65,30 @@ new class extends Component
     #[Validate('nullable|string|max:2000')]
     public string $notes = '';
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('donations', 'view'), 403);
+
+        $this->currency = Money::baseCurrency();
+    }
+
+    /**
+     * The foundation reports in a single base currency, so a gift may only
+     * be recorded in that currency.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'currency' => ['required', 'string', Rule::in([Money::baseCurrency()])],
+        ];
+    }
+
     public function startCreate(): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'create'), 403);
+
         $this->resetForm();
         $this->editingId = null;
         $this->received_at = now()->toDateString();
@@ -71,6 +98,8 @@ new class extends Component
 
     public function startEdit(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'update'), 403);
+
         $d = Donation::query()->findOrFail($id);
         $this->editingId = $d->id;
         $this->donor_name = $d->donor_name;
@@ -107,14 +136,14 @@ new class extends Component
             'received_at' => $data['received_at'],
             'external_reference' => $data['external_reference'] ?: null,
             'notes' => $data['notes'] ?: null,
-            'recorded_by' => auth()->id(),
         ];
 
         if ($this->editingId) {
-            Donation::query()->whereKey($this->editingId)->update($payload);
+            // Save through the model so the received_at date cast is applied consistently.
+            Donation::query()->findOrFail($this->editingId)->update($payload);
             $this->flashMessage = "Updated gift from {$data['donor_name']}.";
         } else {
-            $donation = Donation::query()->create($payload);
+            $donation = Donation::query()->create($payload + ['recorded_by' => auth()->id()]);
             $this->flashMessage = "Recorded gift from {$data['donor_name']}.";
 
             // Never email a receipt for a zero/missing amount (e.g. a malformed import).
@@ -129,6 +158,8 @@ new class extends Component
 
     public function askDelete(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'delete'), 403);
+
         $this->confirmDeleteId = $id;
     }
 
@@ -149,8 +180,14 @@ new class extends Component
         $this->flashMessage = "Deleted gift from {$name}.";
     }
 
+    /**
+     * Exporting donor PII is a reporting action, so it requires reports.export
+     * in addition to the donations.view needed to open the page.
+     */
     public function exportCsv(): StreamedResponse
     {
+        abort_unless(auth()->user()?->canDo('donations', 'view') && auth()->user()->canDo('reports', 'export'), 403);
+
         $query = $this->buildQuery();
         $rows = $query->orderBy('received_at')->get();
 
@@ -160,7 +197,7 @@ new class extends Component
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Received at', 'Donor name', 'Donor email', 'Amount', 'Currency', 'Payment method', 'Event', 'External reference', 'Notes']);
             foreach ($rows as $d) {
-                fputcsv($out, [
+                fputcsv($out, CsvCell::row([
                     $d->received_at?->toDateString(),
                     $d->donor_name,
                     $d->donor_email,
@@ -170,7 +207,7 @@ new class extends Component
                     $d->event?->title,
                     $d->external_reference,
                     $d->notes,
-                ]);
+                ]));
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);
@@ -203,13 +240,13 @@ new class extends Component
             'donor_name', 'donor_email', 'amount', 'payment_method', 'event_id',
             'external_reference', 'notes', 'showForm',
         ]);
-        $this->currency = 'USD';
+        $this->currency = Money::baseCurrency();
         $this->payment_method = PaymentMethod::MobileMoney->value;
         $this->resetErrorBag();
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\Donation>
+     * @return Builder<Donation>
      */
     protected function buildQuery()
     {
@@ -219,12 +256,12 @@ new class extends Component
             $query->where('event_id', $this->eventFilter);
         }
 
-        if (filled($this->fromDate)) {
-            $query->where('received_at', '>=', $this->fromDate);
+        if ($from = $this->parsedDate($this->fromDate)) {
+            $query->whereDate('received_at', '>=', $from);
         }
 
-        if (filled($this->toDate)) {
-            $query->where('received_at', '<=', $this->toDate);
+        if ($to = $this->parsedDate($this->toDate)) {
+            $query->whereDate('received_at', '<=', $to);
         }
 
         if (filled($this->search)) {
@@ -239,6 +276,22 @@ new class extends Component
         return $query;
     }
 
+    /**
+     * Normalise a filter date to Y-m-d, ignoring anything that is not a valid date.
+     */
+    protected function parsedDate(string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     #[Computed]
     public function donations()
     {
@@ -248,8 +301,8 @@ new class extends Component
     #[Computed]
     public function totals(): array
     {
-        $filtered = (int) $this->buildQuery()->sum('amount_cents');
-        $all = (int) Donation::query()->sum('amount_cents');
+        $filtered = (int) $this->buildQuery()->inBaseCurrency()->sum('amount_cents');
+        $all = (int) Donation::query()->inBaseCurrency()->sum('amount_cents');
 
         return [
             'filtered' => $filtered,
@@ -273,11 +326,11 @@ new class extends Component
     <div class="grid gap-4 sm:grid-cols-3">
         <article class="rounded-2xl border border-cream-300 bg-surface p-5">
             <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Total recorded</p>
-            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($this->totals['all'] / 100) }}</p>
+            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::fromCents($this->totals['all']) }}</p>
         </article>
         <article class="rounded-2xl border border-cream-300 bg-surface p-5">
             <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">In current view</p>
-            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($this->totals['filtered'] / 100) }}</p>
+            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::fromCents($this->totals['filtered']) }}</p>
             <p class="mt-1 text-xs text-ink-500">{{ $this->totals['count'] }} gift(s) match the filters</p>
         </article>
         <article class="rounded-2xl border border-cream-300 bg-surface p-5">
@@ -289,7 +342,7 @@ new class extends Component
 
     <x-admin.section-header
         title="Recorded gifts"
-        :subtitle="$this->totals['count'].' gift(s) in view · $'.number_format($this->totals['filtered'] / 100).' total'"
+        :subtitle="$this->totals['count'].' gift(s) in view · '.\App\Support\Money::fromCents($this->totals['filtered']).' total'"
     >
         <x-slot:actions>
             <select wire:model.live="eventFilter" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
@@ -356,7 +409,8 @@ new class extends Component
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Currency</label>
-                    <input type="text" maxlength="3" wire:model="currency" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm uppercase text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <input type="text" value="{{ $currency }}" readonly aria-readonly="true" title="All gifts are recorded in the foundation's base currency" class="mt-2 block w-full cursor-not-allowed rounded-lg border border-cream-300 bg-cream-100 px-3 py-2.5 text-sm uppercase text-ink-700">
+                    @error('currency') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Payment method</label>

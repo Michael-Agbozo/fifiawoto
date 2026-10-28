@@ -10,12 +10,12 @@
     />
     <x-admin.kpi-card
         label="Total goal"
-        :value="'$'.number_format($kpis['goal']['value'] ?? 0)"
+        :value="\App\Support\Money::format($kpis['goal']['value'] ?? 0)"
         hint="Sum of goals across events"
     />
     <x-admin.kpi-card
         label="Total raised"
-        :value="'$'.number_format($kpis['raised']['value'] ?? 0)"
+        :value="\App\Support\Money::format($kpis['raised']['value'] ?? 0)"
         hint="Sum of donations attributed"
     />
     <x-admin.kpi-card
@@ -46,14 +46,14 @@
                 <li>
                     <div class="flex items-center justify-between">
                         <p class="truncate font-semibold text-ink-900">{{ $ev['title'] }}</p>
-                        <span class="text-sm font-bold text-ink-900">${{ number_format($ev['raised_cents'] / 100) }}</span>
+                        <span class="text-sm font-bold text-ink-900">{{ \App\Support\Money::format($ev['raised_cents'] / 100) }}</span>
                     </div>
                     @if ($ev['goal_cents'])
                         <div class="mt-1 flex items-center gap-2 text-xs text-ink-500">
                             <div class="h-1 flex-1 overflow-hidden rounded-full bg-cream-100">
                                 <div class="h-full rounded-full bg-gold-500" style="width: {{ $pct }}%"></div>
                             </div>
-                            <span>{{ $pct }}% of ${{ number_format($ev['goal_cents'] / 100) }}</span>
+                            <span>{{ $pct }}% of {{ \App\Support\Money::format($ev['goal_cents'] / 100) }}</span>
                         </div>
                     @else
                         <p class="text-xs text-ink-500">{{ $ev['status'] }}</p>
@@ -80,7 +80,7 @@
                     <div class="h-1 flex-1 overflow-hidden rounded-full bg-cream-100">
                         <div class="h-full rounded-full {{ $ev['pct'] >= 100 ? 'bg-green-500' : 'bg-brand-700' }}" style="width: {{ min(100, $ev['pct']) }}%"></div>
                     </div>
-                    <span>${{ number_format($ev['raised_cents'] / 100) }} of ${{ number_format($ev['goal_cents'] / 100) }}</span>
+                    <span>{{ \App\Support\Money::format($ev['raised_cents'] / 100) }} of {{ \App\Support\Money::format($ev['goal_cents'] / 100) }}</span>
                 </div>
             </li>
         @empty

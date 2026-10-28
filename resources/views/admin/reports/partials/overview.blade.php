@@ -19,7 +19,7 @@
 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     <x-admin.kpi-card
         label="Total raised"
-        :value="'$'.number_format($kpis['donations']['value'] ?? 0)"
+        :value="\App\Support\Money::format($kpis['donations']['value'] ?? 0)"
         :delta="$kpis['donations']['delta'] ?? null"
     />
     <x-admin.kpi-card
@@ -89,7 +89,7 @@
                         <p class="truncate font-semibold text-ink-900">{{ $donor['donor_name'] }}</p>
                         <p class="truncate text-xs text-ink-500">{{ $donor['gift_count'] }} gift(s)</p>
                     </div>
-                    <span class="text-sm font-bold text-ink-900">${{ number_format($donor['total_cents'] / 100) }}</span>
+                    <span class="text-sm font-bold text-ink-900">{{ \App\Support\Money::format($donor['total_cents'] / 100) }}</span>
                 </li>
             @empty
                 <li class="text-xs text-ink-500">No donor activity in range.</li>
@@ -104,7 +104,7 @@
                         <p class="truncate font-semibold text-ink-900">{{ $ev['title'] }}</p>
                         <p class="truncate text-xs text-ink-500">{{ $ev['status'] }}</p>
                     </div>
-                    <span class="text-sm font-bold text-ink-900">${{ number_format($ev['raised_cents'] / 100) }}</span>
+                    <span class="text-sm font-bold text-ink-900">{{ \App\Support\Money::format($ev['raised_cents'] / 100) }}</span>
                 </li>
             @empty
                 <li class="text-xs text-ink-500">No event revenue in range.</li>

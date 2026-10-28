@@ -8,6 +8,8 @@ use App\Models\Event;
 use App\Models\NewsletterSubscriber;
 use App\Models\User;
 use App\Models\VolunteerApplication;
+use App\Services\ImpactMetricService;
+use Illuminate\Support\Carbon;
 
 it('renders every KPI label and the activity panel', function () {
     $admin = User::factory()->superAdmin()->create();
@@ -61,7 +63,10 @@ it('counts upcoming published events correctly', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
-        ->assertSeeInOrder(['Upcoming events', '2']);
+        ->assertSeeInOrder(['Upcoming events</p>', 'text-ink-900">2</p>'], false);
+
+    $card = collect(app(ImpactMetricService::class)->dashboardCards())->firstWhere('label', 'Upcoming events');
+    expect($card['value'])->toBe('2');
 });
 
 it('totals donations across all events', function () {
@@ -74,7 +79,10 @@ it('totals donations across all events', function () {
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
-        ->assertSee('$400');
+        ->assertSee('Cumulative revenue</p>', false)
+        ->assertSee('text-ink-900">$400.00</p>', false);
+
+    expect(app(ImpactMetricService::class)->totalDonationsCents())->toBe(400_00);
 });
 
 it('surfaces pending volunteer applications on the Active volunteers card', function () {
@@ -143,4 +151,69 @@ it('only exposes user management to super admins', function () {
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertSee('User management');
+});
+
+it('exports activity filtered by tab before applying the row limit', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    // 205 newer volunteer applications would crowd the donation out of a
+    // "top 200 then filter" export.
+    VolunteerApplication::factory()->count(205)->create(['created_at' => now()]);
+    Donation::factory()->create(['donor_name' => 'Old Donor', 'received_at' => now()->subYear()->toDateString()]);
+
+    $csv = $this->actingAs($admin)
+        ->get(route('admin.dashboard.export', ['tab' => 'donation']))
+        ->assertOk()
+        ->streamedContent();
+
+    expect($csv)->toContain('Old Donor')
+        ->and(substr_count(trim($csv), "\n"))->toBe(1);
+});
+
+it('escapes spreadsheet formulas in the activity export', function () {
+    $admin = User::factory()->superAdmin()->create();
+    Donation::factory()->create(['donor_name' => '=HYPERLINK("http://evil.test","x")']);
+
+    $csv = $this->actingAs($admin)
+        ->get(route('admin.dashboard.export', ['tab' => 'donation']))
+        ->streamedContent();
+
+    expect($csv)->toContain('"\'=HYPERLINK(')
+        ->not->toContain(',"=HYPERLINK(');
+});
+
+it('compares month-to-date donations with the same span of last month', function () {
+    Carbon::setTestNow('2026-10-10 12:00:00');
+
+    Donation::factory()->create(['received_at' => '2026-10-05', 'amount_cents' => 200_00]);
+    Donation::factory()->create(['received_at' => '2026-09-05', 'amount_cents' => 100_00]);
+    Donation::factory()->create(['received_at' => '2026-09-25', 'amount_cents' => 900_00]); // after the same span
+
+    $card = collect(app(ImpactMetricService::class)->dashboardCards())->firstWhere('label', 'Donations this month');
+
+    expect($card['value'])->toBe('$200')
+        ->and($card['delta'])->toBe(100.0);
+
+    Carbon::setTestNow();
+});
+
+it('returns a null delta when there was nothing last month', function () {
+    Carbon::setTestNow('2026-10-10 12:00:00');
+    Donation::factory()->create(['received_at' => '2026-10-05', 'amount_cents' => 200_00]);
+
+    $card = collect(app(ImpactMetricService::class)->dashboardCards())->firstWhere('label', 'Donations this month');
+
+    expect($card['delta'])->toBeNull();
+
+    Carbon::setTestNow();
+});
+
+it('excludes non-base-currency donations from dashboard totals', function () {
+    Donation::factory()->create(['amount_cents' => 100_00, 'currency' => 'USD', 'received_at' => now()->toDateString()]);
+    Donation::factory()->create(['amount_cents' => 5000_00, 'currency' => 'GHS', 'received_at' => now()->toDateString()]);
+
+    $metrics = app(ImpactMetricService::class);
+
+    expect($metrics->totalDonationsCents())->toBe(100_00)
+        ->and(collect($metrics->dailyDonations(30))->sum('total_cents'))->toBe(100_00);
 });

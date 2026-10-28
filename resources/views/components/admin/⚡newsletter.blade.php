@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\NewsletterSubscriber;
+use App\Support\CsvCell;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -18,6 +19,11 @@ new class extends Component
 
     public ?string $flashMessage = null;
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('newsletter', 'view'), 403);
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -30,6 +36,8 @@ new class extends Component
 
     public function unsubscribe(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('newsletter', 'update'), 403);
+
         $sub = NewsletterSubscriber::query()->findOrFail($id);
         $sub->update(['unsubscribed_at' => now()]);
         $this->flashMessage = "{$sub->email} unsubscribed.";
@@ -37,6 +45,8 @@ new class extends Component
 
     public function resubscribe(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('newsletter', 'update'), 403);
+
         $sub = NewsletterSubscriber::query()->findOrFail($id);
         $sub->update(['unsubscribed_at' => null, 'subscribed_at' => $sub->subscribed_at ?? now()]);
         $this->flashMessage = "{$sub->email} resubscribed.";
@@ -44,6 +54,8 @@ new class extends Component
 
     public function askDelete(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('newsletter', 'delete'), 403);
+
         $this->confirmDeleteId = $id;
     }
 
@@ -61,8 +73,14 @@ new class extends Component
         $this->flashMessage = 'Subscriber removed.';
     }
 
+    /**
+     * The subscriber list export is gated on newsletter.view (not reports.export)
+     * so the Media Manager role, which owns the newsletter, can still export it.
+     */
     public function exportCsv(): StreamedResponse
     {
+        abort_unless(auth()->user()?->canDo('newsletter', 'view'), 403);
+
         $rows = $this->buildQuery()->orderBy('email')->get();
         $filename = 'newsletter-subscribers-'.now()->format('Y-m-d-His').'.csv';
 
@@ -70,13 +88,13 @@ new class extends Component
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Email', 'Name', 'Source', 'Subscribed at', 'Unsubscribed at']);
             foreach ($rows as $sub) {
-                fputcsv($out, [
+                fputcsv($out, CsvCell::row([
                     $sub->email,
                     $sub->name,
                     $sub->source,
                     $sub->subscribed_at?->toDateTimeString(),
                     $sub->unsubscribed_at?->toDateTimeString(),
-                ]);
+                ]));
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);

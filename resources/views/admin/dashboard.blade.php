@@ -121,7 +121,7 @@
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="font-sans text-sm font-medium text-ink-700">Donations this period</p>
-                    <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($totalLast30 / 100) }}</p>
+                    <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::format($totalLast30 / 100) }}</p>
                     <p class="mt-1 text-xs text-ink-500">Last 30 days · daily totals</p>
                 </div>
                 <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
@@ -135,7 +135,7 @@
                 <div class="pointer-events-none absolute inset-0 grid grid-rows-4 text-[10px] text-ink-500/60">
                     @for ($i = 0; $i < 4; $i++)
                         <div class="flex items-end border-b border-cream-200/80">
-                            <span class="-mb-1 -ml-1">{{ $i === 0 ? '$'.number_format($maxDaily / 100) : '' }}</span>
+                            <span class="-mb-1 -ml-1">{{ $i === 0 ? \App\Support\Money::format($maxDaily / 100) : '' }}</span>
                         </div>
                     @endfor
                 </div>
@@ -148,7 +148,7 @@
                             <div class="w-full max-w-[14px] rounded-t bg-cream-200 transition group-hover:bg-cream-300" style="height: 100%;"></div>
                             <div class="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[14px] rounded-t bg-gradient-to-t from-brand-900 to-brand-500 transition group-hover:from-gold-500 group-hover:to-gold-400" style="height: {{ $h }}%;"></div>
                             <span class="pointer-events-none absolute -top-7 hidden whitespace-nowrap rounded-md bg-brand-900 px-2 py-0.5 text-[10px] font-semibold text-white shadow-lg group-hover:block">
-                                ${{ number_format($day['total_cents'] / 100) }}
+                                {{ \App\Support\Money::format($day['total_cents'] / 100) }}
                                 <span class="block text-[9px] text-white/70">{{ $day['label'] }}</span>
                             </span>
                         </div>
@@ -170,7 +170,7 @@
             <p class="font-sans text-sm font-medium text-ink-700">Cumulative revenue</p>
             <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $totalDonations }}</p>
             <p class="mt-1 text-xs text-ink-500">
-                <span class="font-semibold text-green-600">${{ number_format($totalLast30 / 100) }}</span>
+                <span class="font-semibold text-green-600">{{ \App\Support\Money::format($totalLast30 / 100) }}</span>
                 <span>in the last 30 days</span>
             </p>
 

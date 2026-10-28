@@ -20,7 +20,7 @@
 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     <x-admin.kpi-card
         label="Total raised"
-        :value="'$'.number_format($kpis['total']['value'] ?? 0)"
+        :value="\App\Support\Money::format($kpis['total']['value'] ?? 0)"
         :delta="$kpis['total']['delta'] ?? null"
     />
     <x-admin.kpi-card
@@ -30,7 +30,7 @@
     />
     <x-admin.kpi-card
         label="Average gift"
-        :value="'$'.number_format($kpis['avg']['value'] ?? 0, 2)"
+        :value="\App\Support\Money::format($kpis['avg']['value'] ?? 0, 2)"
         :delta="$kpis['avg']['delta'] ?? null"
     />
     <x-admin.kpi-card
@@ -43,7 +43,7 @@
 <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Daily donation trend</p>
-        <p class="text-xs text-ink-500">{{ count($daily) }} days · peak ${{ number_format($maxDaily / 100) }}</p>
+        <p class="text-xs text-ink-500">{{ count($daily) }} days · peak {{ \App\Support\Money::format($maxDaily / 100) }}</p>
     </div>
     <div class="mt-5 overflow-x-auto">
         <svg viewBox="0 0 {{ $width }} {{ $height + 30 }}" preserveAspectRatio="none" class="h-52 w-full min-w-[600px]">
@@ -78,7 +78,7 @@
                 <div>
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-semibold capitalize text-ink-900">{{ $row['label'] }}</span>
-                        <span class="text-ink-500">${{ number_format($row['cents'] / 100) }} · {{ $row['count'] }} gift(s)</span>
+                        <span class="text-ink-500">{{ \App\Support\Money::format($row['cents'] / 100) }} · {{ $row['count'] }} gift(s)</span>
                     </div>
                     <div class="mt-1 h-2 w-full overflow-hidden rounded-full bg-cream-100">
                         <div class="h-full rounded-full bg-gold-500" style="width: {{ $pct }}%"></div>
@@ -102,7 +102,7 @@
                             <p class="truncate text-xs text-ink-500">{{ $donor['gift_count'] }} gift(s){{ $donor['donor_email'] ? ' · '.$donor['donor_email'] : '' }}</p>
                         </div>
                     </div>
-                    <span class="text-sm font-bold text-ink-900">${{ number_format($donor['total_cents'] / 100) }}</span>
+                    <span class="text-sm font-bold text-ink-900">{{ \App\Support\Money::format($donor['total_cents'] / 100) }}</span>
                 </li>
             @empty
                 <li class="text-xs text-ink-500">No donor activity in range.</li>
@@ -119,14 +119,14 @@
             <li>
                 <div class="flex items-center justify-between">
                     <p class="truncate font-semibold text-ink-900">{{ $ev['title'] }}</p>
-                    <span class="text-sm font-bold text-ink-900">${{ number_format($ev['raised_cents'] / 100) }}</span>
+                    <span class="text-sm font-bold text-ink-900">{{ \App\Support\Money::format($ev['raised_cents'] / 100) }}</span>
                 </div>
                 <div class="mt-1 flex items-center gap-2 text-xs text-ink-500">
                     @if ($ev['goal_cents'])
                         <div class="h-1 flex-1 overflow-hidden rounded-full bg-cream-100">
                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $pct }}%"></div>
                         </div>
-                        <span>{{ $pct }}% of ${{ number_format($ev['goal_cents'] / 100) }}</span>
+                        <span>{{ $pct }}% of {{ \App\Support\Money::format($ev['goal_cents'] / 100) }}</span>
                     @else
                         <span>{{ $ev['status'] }}</span>
                     @endif

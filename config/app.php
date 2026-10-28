@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Base Currency
+    |--------------------------------------------------------------------------
+    |
+    | The foundation records and reports every gift in this single ISO 4217
+    | currency. Totals, analytics and exports only aggregate donations in
+    | this currency so amounts in different currencies are never mixed.
+    |
+    */
+
+    'currency' => strtoupper((string) env('APP_CURRENCY', 'USD')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

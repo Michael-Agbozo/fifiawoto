@@ -11,6 +11,7 @@ use App\Models\Donation;
 use App\Models\Event;
 use App\Models\NewsletterSubscriber;
 use App\Models\VolunteerApplication;
+use App\Support\Money;
 use Illuminate\Support\Carbon;
 
 class ImpactMetricService
@@ -27,11 +28,19 @@ class ImpactMetricService
         $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
         $previousMonthEnd = $monthStart->copy()->subSecond();
 
+        // Month-to-date is compared with the same span of last month (e.g. 1st–28th vs 1st–28th),
+        // capped at last month's end for short months.
+        $previousSpanEnd = $previousMonthStart->copy()
+            ->addSeconds((int) $monthStart->diffInSeconds($now))
+            ->min($previousMonthEnd);
+
         $thisMonthDonations = (int) Donation::query()
+            ->inBaseCurrency()
             ->whereBetween('received_at', [$monthStart, $now])
             ->sum('amount_cents');
         $lastMonthDonations = (int) Donation::query()
-            ->whereBetween('received_at', [$previousMonthStart, $previousMonthEnd])
+            ->inBaseCurrency()
+            ->whereBetween('received_at', [$previousMonthStart, $previousSpanEnd])
             ->sum('amount_cents');
 
         $activeBeneficiaries = Beneficiary::query()->active()->count();
@@ -60,11 +69,11 @@ class ImpactMetricService
         return [
             [
                 'label' => 'Donations this month',
-                'value' => '$'.number_format($thisMonthDonations / 100),
+                'value' => Money::fromCents($thisMonthDonations),
                 'raw' => $thisMonthDonations,
                 'delta' => $this->percentDelta($thisMonthDonations, $lastMonthDonations),
                 'icon' => 'heart',
-                'hint' => 'vs last month',
+                'hint' => 'vs same period last month',
             ],
             [
                 'label' => 'Active beneficiaries',
@@ -104,6 +113,7 @@ class ImpactMetricService
         $start = $end->copy()->subDays($days - 1);
 
         $rows = Donation::query()
+            ->inBaseCurrency()
             ->selectRaw('DATE(received_at) as day, SUM(amount_cents) as total')
             ->whereBetween('received_at', [$start, $end])
             ->groupBy('day')
@@ -147,14 +157,12 @@ class ImpactMetricService
 
     public function totalDonations(): string
     {
-        $cents = (int) Donation::query()->sum('amount_cents');
-
-        return '$'.number_format($cents / 100, 2);
+        return Money::fromCents($this->totalDonationsCents(), 2);
     }
 
     public function totalDonationsCents(): int
     {
-        return (int) Donation::query()->sum('amount_cents');
+        return (int) Donation::query()->inBaseCurrency()->sum('amount_cents');
     }
 
     public function pendingVolunteerApplications(): int
@@ -179,82 +187,95 @@ class ImpactMetricService
     }
 
     /**
-     * Recent activity feed for the dashboard table.
+     * Recent activity feed for the dashboard table. Pass $kind (volunteer,
+     * contact, donation, newsletter) to only read that source, so the limit
+     * applies after filtering.
      *
      * @return array<int, array{when: Carbon|null, kind: string, label: string, status: string, status_class: string, name: string, detail: string, category: string}>
      */
-    public function recentActivity(int $limit = 12): array
+    public function recentActivity(int $limit = 12, ?string $kind = null): array
     {
         $entries = collect();
+        $wants = fn (string $source): bool => $kind === null || $kind === $source;
 
-        VolunteerApplication::query()
-            ->latest()
-            ->limit($limit)
-            ->get()
-            ->each(function (VolunteerApplication $a) use ($entries) {
-                $entries->push([
-                    'when' => $a->created_at,
-                    'kind' => 'volunteer',
-                    'name' => $a->full_name,
-                    'detail' => $a->email ?? $a->phone,
-                    'category' => 'Volunteer application',
-                    'label' => 'Volunteer',
-                    'status' => $a->status->label(),
-                    'status_class' => $this->statusClass($a->status->value),
-                ]);
-            });
+        if ($wants('volunteer')) {
+            VolunteerApplication::query()
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->each(function (VolunteerApplication $a) use ($entries) {
+                    $entries->push([
+                        'when' => $a->created_at,
+                        'kind' => 'volunteer',
+                        'name' => $a->full_name,
+                        'detail' => $a->email ?? $a->phone,
+                        'category' => 'Volunteer application',
+                        'label' => 'Volunteer',
+                        'status' => $a->status->label(),
+                        'status_class' => $this->statusClass($a->status->value),
+                    ]);
+                });
+        }
 
-        ContactMessage::query()
-            ->latest()
-            ->limit($limit)
-            ->get()
-            ->each(function (ContactMessage $m) use ($entries) {
-                $entries->push([
-                    'when' => $m->created_at,
-                    'kind' => 'contact',
-                    'name' => $m->full_name,
-                    'detail' => $m->email,
-                    'category' => $m->subject->label(),
-                    'label' => 'Contact',
-                    'status' => $m->status->label(),
-                    'status_class' => $this->statusClass($m->status->value),
-                ]);
-            });
+        if ($wants('contact')) {
+            ContactMessage::query()
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->each(function (ContactMessage $m) use ($entries) {
+                    $entries->push([
+                        'when' => $m->created_at,
+                        'kind' => 'contact',
+                        'name' => $m->full_name,
+                        'detail' => $m->email,
+                        'category' => $m->subject->label(),
+                        'label' => 'Contact',
+                        'status' => $m->status->label(),
+                        'status_class' => $this->statusClass($m->status->value),
+                    ]);
+                });
+        }
 
-        Donation::query()
-            ->with('event')
-            ->latest('received_at')
-            ->limit($limit)
-            ->get()
-            ->each(function (Donation $d) use ($entries) {
-                $entries->push([
-                    'when' => $d->received_at,
-                    'kind' => 'donation',
-                    'name' => $d->donor_name,
-                    'detail' => '$'.number_format($d->amount_cents / 100),
-                    'category' => $d->event?->title ?? 'Unallocated',
-                    'label' => 'Donation',
-                    'status' => 'Recorded',
-                    'status_class' => $this->statusClass('completed'),
-                ]);
-            });
+        if ($wants('donation')) {
+            Donation::query()
+                ->with('event')
+                ->latest('received_at')
+                ->limit($limit)
+                ->get()
+                ->each(function (Donation $d) use ($entries) {
+                    $entries->push([
+                        'when' => $d->received_at,
+                        'kind' => 'donation',
+                        'name' => $d->donor_name,
+                        'detail' => $d->currency === Money::baseCurrency()
+                            ? Money::fromCents($d->amount_cents)
+                            : $d->currency.' '.number_format($d->amount_cents / 100),
+                        'category' => $d->event?->title ?? 'Unallocated',
+                        'label' => 'Donation',
+                        'status' => 'Recorded',
+                        'status_class' => $this->statusClass('completed'),
+                    ]);
+                });
+        }
 
-        NewsletterSubscriber::query()
-            ->latest()
-            ->limit($limit)
-            ->get()
-            ->each(function (NewsletterSubscriber $s) use ($entries) {
-                $entries->push([
-                    'when' => $s->subscribed_at,
-                    'kind' => 'newsletter',
-                    'name' => $s->email,
-                    'detail' => $s->name ?? '—',
-                    'category' => 'Newsletter',
-                    'label' => 'Subscriber',
-                    'status' => 'Subscribed',
-                    'status_class' => $this->statusClass('completed'),
-                ]);
-            });
+        if ($wants('newsletter')) {
+            NewsletterSubscriber::query()
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->each(function (NewsletterSubscriber $s) use ($entries) {
+                    $entries->push([
+                        'when' => $s->subscribed_at,
+                        'kind' => 'newsletter',
+                        'name' => $s->email,
+                        'detail' => $s->name ?? '—',
+                        'category' => 'Newsletter',
+                        'label' => 'Subscriber',
+                        'status' => 'Subscribed',
+                        'status_class' => $this->statusClass('completed'),
+                    ]);
+                });
+        }
 
         return $entries
             ->sortByDesc(fn ($e) => optional($e['when'])->timestamp ?? 0)
@@ -266,7 +287,7 @@ class ImpactMetricService
     private function percentDelta(int|float $current, int|float $previous): ?float
     {
         if ($previous == 0) {
-            return $current > 0 ? 100.0 : null;
+            return null;
         }
 
         return round((($current - $previous) / $previous) * 100, 1);

@@ -3,16 +3,20 @@
 use App\Models\Beneficiary;
 use App\Models\Donation;
 use App\Models\Event;
-use App\Models\Volunteer;
 use App\Models\VolunteerApplication;
 use App\Services\ReportAnalyticsService;
+use App\Support\CsvCell;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
+    /** Maximum detail rows rendered into a PDF (keeps DomPDF memory bounded). */
+    public const PDF_ROW_LIMIT = 2000;
+
     public string $category = 'overview';
 
     public string $fromDate = '';
@@ -21,23 +25,73 @@ new class extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->canDo('reports', 'view'), 403);
+
         $this->fromDate = now()->subMonths(3)->startOfMonth()->toDateString();
         $this->toDate = now()->toDateString();
     }
 
     /**
+     * @return array<string, array<int, string>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'fromDate' => ['nullable', 'date'],
+            'toDate' => filled($this->fromDate) && $this->parseDate($this->fromDate)
+                ? ['nullable', 'date', 'after_or_equal:fromDate']
+                : ['nullable', 'date'],
+        ];
+    }
+
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['fromDate', 'toDate'], true)) {
+            $this->validate();
+        }
+    }
+
+    protected function parseDate(string $value): ?Carbon
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Inclusive [start-of-from-day, end-of-to-day] window shared by the detail
+     * table, the exports and the analytics service. Unparseable input falls back
+     * to the defaults (validation surfaces the error separately).
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function range(): array
+    {
+        $from = $this->parseDate($this->fromDate)?->startOfDay() ?? Carbon::parse('1970-01-01')->startOfDay();
+        $to = $this->parseDate($this->toDate)?->endOfDay() ?? now()->endOfDay();
+
+        return [$from, $to];
+    }
+
+    /**
      * @return array<int, array<string, string|int>>
      */
-    protected function rowsForCategory(): array
+    protected function rowsForCategory(?int $limit = null): array
     {
-        $from = $this->fromDate ?: '1970-01-01';
-        $to = $this->toDate ?: now()->toDateString();
+        [$from, $to] = $this->range();
 
         return match ($this->category) {
             'donations' => Donation::query()
                 ->with('event')
                 ->whereBetween('received_at', [$from, $to])
                 ->orderBy('received_at')
+                ->when($limit, fn ($q) => $q->limit($limit))
                 ->get()
                 ->map(fn ($d) => [
                     'Received at' => $d->received_at?->toDateString(),
@@ -51,6 +105,7 @@ new class extends Component
             'volunteers' => VolunteerApplication::query()
                 ->whereBetween('created_at', [$from, $to])
                 ->orderBy('created_at')
+                ->when($limit, fn ($q) => $q->limit($limit))
                 ->get()
                 ->map(fn ($a) => [
                     'Submitted' => $a->created_at?->toDateString(),
@@ -61,10 +116,13 @@ new class extends Component
                     'Status' => $a->status->label(),
                 ])
                 ->all(),
+            // "Raised" = all-time total for the event in the base currency, matching
+            // ReportAnalyticsService::events().
             'events' => Event::query()
                 ->whereBetween('starts_at', [$from, $to])
-                ->withSum('donations as raised_cents', 'amount_cents')
+                ->withSum(['donations as raised_cents' => fn ($q) => $q->inBaseCurrency()], 'amount_cents')
                 ->orderBy('starts_at')
+                ->when($limit, fn ($q) => $q->limit($limit))
                 ->get()
                 ->map(fn ($e) => [
                     'Starts' => $e->starts_at?->toDateString(),
@@ -78,6 +136,7 @@ new class extends Component
             'beneficiaries' => Beneficiary::query()
                 ->whereBetween('created_at', [$from, $to])
                 ->orderBy('created_at')
+                ->when($limit, fn ($q) => $q->limit($limit))
                 ->get()
                 ->map(fn ($b) => [
                     'Recorded' => $b->created_at?->toDateString(),
@@ -101,14 +160,17 @@ new class extends Component
     #[Computed]
     public function analytics(): array
     {
-        $from = $this->fromDate ?: '1970-01-01';
-        $to = $this->toDate ?: now()->toDateString();
+        [$from, $to] = $this->range();
 
-        return app(ReportAnalyticsService::class)->for($this->category, $from, $to);
+        return app(ReportAnalyticsService::class)->for($this->category, $from->toDateString(), $to->toDateString());
     }
 
     public function downloadCsv(): StreamedResponse
     {
+        abort_unless(auth()->user()?->canDo('reports', 'export'), 403);
+
+        $this->validate();
+
         $rows = $this->rowsForCategory();
         $filename = "report-{$this->category}-".now()->format('Y-m-d-His').'.csv';
 
@@ -119,7 +181,7 @@ new class extends Component
             } else {
                 fputcsv($out, array_keys($rows[0]));
                 foreach ($rows as $row) {
-                    fputcsv($out, $row);
+                    fputcsv($out, CsvCell::row($row));
                 }
             }
             fclose($out);
@@ -128,14 +190,23 @@ new class extends Component
 
     public function downloadPdf()
     {
+        abort_unless(auth()->user()?->canDo('reports', 'export'), 403);
+
+        $this->validate();
+
         $filename = "report-{$this->category}-".now()->format('Y-m-d-His').'.pdf';
+
+        // Fetch one extra row to detect truncation without counting the whole set.
+        $rows = $this->rowsForCategory(self::PDF_ROW_LIMIT + 1);
+        $truncated = count($rows) > self::PDF_ROW_LIMIT;
 
         $pdf = Pdf::loadView('reports.pdf', [
             'category' => $this->category,
             'categoryLabel' => $this->categoryLabel(),
             'fromDate' => $this->fromDate,
             'toDate' => $this->toDate,
-            'rows' => $this->rowsForCategory(),
+            'rows' => array_slice($rows, 0, self::PDF_ROW_LIMIT),
+            'rowLimit' => $truncated ? self::PDF_ROW_LIMIT : null,
             'analytics' => $this->analytics,
             'generatedAt' => now(),
         ])->setPaper('a4', 'portrait');
@@ -176,11 +247,15 @@ new class extends Component
         <x-slot:actions>
             <input type="date" wire:model.live="fromDate" title="From date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            @php $canExport = auth()->user()?->canDo('reports', 'export'); @endphp
+            @if ($canExport)
             <button type="button" wire:click="downloadPdf" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>
                 Download PDF
             </button>
+            @endif
             <x-admin.actions-menu>
+                @if ($canExport)
                 <button type="button" wire:click="downloadCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                     <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Download CSV
@@ -189,6 +264,7 @@ new class extends Component
                     <svg class="size-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>
                     Download PDF
                 </button>
+                @endif
                 @if (filled($fromDate) || filled($toDate))
                     <button type="button" wire:click="$reset('fromDate','toDate')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
@@ -198,6 +274,13 @@ new class extends Component
             </x-admin.actions-menu>
         </x-slot:actions>
     </x-admin.section-header>
+
+    @if ($errors->has('fromDate') || $errors->has('toDate'))
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700" role="alert">
+            @error('fromDate') <p>{{ $message }}</p> @enderror
+            @error('toDate') <p>{{ $message }}</p> @enderror
+        </div>
+    @endif
 
     {{-- Category tabs --}}
     <div class="flex flex-wrap gap-1 border-b border-cream-200">
