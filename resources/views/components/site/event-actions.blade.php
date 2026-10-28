@@ -43,13 +43,13 @@
             </p>
             @if ($event && $event->goal_cents)
                 @php
-                    $raised = $event->raisedCents();
+                    $raised = (int) ($event->raised_cents ?? $event->raisedCents());
                     $goal = (int) $event->goal_cents;
-                    $percent = $event->progressPercent();
+                    $percent = (int) min(100, round($raised / $goal * 100));
                 @endphp
                 <div class="rounded-2xl bg-cream-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Progress so far</p>
-                    <p class="mt-1 font-serif text-2xl font-bold text-heading">${{ number_format($raised / 100) }} <span class="font-sans text-sm font-normal text-ink-500">of ${{ number_format($goal / 100) }} goal</span></p>
+                    <p class="mt-1 font-serif text-2xl font-bold text-heading">{{ \App\Support\Money::fromCents((int) $raised) }} <span class="font-sans text-sm font-normal text-ink-500">of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span></p>
                     <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-brand-100">
                         <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                     </div>

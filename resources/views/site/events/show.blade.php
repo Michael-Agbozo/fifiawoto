@@ -1,12 +1,12 @@
 @php
-    $raised = $event->raisedCents();
+    $raised = (int) ($event->raised_cents ?? $event->raisedCents());
     $goal = (int) ($event->goal_cents ?? 0);
-    $percent = $event->progressPercent();
+    $percent = $goal > 0 ? (int) min(100, round($raised / $goal * 100)) : 0;
     $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp'];
     $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[(int) abs(crc32($event->slug)) % count($fallbacks)]);
 @endphp
 
-<x-layouts::site :title="$event->title">
+<x-layouts::site :title="$event->title" :description="$event->description" :image="$heroImage">
     {{-- HERO --}}
     <section class="relative isolate overflow-hidden bg-brand-900 text-paper">
         <img src="{{ $heroImage }}" alt="{{ $event->title }}" class="absolute inset-0 -z-20 h-full w-full object-cover" fetchpriority="high">
@@ -102,8 +102,8 @@
                 <div class="rounded-2xl border border-brand-100 bg-surface p-6 shadow-sm">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Fundraising</p>
                     @if ($goal > 0)
-                        <p class="mt-3 font-serif text-3xl text-heading">${{ number_format($raised / 100) }}</p>
-                        <p class="mt-1 text-xs text-ink-500">raised of ${{ number_format($goal / 100) }} goal</p>
+                        <p class="mt-3 font-serif text-3xl text-heading">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
+                        <p class="mt-1 text-xs text-ink-500">raised of {{ \App\Support\Money::fromCents((int) $goal) }} goal</p>
                         <div class="mt-4 h-2 overflow-hidden rounded-full bg-brand-100">
                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                         </div>

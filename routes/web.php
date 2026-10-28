@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Site\EventController;
 use App\Http\Controllers\Site\LegalController;
+use App\Http\Controllers\Site\NewsletterController;
 use App\Http\Controllers\Site\PageController;
+use App\Http\Controllers\Site\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
@@ -16,6 +18,15 @@ Route::get('/media', [PageController::class, 'media'])->name('media');
 
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event:slug}', [EventController::class, 'show'])->name('events.show');
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
+Route::prefix('newsletter')->as('newsletter.')->middleware('signed')->group(function () {
+    Route::get('/unsubscribe/{subscriber}', [NewsletterController::class, 'showUnsubscribe'])->name('unsubscribe');
+    Route::post('/unsubscribe/{subscriber}', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe.confirm');
+    Route::get('/resubscribe/{subscriber}', [NewsletterController::class, 'showResubscribe'])->name('resubscribe');
+    Route::post('/resubscribe/{subscriber}', [NewsletterController::class, 'resubscribe'])->name('resubscribe.confirm');
+});
 
 Route::prefix('legal')->as('legal.')->group(function () {
     Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');

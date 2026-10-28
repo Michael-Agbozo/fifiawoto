@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\DetectsSpamSubmissions;
 use App\Enums\AssistanceType;
 use App\Enums\BeneficiaryApplicationStatus;
 use App\Mail\BeneficiaryApplicationReceived;
@@ -16,6 +17,7 @@ use Livewire\WithFileUploads;
 
 new class extends Component
 {
+    use DetectsSpamSubmissions;
     use WithFileUploads;
 
     /** Maximum number of supporting documents per application. */
@@ -78,6 +80,17 @@ new class extends Component
             return;
         }
 
+        if ($this->isLikelySpam()) {
+            RateLimiter::hit($key, 60);
+            $this->reset([
+                'full_name', 'phone', 'email', 'country', 'region',
+                'assistance_type', 'situation', 'documents', 'consent', 'website',
+            ]);
+            $this->submitted = true;
+
+            return;
+        }
+
         $data = $this->validate();
 
         RateLimiter::hit($key, 60);
@@ -86,7 +99,7 @@ new class extends Component
 
         try {
             $application = DB::transaction(function () use ($data, &$storedPaths): BeneficiaryApplication {
-                $application = BeneficiaryApplication::query()->create([
+                $application = new BeneficiaryApplication([
                     'full_name' => $data['full_name'],
                     'phone' => $data['phone'],
                     'email' => $data['email'] ?: null,
@@ -96,6 +109,7 @@ new class extends Component
                     'situation' => $data['situation'],
                     'status' => BeneficiaryApplicationStatus::New->value,
                 ]);
+                $application->forceFill(['consented_at' => now()])->save();
 
                 foreach ($this->documents as $upload) {
                     $path = $upload->store("applications/{$application->id}", 'beneficiaries');
@@ -157,6 +171,7 @@ new class extends Component
                 </div>
             @else
                 <form wire:submit="submit" class="mt-8 space-y-5">
+                    @include('components.site.partials.honeypot')
                     @error('rate')
                         <div role="alert" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
                     @enderror

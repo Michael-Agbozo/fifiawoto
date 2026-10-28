@@ -122,8 +122,8 @@
                                 @if ($goal > 0)
                                     <div class="mt-5">
                                         <div class="flex items-center justify-between text-xs text-ink-500">
-                                            <span>${{ number_format($raised / 100) }} raised</span>
-                                            <span>Goal ${{ number_format($goal / 100) }}</span>
+                                            <span>{{ \App\Support\Money::fromCents((int) $raised) }} raised</span>
+                                            <span>Goal {{ \App\Support\Money::fromCents((int) $goal) }}</span>
                                         </div>
                                         <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-brand-100">
                                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
@@ -198,8 +198,8 @@
                                 @if ($goal > 0)
                                     <div class="mt-5">
                                         <div class="flex items-center justify-between text-xs text-ink-500">
-                                            <span><strong class="font-semibold text-ink-900">${{ number_format($raised / 100) }}</strong> raised</span>
-                                            <span>{{ $percent }}% of ${{ number_format($goal / 100) }} goal</span>
+                                            <span><strong class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</strong> raised</span>
+                                            <span>{{ $percent }}% of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span>
                                         </div>
                                         <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-brand-100">
                                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>

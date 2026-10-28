@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('instagram:sync')->hourly()->withoutOverlapping()->onOneServer();
+Schedule::command('instagram:refresh-token')->weekly()->withoutOverlapping()->onOneServer();

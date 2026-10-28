@@ -1,23 +1,32 @@
 <?php
 
+use App\Concerns\DetectsSpamSubmissions;
+use App\Mail\NewsletterResubscribeConfirmation;
 use App\Models\NewsletterSubscriber;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 new class extends Component
 {
+    use DetectsSpamSubmissions;
+
     #[Validate('nullable|string|max:120')]
     public string $name = '';
 
     #[Validate('required|email|max:255')]
     public string $email = '';
 
+    #[Locked]
     public string $source = 'home';
 
     public bool $submitted = false;
 
     /** Form only, without the section wrapper and heading — used inside the site popup. */
+    #[Locked]
     public bool $compact = false;
 
     public function mount(string $source = 'home', bool $compact = false): void
@@ -37,20 +46,37 @@ new class extends Component
             return;
         }
 
+        if ($this->isLikelySpam()) {
+            RateLimiter::hit($key, 60);
+            $this->reset(['name', 'email', 'website']);
+            $this->submitted = true;
+
+            return;
+        }
+
+        $this->email = Str::lower(trim($this->email));
+        $this->name = trim($this->name);
+
         $data = $this->validate();
 
         RateLimiter::hit($key, 60);
 
-        NewsletterSubscriber::query()->updateOrCreate(
-            ['email' => $data['email']],
-            [
+        $subscriber = NewsletterSubscriber::query()->where('email', $data['email'])->first();
+
+        if ($subscriber === null) {
+            NewsletterSubscriber::query()->create([
+                'email' => $data['email'],
                 'name' => $data['name'] ?: null,
                 'subscribed_at' => now(),
-                'unsubscribed_at' => null,
                 'source' => $this->source,
-            ],
-        );
+            ]);
+        } elseif ($subscriber->unsubscribed_at !== null) {
+            // Never silently re-subscribe an address that opted out: the owner must confirm by email.
+            Mail::to($subscriber->email)->queue(new NewsletterResubscribeConfirmation($subscriber));
+        }
 
+        // Existing active subscribers are left untouched (no name/source overwrite). The same
+        // message is shown in every case so the form doesn't reveal who is subscribed.
         $this->reset(['name', 'email']);
         $this->submitted = true;
     }
@@ -74,6 +100,7 @@ new class extends Component
                 <p class="font-semibold text-heading">Thank you for subscribing.</p>
                 <p class="mt-1 text-ink-500">
                     We'll keep you posted on the foundation's work, you can unsubscribe at any time.
+                    If this address previously unsubscribed, check your inbox for a link to confirm.
                 </p>
             </div>
         @else
@@ -81,6 +108,8 @@ new class extends Component
                 wire:submit="subscribe"
                 @class(['grid gap-3 text-left', 'mx-auto mt-8 max-w-xl sm:grid-cols-[1fr_1.4fr_auto]' => ! $compact])
             >
+                @include('components.site.partials.honeypot')
+
                 <label class="sr-only" for="newsletter-name-{{ $this->getId() }}">Name</label>
                 <input
                     id="newsletter-name-{{ $this->getId() }}"

@@ -1,9 +1,35 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+@php
+    $pageTitle = filled($title ?? null) ? $title.' - '.config('app.name', 'Laravel') : config('app.name', 'Laravel');
+    $metaDescription = filled($description ?? null)
+        ? \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($description))), 160)
+        : 'The Dadaa Fifiawoto Nyamadi Foundation supports widows, children and vulnerable families across Ghana, Togo, Benin and the United States through education, healthcare and community outreach.';
+    $metaImage = filled($image ?? null) ? $image : asset('images/foundation/community-1.jpg');
+    $canonicalUrl = url()->current();
+@endphp
+
 <title>
-    {{ filled($title ?? null) ? $title.' - '.config('app.name', 'Laravel') : config('app.name', 'Laravel') }}
+    {{ $pageTitle }}
 </title>
+
+<meta name="description" content="{{ $metaDescription }}">
+<link rel="canonical" href="{{ $canonicalUrl }}">
+@if ($noindex ?? false)
+    <meta name="robots" content="noindex, nofollow">
+@endif
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ config('app.name', 'Laravel') }}">
+<meta property="og:title" content="{{ $pageTitle }}">
+<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:url" content="{{ $canonicalUrl }}">
+<meta property="og:image" content="{{ $metaImage }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $pageTitle }}">
+<meta name="twitter:description" content="{{ $metaDescription }}">
+<meta name="twitter:image" content="{{ $metaImage }}">
 
 <link rel="icon" href="{{ asset('images/logos/favicon-512.jpg') }}" type="image/jpeg">
 <link rel="apple-touch-icon" href="{{ asset('images/logos/favicon-512.jpg') }}">

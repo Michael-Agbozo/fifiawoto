@@ -3,6 +3,7 @@
 use App\Enums\EventStatus;
 use App\Models\Donation;
 use App\Models\Event;
+use App\Models\InstagramPost;
 
 it('renders every PRD-mandated section on the home page', function () {
     Event::factory()->create([
@@ -77,4 +78,19 @@ it('hides the featured event section when nothing is scheduled', function () {
 
     $this->get(route('home'))
         ->assertDontSee('Upcoming Outreach');
+});
+
+it('falls back to media_url for Instagram image posts without a thumbnail', function () {
+    InstagramPost::factory()->create([
+        'is_approved' => true,
+        'is_hidden' => false,
+        'media_type' => 'IMAGE',
+        'media_url' => 'https://cdn.example.test/ig-image-only.jpg',
+        'thumbnail_url' => null,
+        'posted_at' => now(),
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('https://cdn.example.test/ig-image-only.jpg', false);
 });

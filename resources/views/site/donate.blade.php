@@ -75,8 +75,8 @@
                 <div class="reveal-right rounded-3xl border border-white/15 bg-white/5 p-7 backdrop-blur sm:p-8" style="transition-delay: 240ms">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-300">Progress</p>
                     <div class="mt-4 flex items-baseline justify-between gap-4">
-                        <p class="font-serif text-4xl font-bold sm:text-5xl">${{ number_format($raised / 100) }}</p>
-                        <p class="text-sm font-semibold text-white/70">of ${{ number_format($goal / 100) }} goal</p>
+                        <p class="font-serif text-4xl font-bold sm:text-5xl">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
+                        <p class="text-sm font-semibold text-white/70">of {{ \App\Support\Money::fromCents((int) $goal) }} goal</p>
                     </div>
                     <div class="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
                         <div class="h-full rounded-full bg-gold-500 transition-all duration-700" style="width: {{ $percent }}%"></div>

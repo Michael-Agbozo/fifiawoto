@@ -26,6 +26,7 @@ class BeneficiaryApplication extends Model
     {
         return [
             'reviewed_at' => 'datetime',
+            'consented_at' => 'datetime',
             'assistance_type' => AssistanceType::class,
             'status' => BeneficiaryApplicationStatus::class,
         ];

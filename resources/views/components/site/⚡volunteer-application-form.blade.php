@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\DetectsSpamSubmissions;
 use App\Enums\VolunteerApplicationStatus;
 use App\Enums\VolunteerAvailability;
 use App\Enums\VolunteerInterest;
@@ -12,6 +13,8 @@ use Livewire\Component;
 
 new class extends Component
 {
+    use DetectsSpamSubmissions;
+
     #[Validate('required|string|max:120')]
     public string $full_name = '';
 
@@ -72,6 +75,17 @@ new class extends Component
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
             $this->addError('rate', "Too many submissions. Please wait {$seconds} seconds and try again.");
+
+            return;
+        }
+
+        if ($this->isLikelySpam()) {
+            RateLimiter::hit($key, 60);
+            $this->reset([
+                'full_name', 'email', 'phone', 'country', 'interests',
+                'availability', 'skills', 'motivation', 'consent', 'website',
+            ]);
+            $this->submitted = true;
 
             return;
         }

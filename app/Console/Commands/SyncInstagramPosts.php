@@ -4,10 +4,12 @@ namespace App\Console\Commands;
 
 use App\Enums\InstagramSource;
 use App\Models\InstagramPost;
+use App\Support\InstagramToken;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SyncInstagramPosts extends Command
 {
@@ -17,7 +19,7 @@ class SyncInstagramPosts extends Command
 
     public function handle(): int
     {
-        $token = config('services.instagram.access_token');
+        $token = InstagramToken::current();
 
         if (blank($token)) {
             $this->info('Instagram sync is not configured (INSTAGRAM_ACCESS_TOKEN is empty) — skipping.');
@@ -34,13 +36,34 @@ class SyncInstagramPosts extends Command
                 'access_token' => $token,
             ]);
         } catch (ConnectionException $e) {
-            $this->error('Could not reach Instagram: '.$e->getMessage());
+            // The exception message echoes the request URL, which carries the access token.
+            Log::error('Instagram sync: could not reach the Graph API.', [
+                'error' => InstagramToken::redact($e->getMessage(), $token),
+            ]);
+            $this->error('Could not reach Instagram — see the application log for details.');
 
             return self::FAILURE;
         }
 
         if ($response->failed()) {
-            $this->error('Instagram API error ('.$response->status().'): '.$response->json('error.message', 'unknown error'));
+            $apiMessage = InstagramToken::redact((string) $response->json('error.message', 'unknown error'), $token);
+
+            // Graph API error code 190 = invalid or expired access token.
+            if ((int) $response->json('error.code') === 190) {
+                Log::error('Instagram sync: access token is invalid or expired. Generate a new long-lived token and set INSTAGRAM_ACCESS_TOKEN (instagram:refresh-token only works while the current token is still valid).', [
+                    'status' => $response->status(),
+                    'error' => $apiMessage,
+                ]);
+                $this->error('Instagram access token is invalid or expired: '.$apiMessage);
+
+                return self::FAILURE;
+            }
+
+            Log::error('Instagram sync: Graph API request failed.', [
+                'status' => $response->status(),
+                'error' => $apiMessage,
+            ]);
+            $this->error('Instagram API error ('.$response->status().'): '.$apiMessage);
 
             return self::FAILURE;
         }

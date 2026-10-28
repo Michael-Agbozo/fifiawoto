@@ -15,7 +15,7 @@ class EventController extends Controller
 
         $query = Event::query()
             ->published()
-            ->withSum('donations as raised_cents', 'amount_cents');
+            ->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents');
 
         if ($search !== '') {
             $needle = '%'.$search.'%';
@@ -40,9 +40,9 @@ class EventController extends Controller
 
     public function show(Event $event): View
     {
-        abort_unless($event->trashed() === false && $event->status->value === 'published', 404);
+        abort_unless(Event::query()->published()->whereKey($event->getKey())->exists(), 404);
 
-        $event->load(['images', 'donations']);
+        $event->load('images')->loadSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents');
 
         return view('site.events.show', [
             'event' => $event,

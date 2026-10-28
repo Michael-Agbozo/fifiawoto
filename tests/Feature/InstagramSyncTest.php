@@ -2,7 +2,11 @@
 
 use App\Enums\InstagramSource;
 use App\Models\InstagramPost;
+use App\Models\Setting;
+use App\Support\InstagramToken;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 it('is a no-op until an access token is configured', function () {
     config(['services.instagram.access_token' => null]);
@@ -74,5 +78,76 @@ it('fails cleanly when the API returns an error', function () {
 it('is scheduled hourly', function () {
     $this->artisan('schedule:list')
         ->expectsOutputToContain('instagram:sync')
+        ->assertSuccessful();
+});
+
+it('never prints or logs the access token when Instagram is unreachable', function () {
+    config(['services.instagram.access_token' => 'secret-token-xyz']);
+    Http::fake(fn () => throw new ConnectionException('cURL error 28 for https://graph.instagram.com/me/media?access_token=secret-token-xyz'));
+
+    Log::shouldReceive('error')
+        ->once()
+        ->withArgs(fn (string $message, array $context) => ! str_contains($message.json_encode($context), 'secret-token-xyz')
+            && str_contains($context['error'], '[redacted]'));
+
+    $this->artisan('instagram:sync')
+        ->expectsOutputToContain('Could not reach Instagram')
+        ->doesntExpectOutputToContain('secret-token-xyz')
+        ->assertFailed();
+});
+
+it('reports an expired token clearly', function () {
+    config(['services.instagram.access_token' => 'expired']);
+    Http::fake(['graph.instagram.com/*' => Http::response(['error' => ['message' => 'Session has expired', 'code' => 190]], 400)]);
+
+    Log::shouldReceive('error')->once()->withArgs(fn (string $message) => str_contains($message, 'invalid or expired'));
+
+    $this->artisan('instagram:sync')
+        ->expectsOutputToContain('invalid or expired')
+        ->assertFailed();
+});
+
+it('refreshes the long-lived token and uses the persisted token for syncing', function () {
+    config(['services.instagram.access_token' => 'env-token']);
+
+    Http::fake([
+        'graph.instagram.com/refresh_access_token*' => Http::response([
+            'access_token' => 'refreshed-token',
+            'token_type' => 'bearer',
+            'expires_in' => 5_184_000,
+        ]),
+        'graph.instagram.com/*' => Http::response(['data' => []]),
+    ]);
+
+    $this->artisan('instagram:refresh-token')
+        ->expectsOutputToContain('refreshed')
+        ->doesntExpectOutputToContain('refreshed-token')
+        ->assertSuccessful();
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'grant_type=ig_refresh_token')
+        && str_contains($request->url(), 'access_token=env-token'));
+
+    expect(InstagramToken::current())->toBe('refreshed-token')
+        ->and(Setting::read(InstagramToken::SETTING_KEY))->not->toContain('refreshed-token');
+
+    $this->artisan('instagram:sync')->assertSuccessful();
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/media') && str_contains($request->url(), 'access_token=refreshed-token'));
+});
+
+it('keeps the current token when refreshing fails', function () {
+    config(['services.instagram.access_token' => 'env-token']);
+    Http::fake(['graph.instagram.com/*' => Http::response(['error' => ['message' => 'Invalid OAuth access token', 'code' => 190]], 400)]);
+
+    $this->artisan('instagram:refresh-token')
+        ->expectsOutputToContain('refresh failed')
+        ->assertFailed();
+
+    expect(InstagramToken::current())->toBe('env-token');
+});
+
+it('schedules the token refresh weekly', function () {
+    $this->artisan('schedule:list')
+        ->expectsOutputToContain('instagram:refresh-token')
         ->assertSuccessful();
 });

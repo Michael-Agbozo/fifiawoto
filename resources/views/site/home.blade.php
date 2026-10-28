@@ -240,7 +240,7 @@
         if ($highlights->isNotEmpty()) {
             $slides = $highlights->map(fn ($post) => [
                 'permalink' => $post->permalink,
-                'thumb' => $post->thumbnail_url ?: null,
+                'thumb' => $post->previewImageUrl(),
                 'caption' => $post->caption ?: 'View on Instagram',
                 'is_video' => ($post->media_type ?? null) === 'VIDEO',
             ])->values()->all();
@@ -432,14 +432,14 @@
                     @if ($goal > 0)
                         <div class="flex items-end justify-between text-sm">
                             <span class="text-paper-dim/80">Raised</span>
-                            <span class="font-semibold text-paper">${{ number_format($raised / 100) }}</span>
+                            <span class="font-semibold text-paper">{{ \App\Support\Money::fromCents((int) $raised) }}</span>
                         </div>
                         <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-700/60">
                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                         </div>
                         <div class="mt-2 flex items-center justify-between text-xs text-paper-dim/70">
                             <span>{{ $percent }}% funded</span>
-                            <span>Goal ${{ number_format($goal / 100) }}</span>
+                            <span>Goal {{ \App\Support\Money::fromCents((int) $goal) }}</span>
                         </div>
                     @endif
                     <dl class="mt-6 grid grid-cols-2 gap-4 text-sm">

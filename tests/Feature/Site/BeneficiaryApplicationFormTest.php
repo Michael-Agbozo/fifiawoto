@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DocumentDownloadController;
 use App\Mail\BeneficiaryApplicationReceived;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
+use App\Models\BeneficiaryApplicationDocument;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -22,6 +23,7 @@ beforeEach(function () {
 function fillSupportApplication()
 {
     return Livewire::test('site.beneficiary-application-form')
+        ->tap(fn () => test()->travel(5)->seconds())
         ->set('full_name', 'Ama Mensah')
         ->set('phone', '+233 200 000 000')
         ->set('country', 'Ghana')
@@ -50,6 +52,7 @@ it('stores an application with its documents on the private disk', function () {
 
     $application = BeneficiaryApplication::query()->sole();
     expect($application->status)->toBe(BeneficiaryApplicationStatus::New)
+        ->and($application->consented_at)->not->toBeNull()
         ->and($application->assistance_type)->toBe(AssistanceType::Medical)
         ->and($application->documents)->toHaveCount(2);
 
@@ -65,6 +68,7 @@ it('validates the application', function () {
     Livewire::test('site.beneficiary-application-form')
         ->set('assistance_type', 'not-a-type')
         ->set('situation', 'too short')
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['full_name', 'phone', 'country', 'assistance_type', 'situation', 'consent']);
 
@@ -72,10 +76,15 @@ it('validates the application', function () {
 });
 
 it('rejects unsafe or too many documents', function () {
+    // Unsafe types are rejected at upload time (config/livewire.php temporary_file_upload rules)
+    // or on submit — either way, nothing with that extension is ever stored.
     fillSupportApplication()
         ->set('documents', [UploadedFile::fake()->create('page.html', 1, 'text/html')])
-        ->call('submit')
-        ->assertHasErrors('documents.0');
+        ->assertHasErrors('documents.0')
+        ->call('submit');
+
+    expect(BeneficiaryApplicationDocument::query()->where('original_name', 'page.html')->exists())->toBeFalse();
+    BeneficiaryApplication::query()->delete();
 
     fillSupportApplication()
         ->set('documents', array_map(fn ($i) => UploadedFile::fake()->create("doc{$i}.pdf", 10, 'application/pdf'), range(1, 6)))

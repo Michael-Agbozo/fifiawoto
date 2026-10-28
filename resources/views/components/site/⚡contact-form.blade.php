@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\DetectsSpamSubmissions;
 use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
 use App\Mail\ContactFormReceived;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 new class extends Component
 {
+    use DetectsSpamSubmissions;
+
     #[Validate('required|string|max:120')]
     public string $full_name = '';
 
@@ -55,6 +58,14 @@ new class extends Component
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
             $this->addError('rate', "Too many submissions. Please wait {$seconds} seconds and try again.");
+
+            return;
+        }
+
+        if ($this->isLikelySpam()) {
+            RateLimiter::hit($key, 60);
+            $this->reset(['full_name', 'email', 'phone', 'subject', 'message', 'consent', 'website']);
+            $this->submitted = true;
 
             return;
         }
@@ -114,6 +125,7 @@ new class extends Component
                 </div>
             @else
                 <form wire:submit="submit" class="mt-8 space-y-5">
+                    @include('components.site.partials.honeypot')
                     @error('rate')
                         <div role="alert" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
                     @enderror
