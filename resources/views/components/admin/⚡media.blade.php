@@ -4,7 +4,9 @@ use App\Enums\MediaCategory;
 use App\Enums\MediaType;
 use App\Models\Event;
 use App\Models\MediaItem;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -13,6 +15,7 @@ new class extends Component
 {
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -27,10 +30,8 @@ new class extends Component
 
     public string $search = '';
 
-    #[Validate('required|string')]
     public string $type = 'image';
 
-    #[Validate('required|string')]
     public string $category = '';
 
     #[Validate('nullable|integer|exists:events,id')]
@@ -47,6 +48,24 @@ new class extends Component
 
     #[Validate('integer|min:0|max:9999')]
     public int $sort = 0;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('media', 'view'), 403);
+    }
+
+    /**
+     * Enum-backed fields (merged with the #[Validate] attribute rules).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'type' => ['required', Rule::enum(MediaType::class)],
+            'category' => ['required', Rule::enum(MediaCategory::class)],
+        ];
+    }
 
     public function startCreate(): void
     {
@@ -94,7 +113,7 @@ new class extends Component
         ];
 
         if ($this->editingId) {
-            MediaItem::query()->whereKey($this->editingId)->update($payload);
+            MediaItem::query()->findOrFail($this->editingId)->update($payload);
             $this->flashMessage = 'Media item updated.';
         } else {
             MediaItem::query()->create($payload);

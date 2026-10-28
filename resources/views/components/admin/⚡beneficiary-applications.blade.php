@@ -7,7 +7,6 @@ use App\Enums\SupportStatus;
 use App\Enums\TimelineEntryType;
 use App\Mail\BeneficiaryApplicationConverted;
 use App\Models\Beneficiary;
-use App\Http\Controllers\Admin\DocumentDownloadController;
 use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
@@ -58,6 +57,14 @@ new class extends Component
         }
 
         $app = BeneficiaryApplication::query()->findOrFail($id);
+
+        // A converted application is a closed record; its status is final.
+        if ($app->converted_beneficiary_id) {
+            $this->flashMessage = "Application from {$app->full_name} has already been converted and can't change status.";
+
+            return;
+        }
+
         $app->update([
             'status' => $status,
             'reviewer_id' => auth()->id(),
@@ -371,7 +378,6 @@ new class extends Component
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Convert to beneficiary
                                                 </button>
-                                            @endif
                                             <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                                 Mark in review
@@ -380,6 +386,7 @@ new class extends Component
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                                                 Reject
                                             </button>
+                                            @endif
                                             <button type="button" wire:click="askDelete({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete

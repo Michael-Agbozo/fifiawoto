@@ -4,6 +4,7 @@ use App\Enums\ContactMessageStatus;
 use App\Mail\ContactMessageReply as ContactMessageReplyMail;
 use App\Models\ContactMessage;
 use App\Models\ContactMessageReply;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
@@ -35,6 +36,8 @@ new class extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->canDo('inbox', 'view'), 403);
+
         // Default to "New" so admins land on unread messages.
         $this->statusFilter = ContactMessageStatus::New->value;
     }
@@ -55,7 +58,7 @@ new class extends Component
         $msg = ContactMessage::query()->findOrFail($id);
         $this->openMessageId = $msg->id;
 
-        if ($msg->status === ContactMessageStatus::New) {
+        if ($msg->status === ContactMessageStatus::New && auth()->user()?->canDo('inbox', 'reply')) {
             $msg->update([
                 'status' => ContactMessageStatus::InProgress->value,
                 'handled_by' => auth()->id(),
@@ -118,6 +121,22 @@ new class extends Component
         }
         RateLimiter::hit($key, 10);
 
+        DB::transaction(function () use ($msg, $data): void {
+            ContactMessageReply::query()->create([
+                'contact_message_id' => $msg->id,
+                'replied_by' => auth()->id(),
+                'to_email' => $msg->email,
+                'subject' => $data['replySubject'],
+                'body' => $data['replyBody'],
+                'sent_at' => now(),
+            ]);
+
+            $msg->update([
+                'status' => ContactMessageStatus::Resolved->value,
+                'handled_by' => auth()->id(),
+            ]);
+        });
+
         Mail::queue(new ContactMessageReplyMail(
             recipientName: $msg->full_name,
             recipientEmail: $msg->email,
@@ -126,19 +145,7 @@ new class extends Component
             originalMessage: $msg->message,
         ));
 
-        ContactMessageReply::query()->create([
-            'contact_message_id' => $msg->id,
-            'replied_by' => auth()->id(),
-            'to_email' => $msg->email,
-            'subject' => $data['replySubject'],
-            'body' => $data['replyBody'],
-            'sent_at' => now(),
-        ]);
-
-        $msg->update([
-            'status' => ContactMessageStatus::Resolved->value,
-            'handled_by' => auth()->id(),
-        ]);
+        unset($this->message);
 
         $this->showReplyForm = false;
         $this->replyBody = '';
@@ -147,6 +154,8 @@ new class extends Component
 
     public function markResolved(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('inbox', 'reply'), 403);
+
         $msg = ContactMessage::query()->findOrFail($id);
         $msg->update([
             'status' => ContactMessageStatus::Resolved->value,
@@ -157,6 +166,8 @@ new class extends Component
 
     public function markNew(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('inbox', 'reply'), 403);
+
         $msg = ContactMessage::query()->findOrFail($id);
         $msg->update(['status' => ContactMessageStatus::New->value]);
         $this->flashMessage = 'Message moved back to New.';
@@ -164,6 +175,8 @@ new class extends Component
 
     public function archive(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('inbox', 'reply'), 403);
+
         $msg = ContactMessage::query()->findOrFail($id);
         $msg->update(['status' => ContactMessageStatus::Archived->value]);
         $this->flashMessage = 'Message archived.';
@@ -361,20 +374,21 @@ new class extends Component
                         <a href="mailto:{{ $msg->email }}" class="grid size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" title="Open in mail client">
                             <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3l-9 9M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
                         </a>
+                        @if ($canReply || $canDelete)
                         <x-admin.actions-menu>
-                            @if ($msg->status !== \App\Enums\ContactMessageStatus::Resolved)
+                            @if ($canReply && $msg->status !== \App\Enums\ContactMessageStatus::Resolved)
                                 <button type="button" wire:click="markResolved({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                     Mark resolved
                                 </button>
                             @endif
-                            @if ($msg->status !== \App\Enums\ContactMessageStatus::New)
+                            @if ($canReply && $msg->status !== \App\Enums\ContactMessageStatus::New)
                                 <button type="button" wire:click="markNew({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                     Mark as new
                                 </button>
                             @endif
-                            @if ($msg->status !== \App\Enums\ContactMessageStatus::Archived)
+                            @if ($canReply && $msg->status !== \App\Enums\ContactMessageStatus::Archived)
                                 <button type="button" wire:click="archive({{ $msg->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8h18M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M9 12h6"/></svg>
                                     Archive
@@ -387,6 +401,7 @@ new class extends Component
                                 </button>
                             @endif
                         </x-admin.actions-menu>
+                        @endif
                     </div>
                 </div>
 

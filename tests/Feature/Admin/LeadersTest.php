@@ -4,6 +4,7 @@ use App\Models\Leader;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -110,4 +111,20 @@ it('shows published leaders on the public about page', function () {
         ->assertSee('Public Leader')
         ->assertSee('Founder · Board Chair', escape: false)
         ->assertDontSee('Hidden Leader');
+});
+
+it('ignores a tampered photo_path, including leaders/../ traversal', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('beneficiaries/secret.jpg', 'x');
+    $leader = Leader::factory()->create(['photo_path' => 'images/foundation/leadership/seeded.jpg']);
+
+    $component = Livewire::test('admin.leaders')->call('startEdit', $leader->id);
+
+    expect(fn () => $component->set('photo_path', 'leaders/../beneficiaries/secret.jpg'))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+
+    $component->set('remove_photo', true)->call('save')->assertHasNoErrors();
+
+    Storage::disk('public')->assertExists('beneficiaries/secret.jpg');
+    expect($leader->refresh()->photo_path)->toBeNull();
 });

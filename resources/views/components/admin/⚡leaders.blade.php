@@ -1,8 +1,10 @@
 <?php
 
 use App\Models\Leader;
+use App\Support\MediaUrl;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -13,6 +15,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     #[Validate('required|string|max:120')]
@@ -24,6 +27,7 @@ new class extends Component
     #[Validate('nullable|string|max:2000')]
     public string $bio = '';
 
+    #[Locked]
     public string $photo_path = '';
 
     #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:5120')]
@@ -46,6 +50,11 @@ new class extends Component
     public string $search = '';
 
     public string $filter = '';
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('leaders', 'view'), 403);
+    }
 
     public function startCreate(): void
     {
@@ -81,23 +90,17 @@ new class extends Component
 
         $data = $this->validate();
 
-        $photoPath = $this->photo_path ?: null;
+        $existing = $this->editingId ? Leader::query()->findOrFail($this->editingId) : null;
 
-        // Only delete from storage if it's a managed upload (lives under leaders/),
-        // not a seeded asset path like 'images/foundation/leadership/...'.
-        $isStored = $photoPath && str_starts_with($photoPath, 'leaders/');
+        // Never trust the client-side photo_path; the stored file comes from the DB record.
+        $oldPhotoPath = $existing?->photo_path ?: null;
+        $photoPath = $oldPhotoPath;
 
         if ($this->remove_photo) {
-            if ($isStored && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = null;
         }
 
         if ($this->photo_upload) {
-            if ($isStored && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = $this->photo_upload->store('leaders', 'public');
         }
 
@@ -110,12 +113,17 @@ new class extends Component
             'sort' => $data['sort'],
         ];
 
-        if ($this->editingId) {
-            Leader::query()->whereKey($this->editingId)->update($payload);
+        if ($existing) {
+            $existing->update($payload);
             $this->flashMessage = "Updated {$data['name']}.";
         } else {
             Leader::query()->create($payload);
             $this->flashMessage = "Added {$data['name']} to the leadership team.";
+        }
+
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && str_starts_with($oldPhotoPath, 'leaders/') && Storage::disk('public')->exists($oldPhotoPath)) {
+            Storage::disk('public')->delete($oldPhotoPath);
         }
 
         $this->resetForm();
@@ -212,7 +220,7 @@ new class extends Component
 
     public function photoSrc(?string $path): ?string
     {
-        return \App\Support\MediaUrl::for($path);
+        return MediaUrl::for($path);
     }
 }; ?>
 

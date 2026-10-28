@@ -27,3 +27,17 @@ it('filters by category', function () {
         ->assertSee('Event Pic')
         ->assertDontSee('Volunteer Pic');
 });
+
+it('rejects invalid type and category values instead of saving them', function () {
+    $item = MediaItem::factory()->create();
+
+    Livewire::test('admin.media')
+        ->call('startEdit', $item->id)
+        ->set('type', 'hologram')
+        ->set('category', 'nonsense')
+        ->call('save')
+        ->assertHasErrors(['type', 'category']);
+
+    Livewire::test('admin.media')->assertOk();
+    expect($item->refresh()->category)->toBeInstanceOf(MediaCategory::class);
+});

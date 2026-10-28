@@ -3,6 +3,7 @@
 use App\Models\Testimonial;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -13,6 +14,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     #[Validate('required|string|max:120')]
@@ -24,6 +26,7 @@ new class extends Component
     #[Validate('required|string|min:10|max:1000')]
     public string $quote = '';
 
+    #[Locked]
     public string $photo_path = '';
 
     #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:5120')]
@@ -49,6 +52,11 @@ new class extends Component
     public string $search = '';
 
     public string $filter = '';
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('testimonials', 'view'), 403);
+    }
 
     public function startCreate(): void
     {
@@ -85,19 +93,17 @@ new class extends Component
 
         $data = $this->validate();
 
-        $photoPath = $this->photo_path ?: null;
+        $existing = $this->editingId ? Testimonial::query()->findOrFail($this->editingId) : null;
+
+        // Never trust the client-side photo_path; the stored file comes from the DB record.
+        $oldPhotoPath = $existing?->photo_path ?: null;
+        $photoPath = $oldPhotoPath;
 
         if ($this->remove_photo) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = null;
         }
 
         if ($this->photo_upload) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = $this->photo_upload->store('testimonials', 'public');
         }
 
@@ -111,12 +117,17 @@ new class extends Component
             'sort' => $data['sort'],
         ];
 
-        if ($this->editingId) {
-            Testimonial::query()->whereKey($this->editingId)->update($payload);
+        if ($existing) {
+            $existing->update($payload);
             $this->flashMessage = "Updated testimonial from {$data['author_name']}.";
         } else {
             Testimonial::query()->create($payload);
             $this->flashMessage = "Added testimonial from {$data['author_name']}.";
+        }
+
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && Storage::disk('public')->exists($oldPhotoPath)) {
+            Storage::disk('public')->delete($oldPhotoPath);
         }
 
         $this->resetForm();

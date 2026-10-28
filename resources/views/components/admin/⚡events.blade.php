@@ -4,10 +4,13 @@ use App\Enums\EventStatus;
 use App\Mail\EventVolunteerInvitation;
 use App\Models\Event;
 use App\Models\Volunteer;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -18,6 +21,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -60,14 +64,31 @@ new class extends Component
     #[Validate('nullable|numeric|min:0|max:10000000')]
     public string $goal_amount = '';
 
-    #[Validate('required|string')]
     public string $status = 'draft';
 
+    #[Locked]
     public string $hero_image_path = '';
 
     public $hero_image_upload = null;
 
     public bool $remove_hero_image = false;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view'), 403);
+    }
+
+    /**
+     * Enum-backed fields (merged with the #[Validate] attribute rules).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'status' => ['required', Rule::enum(EventStatus::class)],
+        ];
+    }
 
     public function startCreate(): void
     {
@@ -125,25 +146,24 @@ new class extends Component
             'hero_image_upload.dimensions' => 'The program image must be exactly 1080×1080 pixels.',
         ]);
 
-        $heroPath = $this->hero_image_path ?: null;
+        $existing = $this->editingId ? Event::query()->findOrFail($this->editingId) : null;
+
+        // Never trust the client-side hero_image_path; the stored file comes from the DB record.
+        $oldHeroPath = $existing?->hero_image_path ?: null;
+        $heroPath = $oldHeroPath;
 
         if ($this->remove_hero_image) {
-            if ($heroPath && Storage::disk('public')->exists($heroPath)) {
-                Storage::disk('public')->delete($heroPath);
-            }
             $heroPath = null;
         }
 
         if ($this->hero_image_upload) {
-            if ($heroPath && Storage::disk('public')->exists($heroPath)) {
-                Storage::disk('public')->delete($heroPath);
-            }
             $heroPath = $this->hero_image_upload->store('events', 'public');
         }
 
+        $isPublished = $data['status'] === EventStatus::Published->value;
+
         $payload = [
             'title' => $data['title'],
-            'slug' => Str::slug($data['title']).'-'.Str::lower(Str::random(4)),
             'starts_at' => $data['starts_at'],
             'ends_at' => $data['ends_at'] ?: null,
             'location' => $data['location'],
@@ -155,30 +175,31 @@ new class extends Component
             'goal_cents' => $data['goal_amount'] !== '' ? (int) round(((float) $data['goal_amount']) * 100) : null,
             'status' => $data['status'],
             'hero_image_path' => $heroPath,
-            'published_at' => $data['status'] === EventStatus::Published->value ? now() : null,
         ];
 
-        if ($this->editingId) {
-            $event = Event::query()->findOrFail($this->editingId);
-            // Keep existing slug on edit so public URLs don't break
-            $payload['slug'] = $event->slug;
-            $event->update($payload);
+        if ($existing) {
+            // Keep existing slug on edit so public URLs don't break.
+            if ($isPublished) {
+                $payload['published_at'] = $this->resolvePublishedAt($existing);
+            }
+            $existing->update($payload);
+            $event = $existing;
             $this->flashMessage = 'Event updated.';
         } else {
+            $payload['slug'] = Str::slug($data['title']).'-'.Str::lower(Str::random(4));
+            $payload['published_at'] = $isPublished ? now() : null;
             $event = Event::query()->create($payload);
             $this->flashMessage = 'Event created.';
+        }
 
-            $queued = 0;
-            Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($event, &$queued) {
-                foreach ($volunteers as $volunteer) {
-                    Mail::queue(new EventVolunteerInvitation($event, $volunteer));
-                    $queued++;
-                }
-            });
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldHeroPath && $oldHeroPath !== $heroPath && Storage::disk('public')->exists($oldHeroPath)) {
+            Storage::disk('public')->delete($oldHeroPath);
+        }
 
-            if ($queued > 0) {
-                $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
-            }
+        $queued = $this->notifyVolunteersOnFirstPublish($event);
+        if ($queued > 0) {
+            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
         }
 
         $this->resetForm();
@@ -191,9 +212,55 @@ new class extends Component
         $e = Event::query()->findOrFail($id);
         $e->update([
             'status' => EventStatus::Published->value,
-            'published_at' => now(),
+            'published_at' => $this->resolvePublishedAt($e),
         ]);
         $this->flashMessage = "{$e->title} is now published.";
+
+        $queued = $this->notifyVolunteersOnFirstPublish($e);
+        if ($queued > 0) {
+            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
+        }
+    }
+
+    /**
+     * Keep the original publish date once set (and already in the past);
+     * otherwise publish as of now.
+     */
+    protected function resolvePublishedAt(Event $event): CarbonInterface
+    {
+        return $event->published_at && $event->published_at->lte(now())
+            ? $event->published_at
+            : now();
+    }
+
+    /**
+     * Queue volunteer invitations the first time an event is Published.
+     * The conditional update claims the event atomically so invites are
+     * never sent twice, even under concurrent publishes.
+     */
+    protected function notifyVolunteersOnFirstPublish(Event $event): int
+    {
+        $claimed = Event::query()
+            ->whereKey($event->id)
+            ->where('status', EventStatus::Published->value)
+            ->whereNull('volunteers_notified_at')
+            ->update(['volunteers_notified_at' => now()]);
+
+        if ($claimed === 0) {
+            return 0;
+        }
+
+        $event->refresh();
+
+        $queued = 0;
+        Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($event, &$queued) {
+            foreach ($volunteers as $volunteer) {
+                Mail::queue(new EventVolunteerInvitation($event, $volunteer));
+                $queued++;
+            }
+        });
+
+        return $queued;
     }
 
     public function unpublish(int $id): void
@@ -261,7 +328,7 @@ new class extends Component
     #[Computed]
     public function events()
     {
-        $query = Event::query()->withSum('donations as raised_cents', 'amount_cents');
+        $query = Event::query()->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents');
 
         if (filled($this->statusFilter)) {
             $query->where('status', $this->statusFilter);
@@ -445,7 +512,7 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Fundraising goal (USD)</label>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Fundraising goal ({{ \App\Support\Money::baseCurrency() }})</label>
                     <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
@@ -509,9 +576,9 @@ new class extends Component
                                 <x-admin.status-pill :palette="$event->status->palette()" :label="$event->status->label()" />
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <p class="font-semibold text-ink-900">${{ number_format($raised / 100) }}</p>
+                                <p class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
                                 @if ($goal > 0)
-                                    <p class="text-xs text-ink-500">{{ $percent }}% of ${{ number_format($goal / 100) }}</p>
+                                    <p class="text-xs text-ink-500">{{ $percent }}% of {{ \App\Support\Money::fromCents((int) $goal) }}</p>
                                     <div class="mt-1 h-1 w-24 rounded-full bg-cream-200">
                                         <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                                     </div>

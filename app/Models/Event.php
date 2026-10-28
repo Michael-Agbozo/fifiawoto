@@ -33,6 +33,7 @@ class Event extends Model
         'hero_image_path',
         'status',
         'published_at',
+        'volunteers_notified_at',
     ];
 
     /**
@@ -44,6 +45,7 @@ class Event extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'published_at' => 'datetime',
+            'volunteers_notified_at' => 'datetime',
             'goal_cents' => 'integer',
             'status' => EventStatus::class,
         ];
@@ -81,7 +83,7 @@ class Event extends Model
 
     public function raisedCents(): int
     {
-        return (int) $this->donations()->sum('amount_cents');
+        return (int) $this->donations()->inBaseCurrency()->sum('amount_cents');
     }
 
     public function progressPercent(): int

@@ -7,9 +7,12 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -20,6 +23,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -57,13 +61,11 @@ new class extends Component
     #[Validate('nullable|string|max:120')]
     public string $region = '';
 
-    #[Validate('required|string')]
     public string $category = '';
 
     #[Validate('required|string|min:20|max:4000')]
     public string $description = '';
 
-    #[Validate('required|string')]
     public string $status = 'pending_review';
 
     #[Validate('nullable|exists:users,id')]
@@ -72,12 +74,32 @@ new class extends Component
     #[Validate('nullable|string|max:4000')]
     public string $notes = '';
 
+    #[Locked]
     public string $photo_path = '';
 
     #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:5120')]
     public $photo_upload = null;
 
     public bool $remove_photo = false;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'view'), 403);
+    }
+
+    /**
+     * Enum-backed fields are validated here (attributes can't call Rule::enum()).
+     * Merged with the #[Validate] attribute rules by Livewire.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'category' => ['required', Rule::enum(SupportCategory::class)],
+            'status' => ['required', Rule::enum(SupportStatus::class)],
+        ];
+    }
 
     public function startCreate(): void
     {
@@ -122,19 +144,17 @@ new class extends Component
 
         $data = $this->validate();
 
-        $photoPath = $this->photo_path ?: null;
+        $existing = $this->editingId ? Beneficiary::query()->findOrFail($this->editingId) : null;
+
+        // Never trust the client-side photo_path; the stored file comes from the DB record.
+        $oldPhotoPath = $existing?->photo_path ?: null;
+        $photoPath = $oldPhotoPath;
 
         if ($this->remove_photo) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = null;
         }
 
         if ($this->photo_upload) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = $this->photo_upload->store('beneficiaries', 'public');
         }
 
@@ -154,35 +174,40 @@ new class extends Component
             'photo_path' => $photoPath,
         ];
 
-        if ($this->editingId) {
-            Beneficiary::query()->whereKey($this->editingId)->update($payload);
+        if ($existing) {
+            $existing->update($payload);
             $this->flashMessage = 'Beneficiary record updated.';
         } else {
-            $b = Beneficiary::query()->create($payload);
+            DB::transaction(function () use ($payload): void {
+                $b = Beneficiary::query()->create($payload);
 
-            // Seed default folders
-            foreach ([
-                'Medical Records', 'School Documents', 'Photos',
-                'Support Reports', 'Identification Documents',
-            ] as $name) {
-                BeneficiaryFolder::query()->create([
+                foreach ([
+                    'Medical Records', 'School Documents', 'Photos',
+                    'Support Reports', 'Identification Documents',
+                ] as $name) {
+                    BeneficiaryFolder::query()->create([
+                        'beneficiary_id' => $b->id,
+                        'name' => $name,
+                        'slug' => Str::slug($name),
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+
+                BeneficiaryTimelineEntry::query()->create([
                     'beneficiary_id' => $b->id,
-                    'name' => $name,
-                    'slug' => Str::slug($name),
-                    'created_by' => auth()->id(),
+                    'type' => TimelineEntryType::ApplicationReceived->value,
+                    'description' => 'Record created by '.auth()->user()?->name,
+                    'occurred_at' => now(),
+                    'recorded_by' => auth()->id(),
                 ]);
-            }
-
-            // Timeline: record creation
-            BeneficiaryTimelineEntry::query()->create([
-                'beneficiary_id' => $b->id,
-                'type' => TimelineEntryType::ApplicationReceived->value,
-                'description' => 'Record created by '.auth()->user()?->name,
-                'occurred_at' => now(),
-                'recorded_by' => auth()->id(),
-            ]);
+            });
 
             $this->flashMessage = 'Beneficiary record created with default folders.';
+        }
+
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && Storage::disk('public')->exists($oldPhotoPath)) {
+            Storage::disk('public')->delete($oldPhotoPath);
         }
 
         $this->resetForm();

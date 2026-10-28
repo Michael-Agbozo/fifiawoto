@@ -31,6 +31,11 @@ new class extends Component
     #[Validate('in:IMAGE,VIDEO')]
     public string $media_type = 'IMAGE';
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('instagram', 'view'), 403);
+    }
+
     public function startCreate(): void
     {
         $this->reset(['permalink', 'caption', 'thumbnail_url', 'media_type']);
@@ -52,19 +57,24 @@ new class extends Component
 
         $data = $this->validate();
 
-        InstagramPost::query()->updateOrCreate(
-            ['external_id' => sha1($data['permalink'])],
-            [
-                'permalink' => $data['permalink'],
-                'caption' => $data['caption'] ?: null,
-                'thumbnail_url' => $data['thumbnail_url'] ?: null,
-                'media_type' => $data['media_type'],
-                'posted_at' => now(),
-                'is_approved' => true,
-                'is_hidden' => false,
-                'source' => InstagramSource::Manual->value,
-            ],
-        );
+        $post = InstagramPost::query()->firstOrNew(['external_id' => sha1($data['permalink'])]);
+
+        $post->fill([
+            'permalink' => $data['permalink'],
+            'caption' => $data['caption'] ?: null,
+            'thumbnail_url' => $data['thumbnail_url'] ?: null,
+            'media_type' => $data['media_type'],
+            'is_approved' => true,
+            'source' => InstagramSource::Manual->value,
+        ]);
+
+        // Re-adding an existing post must not bump its date or un-hide it.
+        if (! $post->exists) {
+            $post->posted_at = now();
+            $post->is_hidden = false;
+        }
+
+        $post->save();
 
         $this->flashMessage = 'Instagram post added.';
         $this->cancel();
@@ -239,8 +249,8 @@ new class extends Component
             @foreach ($this->posts as $post)
                 <article class="rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                     <div class="aspect-square overflow-hidden rounded-t-3xl bg-cream-200">
-                        @if ($post->thumbnail_url)
-                            <img src="{{ $post->thumbnail_url }}" alt="" class="h-full w-full object-cover" loading="lazy">
+                        @if ($post->previewImageUrl())
+                            <img src="{{ $post->previewImageUrl() }}" alt="" class="h-full w-full object-cover" loading="lazy">
                         @else
                             <div class="grid h-full place-items-center text-xs text-ink-500">No thumbnail</div>
                         @endif

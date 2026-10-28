@@ -2,9 +2,11 @@
 
 use App\Enums\VolunteerApplicationStatus;
 use App\Enums\VolunteerRole;
+use App\Mail\VolunteerApplicationDecision;
 use App\Models\User;
 use App\Models\Volunteer;
 use App\Models\VolunteerApplication;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -113,4 +115,45 @@ it('searches the roster by name or email', function () {
         ->set('rosterSearch', 'Kweku')
         ->assertSee('Kweku Searchable')
         ->assertDontSee('Someone Else');
+});
+
+it('refuses to reject an application that was already approved', function () {
+    Mail::fake();
+
+    $app = VolunteerApplication::factory()->create([
+        'email' => 'ama@example.test',
+        'status' => VolunteerApplicationStatus::New->value,
+    ]);
+
+    Livewire::test('admin.volunteers')
+        ->set('applicationRoleChoice.'.$app->id, VolunteerRole::Event->value)
+        ->call('approve', $app->id)
+        ->call('reject', $app->id)
+        ->assertSet('flashMessage', 'This application has already been reviewed.');
+
+    expect($app->refresh()->status)->toBe(VolunteerApplicationStatus::Approved)
+        ->and(Volunteer::query()->where('email', 'ama@example.test')->count())->toBe(1);
+
+    Mail::assertQueued(VolunteerApplicationDecision::class, 1);
+    Mail::assertNotQueued(
+        VolunteerApplicationDecision::class,
+        fn ($mail) => $mail->approved === false,
+    );
+});
+
+it('refuses to approve an application that was already rejected', function () {
+    Mail::fake();
+
+    $app = VolunteerApplication::factory()->create([
+        'email' => 'kofi@example.test',
+        'status' => VolunteerApplicationStatus::Rejected->value,
+    ]);
+
+    Livewire::test('admin.volunteers')
+        ->set('applicationRoleChoice.'.$app->id, VolunteerRole::Event->value)
+        ->call('approve', $app->id);
+
+    expect($app->refresh()->status)->toBe(VolunteerApplicationStatus::Rejected)
+        ->and(Volunteer::query()->where('email', 'kofi@example.test')->exists())->toBeFalse();
+    Mail::assertNothingQueued();
 });

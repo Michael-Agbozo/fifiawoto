@@ -1,12 +1,11 @@
 <?php
 
 use App\Enums\VolunteerApplicationStatus;
-use App\Enums\VolunteerAvailability;
-use App\Enums\VolunteerInterest;
 use App\Enums\VolunteerRole;
 use App\Mail\VolunteerApplicationDecision;
 use App\Models\Volunteer;
 use App\Models\VolunteerApplication;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -57,6 +56,8 @@ new class extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->canDo('volunteers', 'view'), 403);
+
         $this->tab = request()->query('tab') === 'roster' ? 'roster' : 'applications';
     }
 
@@ -85,14 +86,6 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
 
-        $application = VolunteerApplication::query()->findOrFail($applicationId);
-
-        if ($application->status === VolunteerApplicationStatus::Approved) {
-            $this->flashMessage = 'Application is already approved.';
-
-            return;
-        }
-
         $roleValue = $this->applicationRoleChoice[$applicationId] ?? VolunteerRole::Event->value;
 
         if (! in_array($roleValue, array_column(VolunteerRole::cases(), 'value'), true)) {
@@ -101,23 +94,40 @@ new class extends Component
             return;
         }
 
-        $application->update([
-            'status' => VolunteerApplicationStatus::Approved->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
+        // Lock the row so a concurrent approve/reject can't both act on it.
+        $application = DB::transaction(function () use ($applicationId, $roleValue): ?VolunteerApplication {
+            $application = VolunteerApplication::query()->lockForUpdate()->findOrFail($applicationId);
 
-        Volunteer::query()->updateOrCreate(
-            ['email' => $application->email],
-            [
-                'application_id' => $application->id,
-                'full_name' => $application->full_name,
-                'phone' => $application->phone,
-                'country' => $application->country,
-                'role' => $roleValue,
-                'assigned_at' => now()->toDateString(),
-            ],
-        );
+            if ($application->status !== VolunteerApplicationStatus::New) {
+                return null;
+            }
+
+            $application->update([
+                'status' => VolunteerApplicationStatus::Approved->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            Volunteer::query()->updateOrCreate(
+                ['email' => $application->email],
+                [
+                    'application_id' => $application->id,
+                    'full_name' => $application->full_name,
+                    'phone' => $application->phone,
+                    'country' => $application->country,
+                    'role' => $roleValue,
+                    'assigned_at' => now()->toDateString(),
+                ],
+            );
+
+            return $application;
+        });
+
+        if (! $application) {
+            $this->flashMessage = 'This application has already been reviewed.';
+
+            return;
+        }
 
         unset($this->applicationRoleChoice[$applicationId]);
 
@@ -134,18 +144,29 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
 
-        $application = VolunteerApplication::query()->findOrFail($applicationId);
+        // Only New applications can be rejected: a double-click or a stale
+        // "Reject" after approval must not email the applicant.
+        $application = DB::transaction(function () use ($applicationId): ?VolunteerApplication {
+            $application = VolunteerApplication::query()->lockForUpdate()->findOrFail($applicationId);
 
-        // Idempotent: a double-click must not email the applicant twice.
-        if ($application->status === VolunteerApplicationStatus::Rejected) {
+            if ($application->status !== VolunteerApplicationStatus::New) {
+                return null;
+            }
+
+            $application->update([
+                'status' => VolunteerApplicationStatus::Rejected->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            return $application;
+        });
+
+        if (! $application) {
+            $this->flashMessage = 'This application has already been reviewed.';
+
             return;
         }
-
-        $application->update([
-            'status' => VolunteerApplicationStatus::Rejected->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
 
         Mail::queue(new VolunteerApplicationDecision($application, approved: false));
 

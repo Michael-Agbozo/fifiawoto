@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
 use App\Enums\UserRole;
 use App\Enums\VolunteerApplicationStatus;
@@ -35,6 +36,7 @@ it('emails the admin when a volunteer applies publicly', function () {
         ->set('availability', VolunteerAvailability::cases()[0]->value)
         ->set('motivation', 'I really want to help our community thrive together.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors();
 
@@ -147,6 +149,7 @@ it('emails the admin when the contact form is submitted', function () {
         ->set('subject', ContactSubject::cases()[0]->value)
         ->set('message', 'I would love to learn more about what you do.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors();
 
@@ -174,4 +177,23 @@ it('emails the sender when an admin replies from the inbox', function () {
 it('encrypts the queued team invitation because it carries a temporary password', function () {
     expect(new TeamInvitation(User::factory()->make(), 'temp-pass'))
         ->toBeInstanceOf(ShouldBeEncrypted::class);
+});
+
+it('shows the sent reply and resolved status immediately after replying', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $message = ContactMessage::factory()->create(['email' => 'visitor@example.com']);
+
+    Livewire::test('admin.inbox')
+        ->set('statusFilter', '')
+        ->call('openMessage', $message->id)
+        ->call('startReply')
+        ->set('replySubject', 'Re: your enquiry')
+        ->set('replyBody', 'A distinctive reply body for the stale-cache check.')
+        ->call('sendReply')
+        ->assertHasNoErrors()
+        ->assertSee('Replies sent')
+        ->assertSee('A distinctive reply body for the stale-cache check.');
+
+    expect($message->refresh()->status)->toBe(ContactMessageStatus::Resolved)
+        ->and($message->replies()->count())->toBe(1);
 });
