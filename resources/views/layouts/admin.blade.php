@@ -110,7 +110,8 @@
                             aria-label="Fifiawoto Foundation admin"
                             wire:navigate
                         >
-                            <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-9 w-auto">
+                            <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-9 w-auto dark:hidden">
+                            <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="hidden h-9 w-auto dark:block">
                         </a>
 
                         <a

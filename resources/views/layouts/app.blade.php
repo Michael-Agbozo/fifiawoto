@@ -20,7 +20,8 @@
         >
             <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
                 <a href="{{ route('dashboard') }}" class="flex items-center" aria-label="Fifiawoto Foundation" wire:navigate>
-                    <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-11 w-auto sm:h-12">
+                    <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-11 w-auto sm:h-12 dark:hidden">
+                    <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="hidden h-11 w-auto sm:h-12 dark:block">
                 </a>
 
                 <nav class="hidden lg:flex lg:items-center lg:gap-8">

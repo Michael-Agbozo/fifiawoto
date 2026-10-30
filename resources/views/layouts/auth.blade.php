@@ -8,7 +8,8 @@
             <div class="w-full max-w-md">
                 <div class="mb-8 text-center">
                     <a href="{{ route('home') }}" class="inline-flex" aria-label="Fifiawoto Foundation home" wire:navigate>
-                        <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-14 w-auto">
+                        <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-14 w-auto dark:hidden">
+                        <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="hidden h-14 w-auto dark:block">
                     </a>
                 </div>
 

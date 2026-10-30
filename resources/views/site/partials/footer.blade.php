@@ -2,7 +2,8 @@
     <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-5">
             <div class="lg:col-span-2">
-                <img src="{{ asset('images/logos/dff-footer-logo.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-16 w-auto">
+                <img src="{{ asset('images/logos/dff-footer-logo.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-16 w-auto dark:hidden">
+                <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="hidden h-16 w-auto dark:block">
                 <p class="mt-5 max-w-md text-sm leading-relaxed text-ink-500">
                     The Fifiawoto Foundation works to empower communities through compassion, service, and sustainable development initiatives across the United States, Ghana, Togo, and Benin.
                 </p>

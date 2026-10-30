@@ -161,10 +161,12 @@
     --color-brand-400: #8b92a3;
     --color-brand-500: #a9b0cf;
 
-    /* Red accent lifted just enough for small red text to read on charcoal
-       (~4.5:1) while white text on red fills stays ~4:1 and on-brand. */
-    --color-gold-500: #f22b2b;
-    --color-gold-600: #ff7a7a;
+    /* Muted brick red so the accent reads as an accent rather than glowing
+       against charcoal: small red text and white-on-red fills both stay ~4:1. */
+    --color-gold-300: #f0aaa5;
+    --color-gold-400: #e06a62;
+    --color-gold-500: #d4453d;
+    --color-gold-600: #ef938d;
 }
 
 /* Smooth theme transition on the structural surfaces that actually

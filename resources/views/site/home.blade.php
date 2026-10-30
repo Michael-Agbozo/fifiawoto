@@ -107,7 +107,7 @@
     </section>
 
     {{-- IMPACT, red full-width band with 3 big stats --}}
-    <section class="bg-gold-500 py-20 text-white lg:py-24" aria-labelledby="impact-heading">
+    <section class="bg-gold-500 py-20 text-white lg:py-24 dark:border-y dark:border-cream-300 dark:bg-cream-100" aria-labelledby="impact-heading">
         <div class="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
             <div class="grid gap-10 lg:grid-cols-[6fr_5fr] lg:items-end lg:gap-16">
                 <div class="reveal-left">
@@ -180,7 +180,7 @@
     {{-- JOIN US CTA --}}
     <section class="bg-surface py-12" aria-label="Get involved">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12">
+            <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12 dark:bg-brand-900">
                 <div class="text-center sm:text-left">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">Get involved</p>
                     <h2 class="mt-2 font-serif text-3xl sm:text-4xl">Join us, and be part of the impact.</h2>

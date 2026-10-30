@@ -22,10 +22,10 @@
                 x-show="!scrolled"
                 src="{{ asset('images/logos/dff.svg') }}"
                 alt="Dadaa Fifiawoto Nyamadi Foundation"
-                class="h-12 w-auto sm:h-14"
+                class="h-12 w-auto sm:h-14 dark:hidden"
             >
             <img
-                x-show="scrolled"
+                x-show="scrolled || $store.theme.isDark()"
                 x-cloak
                 src="{{ asset('images/logos/dff-sticky.svg') }}"
                 alt="Dadaa Fifiawoto Nyamadi Foundation"
