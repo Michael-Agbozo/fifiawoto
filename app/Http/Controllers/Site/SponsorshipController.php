@@ -43,6 +43,8 @@ class SponsorshipController extends Controller
             return redirect()->route('sponsor-a-child.show', $child->public_sponsorship_slug, 301);
         }
 
+        $child->load('sponsorshipPhotos');
+
         return view('site.sponsorship-show', compact('child'));
     }
 

@@ -6,6 +6,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use App\Models\SponsorshipPhoto;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,13 @@ new class extends Component
     public bool $sponsorshipPublished = false;
 
     public $sponsorshipPhoto = null;
+
+    /** @var array<int, \Livewire\Features\SupportFileUploads\TemporaryUploadedFile> */
+    public array $galleryUploads = [];
+
+    public bool $galleryUploadsSensitive = false;
+
+    public string $driveFolderUrl = '';
 
     /** Only changed server-side (openFolder/goUp/…) so it can't be pointed at another beneficiary's folder. */
     #[Locked]
@@ -84,6 +92,90 @@ new class extends Component
         $this->guardianConsentReference = $beneficiary->guardian_consent_reference ?? '';
         $this->guardianConsent = $beneficiary->guardian_consent_at !== null;
         $this->sponsorshipPublished = (bool) $beneficiary->sponsorship_published;
+        $this->driveFolderUrl = (string) $beneficiary->drive_folder_url;
+    }
+
+    /** Link this beneficiary to the Google Drive folder that holds their documents and photos. */
+    public function saveDriveFolder(): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
+        $this->driveFolderUrl = trim($this->driveFolderUrl);
+        $this->validate(['driveFolderUrl' => Beneficiary::DRIVE_FOLDER_URL_RULES], [
+            'driveFolderUrl.regex' => 'Use a Google Drive link that starts with https://drive.google.com/.',
+            'driveFolderUrl.url' => 'Use a Google Drive link that starts with https://drive.google.com/.',
+        ]);
+
+        $this->beneficiary->update(['drive_folder_url' => $this->driveFolderUrl ?: null]);
+        $this->flashMessage = $this->driveFolderUrl ? 'Google Drive folder linked.' : 'Google Drive folder link removed.';
+        $this->dispatch('drive-folder-saved');
+    }
+
+    /**
+     * Add photos to the child's public sponsorship gallery. Each upload can be
+     * marked sensitive so the public page shows it blurred until a visitor opts in.
+     */
+    public function uploadGalleryPhotos(): void
+    {
+        abort_unless(auth()->user()?->refresh()->canDo('beneficiaries', 'update'), 403);
+
+        $remaining = SponsorshipPhoto::MAX_PER_CHILD - $this->beneficiary->sponsorshipPhotos()->count();
+
+        $this->validate([
+            'galleryUploads' => ['required', 'array', 'min:1', 'max:'.max(1, $remaining)],
+            'galleryUploads.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'galleryUploads.max' => 'A gallery can hold up to '.SponsorshipPhoto::MAX_PER_CHILD.' photos. Remove some before adding more.',
+        ]);
+
+        if ($remaining < 1) {
+            $this->addError('galleryUploads', 'A gallery can hold up to '.SponsorshipPhoto::MAX_PER_CHILD.' photos. Remove some before adding more.');
+
+            return;
+        }
+
+        $sort = (int) $this->beneficiary->sponsorshipPhotos()->max('sort');
+
+        foreach ($this->galleryUploads as $upload) {
+            $this->beneficiary->sponsorshipPhotos()->create([
+                'path' => $upload->store('sponsorship/gallery', 'public'),
+                'is_sensitive' => $this->galleryUploadsSensitive,
+                'sort' => ++$sort,
+            ]);
+        }
+
+        $count = count($this->galleryUploads);
+        $this->reset('galleryUploads', 'galleryUploadsSensitive');
+        $this->flashMessage = $count === 1 ? 'Gallery photo added.' : $count.' gallery photos added.';
+    }
+
+    public function toggleGallerySensitive(int $photoId): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
+        $photo = $this->beneficiary->sponsorshipPhotos()->findOrFail($photoId);
+        $photo->update(['is_sensitive' => ! $photo->is_sensitive]);
+        $this->flashMessage = $photo->is_sensitive ? 'Photo marked as sensitive.' : 'Photo no longer marked as sensitive.';
+    }
+
+    public function saveGalleryCaption(int $photoId, string $caption): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
+        $caption = trim($caption);
+        validator(['caption' => $caption], ['caption' => 'nullable|string|max:160'])->validate();
+
+        $this->beneficiary->sponsorshipPhotos()->findOrFail($photoId)->update(['caption' => $caption ?: null]);
+    }
+
+    public function deleteGalleryPhoto(int $photoId): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'update'), 403);
+
+        $photo = $this->beneficiary->sponsorshipPhotos()->findOrFail($photoId);
+        Storage::disk('public')->delete($photo->path);
+        $photo->delete();
+        $this->flashMessage = 'Gallery photo removed.';
     }
 
     public function saveSponsorship(): void
@@ -514,6 +606,58 @@ new class extends Component
             <label class="flex gap-3 text-sm text-heading"><input type="checkbox" wire:model="sponsorshipPublished">Publish approved sponsorship profile</label>@error('sponsorshipPublished')<p class="text-red-600">{{ $message }}</p>@enderror
             <button wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-50 px-5 py-3">Save public profile</button>
         </form>
+
+        {{-- Gallery --}}
+        @php $galleryPhotos = $beneficiary->sponsorshipPhotos()->get(); @endphp
+        <div class="mt-8 border-t border-cream-300 pt-6">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h3 class="text-xl text-heading">Gallery photos</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-ink-500">Shown on the public profile under the story. Only upload photos the guardian has approved. Mark anything distressing to see, such as wounds or medical conditions, as sensitive: it will appear blurred until a visitor chooses to view it.</p>
+                </div>
+                <span class="text-xs font-semibold text-ink-500">{{ $galleryPhotos->count() }} / {{ \App\Models\SponsorshipPhoto::MAX_PER_CHILD }}</span>
+            </div>
+
+            @if ($galleryPhotos->isNotEmpty())
+                <ul class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($galleryPhotos as $photo)
+                        <li wire:key="gallery-photo-{{ $photo->id }}" class="overflow-hidden rounded-2xl border border-cream-300 bg-cream-50">
+                            <div class="relative aspect-[4/3] bg-cream-200">
+                                <img src="{{ Storage::disk('public')->url($photo->path) }}" alt="{{ $photo->caption ?: 'Gallery photo' }}" class="h-full w-full object-cover {{ $photo->is_sensitive ? 'blur-md' : '' }}" loading="lazy">
+                                @if ($photo->is_sensitive)
+                                    <span class="absolute left-3 top-3 rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-white">Sensitive</span>
+                                @endif
+                            </div>
+                            <div class="space-y-3 p-3">
+                                <label class="block text-xs font-semibold text-ink-700">Caption
+                                    <input type="text" maxlength="160" value="{{ $photo->caption }}" placeholder="Optional caption"
+                                        x-on:change="$wire.saveGalleryCaption({{ $photo->id }}, $event.target.value)"
+                                        class="mt-1 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-heading">
+                                </label>
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <button type="button" wire:click="toggleGallerySensitive({{ $photo->id }})" class="btn btn-ghost px-3 py-1.5 text-xs">
+                                        {{ $photo->is_sensitive ? 'Unmark sensitive' : 'Mark sensitive' }}
+                                    </button>
+                                    <button type="button" wire:click="deleteGalleryPhoto({{ $photo->id }})" wire:confirm="Remove this photo from the gallery?" class="text-xs font-semibold text-red-600 hover:underline">Remove</button>
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+
+            @if ($galleryPhotos->count() < \App\Models\SponsorshipPhoto::MAX_PER_CHILD)
+                <form wire:submit="uploadGalleryPhotos" class="mt-5 flex flex-col gap-3 rounded-2xl border border-dashed border-cream-300 p-4 sm:flex-row sm:items-center">
+                    <label class="flex-1 text-sm text-heading">Add photos
+                        <input type="file" multiple wire:model="galleryUploads" accept="image/jpeg,image/png,image/webp" class="mt-2 block w-full text-sm">
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-heading"><input type="checkbox" wire:model="galleryUploadsSensitive"> Mark these as sensitive</label>
+                    <button type="submit" wire:loading.attr="disabled" class="btn btn-primary px-5 py-2.5 text-sm disabled:opacity-50">Upload</button>
+                </form>
+                @error('galleryUploads')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+                @error('galleryUploads.*')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            @endif
+        </div>
     </section>
     @endif
 
@@ -573,6 +717,45 @@ new class extends Component
                     </div>
                 @endif
             </dl>
+
+            {{-- Google Drive folder --}}
+            <div class="rounded-2xl border border-cream-300 bg-cream-50 p-4" x-data="{ editing: {{ $beneficiary->drive_folder_url ? 'false' : 'true' }} }" @drive-folder-saved.window="editing = ! $wire.driveFolderUrl">
+                <div class="flex items-center gap-3">
+                    <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-heading ring-1 ring-cream-300" aria-hidden="true">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-heading">Google Drive folder</p>
+                        <p class="text-xs text-ink-500">{{ $beneficiary->drive_folder_url ? 'Documents and photos are kept here.' : 'Not linked yet.' }}</p>
+                    </div>
+                </div>
+
+                @if ($beneficiary->drive_folder_url)
+                    <div class="mt-3 flex flex-wrap items-center gap-2" x-show="! editing">
+                        <a href="{{ $beneficiary->drive_folder_url }}" target="_blank" rel="noopener" class="btn btn-primary px-4 py-2 text-sm">
+                            Open Drive folder
+                            <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+                        </a>
+                        @if (auth()->user()?->canDo('beneficiaries', 'update'))
+                            <button type="button" class="btn btn-ghost px-4 py-2 text-sm" @click="editing = true">Change link</button>
+                        @endif
+                    </div>
+                @endif
+
+                @if (auth()->user()?->canDo('beneficiaries', 'update'))
+                    <form wire:submit="saveDriveFolder" class="mt-3 space-y-2" x-show="editing" @if ($beneficiary->drive_folder_url) x-cloak @endif>
+                        <label for="drive-folder-url" class="sr-only">Google Drive folder link</label>
+                        <input id="drive-folder-url" type="url" wire:model="driveFolderUrl" placeholder="https://drive.google.com/drive/folders/…" class="block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm">
+                        @error('driveFolderUrl') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                        <div class="flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 text-sm">Save link</button>
+                            @if ($beneficiary->drive_folder_url)
+                                <button type="button" class="btn btn-ghost px-4 py-2 text-sm" @click="editing = false">Cancel</button>
+                            @endif
+                        </div>
+                    </form>
+                @endif
+            </div>
 
             <div>
                 <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Description</p>

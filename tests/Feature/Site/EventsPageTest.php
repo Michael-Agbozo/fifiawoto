@@ -166,3 +166,11 @@ it('shows only base-currency gifts in the configured currency on the event page'
         ->assertDontSee('10,234')
         ->assertDontSee('$1,234');
 });
+
+it('offers one-tap country searches and marks the active one', function () {
+    $this->get(route('events.index', ['q' => 'Togo']))
+        ->assertOk()
+        ->assertSee('Find an outreach near you')
+        ->assertSee(route('events.index', ['q' => 'Ghana']), escape: false)
+        ->assertSee('aria-current="true"', escape: false);
+});

@@ -83,14 +83,26 @@
                     </div>
                 @endif
 
-                @if ($event->images->isNotEmpty())
+                @if ($gallery)
+                    @php $preview = $gallery['photos']->take(6); @endphp
                     <div>
-                        <h2 class="reveal font-serif text-2xl text-heading">Photo Gallery</h2>
+                        <div class="flex flex-wrap items-end justify-between gap-3">
+                            <h2 class="reveal font-serif text-2xl text-heading">Photo Gallery</h2>
+                            <a href="{{ $gallery['gallery_url'] }}" class="text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
+                                View full gallery ({{ $gallery['photos']->count() }}) <span aria-hidden="true">→</span>
+                            </a>
+                        </div>
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                            @foreach ($event->images as $image)
-                                <figure class="aspect-square overflow-hidden rounded-xl bg-cream-200">
-                                    <img src="{{ \App\Support\MediaUrl::for($image->path) }}" alt="{{ $image->caption ?? $event->title }}" class="h-full w-full object-cover">
-                                </figure>
+                            @foreach ($preview as $item)
+                                <a href="{{ $gallery['gallery_url'] }}" class="group relative block aspect-square overflow-hidden rounded-xl bg-cream-200" wire:navigate>
+                                    <img src="{{ $item['thumb'] }}" alt="{{ $item['caption'] ?? $event->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
+                                    @if ($item['type'] === 'video')
+                                        <span class="absolute inset-0 grid place-items-center bg-black/25" aria-hidden="true"><span class="grid size-10 place-items-center rounded-full bg-white/90 text-heading"><svg class="ml-0.5 size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+                                    @endif
+                                    @if ($loop->last && $gallery['photos']->count() > $preview->count())
+                                        <span class="absolute inset-0 grid place-items-center bg-brand-900/70 font-semibold text-white">+{{ $gallery['photos']->count() - $preview->count() }} more</span>
+                                    @endif
+                                </a>
                             @endforeach
                         </div>
                     </div>

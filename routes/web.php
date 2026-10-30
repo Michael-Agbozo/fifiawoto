@@ -19,6 +19,8 @@ Route::get('/contact', [PageController::class, 'contact'])->name('contact');
 Route::get('/donate', [PageController::class, 'donate'])->name('donate');
 Route::get('/testimonials', [PageController::class, 'testimonials'])->name('testimonials');
 Route::get('/media', [PageController::class, 'media'])->name('media');
+Route::get('/media/events/{event:slug}', [PageController::class, 'mediaEvent'])->name('media.event');
+Route::get('/media/collections/{category}', [PageController::class, 'mediaCollection'])->where('category', '[a-z_]+')->name('media.collection');
 
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event:slug}', [EventController::class, 'show'])->name('events.show');

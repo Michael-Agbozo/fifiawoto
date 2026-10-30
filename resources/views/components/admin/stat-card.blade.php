@@ -36,7 +36,7 @@
 @endphp
 
 <button type="button" {{ $attributes->class([
-    'group block rounded-2xl border p-5 text-left transition',
+    'tilt group block rounded-2xl border p-5 text-left transition',
     'border-heading bg-brand-900/[0.04] shadow-[0_10px_30px_-15px_rgba(0,4,78,0.18)]' => $active,
     'border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)] hover:-translate-y-0.5 hover:border-heading hover:shadow-[0_12px_40px_-18px_rgba(0,4,78,0.18)]' => ! $active,
 ]) }}>

@@ -6,43 +6,43 @@
         </p>
     </div>
 @else
-    <form wire:submit="submit" class="{{ $compact ? '' : 'mt-8' }} space-y-5">
+    <form wire:submit="submit" class="{{ $compact ? '' : 'mt-8' }} space-y-6">
         @include('components.site.partials.honeypot')
         @error('rate')
             <div role="alert" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</div>
         @enderror
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid gap-5 sm:grid-cols-2">
             <div>
-                <label for="vol-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Full name</label>
+                <label for="vol-name" class="block text-sm font-semibold text-heading">Full name</label>
                 <input id="vol-name" type="text" wire:model="full_name" required
-                    class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Email address</label>
+                <label for="vol-email" class="block text-sm font-semibold text-heading">Email address</label>
                 <input id="vol-email" type="email" wire:model="email" required
-                    class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Phone number</label>
+                <label for="vol-phone" class="block text-sm font-semibold text-heading">Phone number</label>
                 <input id="vol-phone" type="tel" wire:model="phone" required
-                    class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-country" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country / location</label>
+                <label for="vol-country" class="block text-sm font-semibold text-heading">Country / location</label>
                 <input id="vol-country" type="text" wire:model="country" required
-                    class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
+                    class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('country') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
         </div>
 
         <fieldset>
-            <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Areas of interest</legend>
-            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <legend class="block text-sm font-semibold text-heading">Areas of interest</legend>
+            <div @class(['mt-3 grid gap-2.5 sm:grid-cols-2', 'xl:grid-cols-3' => ! $compact])>
                 @foreach ($interestOptions as $value => $label)
-                    <label class="flex items-start gap-3 rounded-lg border border-brand-100 bg-cream-50 px-3 py-2 text-sm text-heading-soft hover:border-brand-300">
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-sm text-heading-soft transition hover:border-heading has-checked:border-heading has-checked:bg-brand-50 has-checked:text-heading">
                         <input type="checkbox" value="{{ $value }}" wire:model.live="interests" class="mt-0.5 rounded border-brand-300 text-label focus:ring-brand-500">
                         <span>{{ $label }}</span>
                     </label>
@@ -52,10 +52,10 @@
         </fieldset>
 
         <fieldset>
-            <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Availability</legend>
+            <legend class="block text-sm font-semibold text-heading">Availability</legend>
             <div class="mt-3 flex flex-wrap gap-2">
                 @foreach ($availabilityOptions as $value => $label)
-                    <label class="cursor-pointer rounded-full border border-brand-200 bg-cream-50 px-4 py-2 text-sm text-heading-soft has-checked:border-brand-700 has-checked:bg-brand-700 has-checked:text-paper">
+                    <label class="cursor-pointer rounded-full border border-cream-300 bg-cream-50 px-5 py-2.5 text-sm font-medium text-heading-soft transition hover:border-heading has-checked:border-heading has-checked:bg-heading has-checked:text-surface">
                         <input type="radio" name="availability" value="{{ $value }}" wire:model.live="availability" class="sr-only">
                         {{ $label }}
                     </label>
@@ -65,17 +65,17 @@
         </fieldset>
 
         <div>
-            <label for="vol-skills" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Skills or experience</label>
+            <label for="vol-skills" class="block text-sm font-semibold text-heading">Skills or experience</label>
             <textarea id="vol-skills" wire:model="skills" rows="3"
-                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 placeholder="Optional, anything relevant we should know about."></textarea>
             @error('skills') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label for="vol-motivation" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Motivation</label>
+            <label for="vol-motivation" class="block text-sm font-semibold text-heading">Motivation</label>
             <textarea id="vol-motivation" wire:model="motivation" rows="4" required
-                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 placeholder="Why do you want to volunteer with the foundation?"></textarea>
             @error('motivation') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
@@ -90,7 +90,7 @@
 
         <div class="pt-2">
             <button type="submit"
-                class="btn btn-primary disabled:opacity-60"
+                class="btn btn-primary btn-lg w-full disabled:opacity-60 sm:w-auto"
                 wire:loading.attr="disabled">
                 <span wire:loading.remove>Apply to Volunteer</span>
                 <span wire:loading>Submitting…</span>

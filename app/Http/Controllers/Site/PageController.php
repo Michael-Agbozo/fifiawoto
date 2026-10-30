@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Enums\MediaCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
-use App\Models\MediaItem;
 use App\Models\Testimonial;
+use App\Support\MediaAlbums;
 use Illuminate\Contracts\View\View;
 
 class PageController extends Controller
@@ -89,16 +90,37 @@ class PageController extends Controller
         ]);
     }
 
-    public function media(): View
+    public function media(MediaAlbums $albums): View
     {
-        $items = MediaItem::query()
-            ->with('event:id,slug,title,status,published_at')
-            ->orderBy('sort')
-            ->orderByDesc('id')
-            ->get();
-
         return view('site.media', [
-            'items' => $items,
+            'albums' => $albums->all(),
+        ]);
+    }
+
+    /** One event's own photo gallery. */
+    public function mediaEvent(Event $event, MediaAlbums $albums): View
+    {
+        abort_unless(Event::query()->published()->whereKey($event->getKey())->exists(), 404);
+
+        return $this->albumPage($albums->forEvent($event), $albums);
+    }
+
+    /** Photos from a programme that aren't tied to a public event. */
+    public function mediaCollection(string $category, MediaAlbums $albums): View
+    {
+        $category = MediaCategory::tryFrom($category) ?? abort(404);
+
+        return $this->albumPage($albums->forCategory($category), $albums);
+    }
+
+    /** @param  array<string, mixed>|null  $album */
+    private function albumPage(?array $album, MediaAlbums $albums): View
+    {
+        abort_if($album === null, 404);
+
+        return view('site.media-album', [
+            'album' => $album,
+            'moreAlbums' => $albums->all()->reject(fn (array $other) => $other['key'] === $album['key'])->take(3)->values(),
         ]);
     }
 }

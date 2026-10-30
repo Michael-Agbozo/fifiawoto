@@ -153,6 +153,19 @@ it('loops every upcoming fundraiser through the causes carousel', function () {
     expect(substr_count($response->getContent(), 'Back-to-School Supplies Drive — Lomé</a>'))->toBe(2);
 });
 
+it('only shows the loop copies of causes while the carousel is looping', function () {
+    Event::factory()->count(2)->create([
+        'goal_cents' => 5_000_00,
+        'starts_at' => now()->addWeeks(2),
+        'status' => EventStatus::Published->value,
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('x-show="looping" aria-hidden="true" inert', escape: false);
+});
+
 it('hides popular causes when no fundraising events are upcoming', function () {
     Event::query()->delete();
 

@@ -9,15 +9,18 @@
     </x-site.page-hero>
 
     {{-- SEARCH --}}
-    <section class="bg-cream-50 py-12 sm:py-16">
+    <section class="bg-cream-50 py-14 sm:py-20">
         <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            <p class="eyebrow">Find an event</p>
+            <h2 class="section-title mt-3 text-heading">Find an outreach near you</h2>
+
             <form
                 method="get"
                 action="{{ route('events.index') }}"
-                class="mx-auto flex max-w-xl items-center gap-2 rounded-full border border-brand-100 bg-surface p-1.5 shadow-sm focus-within:border-brand-700 focus-within:ring-2 focus-within:ring-brand-700/15"
+                class="mx-auto mt-8 flex max-w-3xl items-center gap-2 rounded-full border border-cream-300 bg-surface p-2 shadow-[0_20px_50px_-30px_rgba(0,4,78,0.45)] transition focus-within:border-heading focus-within:shadow-[0_24px_60px_-28px_rgba(0,4,78,0.55)] focus-within:ring-4 focus-within:ring-brand-500/15"
                 role="search"
             >
-                <span class="pl-3 text-ink-500">
+                <span class="ml-1 hidden size-11 shrink-0 place-items-center rounded-full bg-cream-100 text-heading sm:grid" aria-hidden="true">
                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"/>
                     </svg>
@@ -28,19 +31,37 @@
                     type="search"
                     name="q"
                     value="{{ $search ?? '' }}"
-                    placeholder="Search by event name, location, or country…"
+                    placeholder="Event, town or country…"
                     autocomplete="off"
-                    class="flex-1 border-0 bg-transparent px-2 py-2 text-sm text-heading placeholder-ink-500 focus:outline-none focus:ring-0"
+                    class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-base text-heading placeholder-ink-500 focus:outline-none focus:ring-0 sm:text-lg"
                 >
                 @if (filled($search ?? ''))
-                    <a href="{{ route('events.index') }}" class="grid size-9 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-heading" title="Clear search" aria-label="Clear search">
-                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                    <a href="{{ route('events.index') }}" class="grid size-10 shrink-0 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-heading" title="Clear search" aria-label="Clear search">
+                        <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                     </a>
                 @endif
-                <button type="submit" class="rounded-full bg-brand-900 px-5 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-gold-500">
-                    Search
+                <button type="submit" class="btn btn-primary btn-lg shrink-0 px-5 sm:px-7">
+                    <span class="hidden sm:inline">Search</span>
+                    <svg class="size-5 sm:size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    <span class="sr-only sm:hidden">Search</span>
                 </button>
             </form>
+
+            <div class="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
+                <span class="text-ink-500">Popular:</span>
+                @foreach (['Ghana', 'Togo', 'Benin', 'United States'] as $country)
+                    @php $isActive = strcasecmp(trim($search ?? ''), $country) === 0; @endphp
+                    <a
+                        href="{{ route('events.index', ['q' => $country]) }}"
+                        @class([
+                            'rounded-full border px-4 py-1.5 font-medium transition',
+                            'border-heading bg-heading text-surface' => $isActive,
+                            'border-cream-300 bg-surface text-ink-700 hover:border-heading hover:text-heading' => ! $isActive,
+                        ])
+                        @if ($isActive) aria-current="true" @endif
+                    >{{ $country }}</a>
+                @endforeach
+            </div>
 
             @if (filled($search ?? ''))
                 <p class="mt-4 text-sm text-ink-500">

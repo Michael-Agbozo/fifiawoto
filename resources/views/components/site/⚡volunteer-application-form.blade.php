@@ -128,16 +128,47 @@ new class extends Component
 
 <div>
     @if (! $compact)
-        <section class="py-20" aria-labelledby="volunteer-form-heading">
-            <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-                <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
-                    <div class="text-center">
-                        <p class="eyebrow">Application</p>
-                        <h2 id="volunteer-form-heading" class="section-title text-heading mt-3">Apply to Volunteer</h2>
-                        <p class="mt-3 text-sm text-ink-500">
-                            Tell us a little about yourself and how you'd like to contribute. Our volunteer coordinator will be in touch.
-                        </p>
+        <section class="section" aria-labelledby="volunteer-form-heading">
+            <div class="mx-auto grid max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:gap-8 lg:px-8">
+                {{-- What happens next --}}
+                <aside class="relative isolate flex flex-col overflow-hidden rounded-3xl bg-brand-900 p-8 text-white sm:p-10">
+                    <img src="{{ asset('images/foundation/outreach-4.webp') }}" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover opacity-30" loading="lazy">
+                    <div class="absolute inset-0 -z-10 bg-gradient-to-b from-brand-900/70 via-brand-900/85 to-brand-900" aria-hidden="true"></div>
+
+                    <p class="eyebrow eyebrow-light">Volunteer with us</p>
+                    <h3 class="mt-3 font-serif text-3xl font-bold leading-tight text-white sm:text-4xl">What happens next</h3>
+
+                    <ol class="mt-8 space-y-6">
+                        @foreach ([
+                            ['Send your application', 'Tell us about yourself, your interests and when you are free.'],
+                            ['We get in touch', 'Our volunteer coordinator reaches out within a few business days.'],
+                            ['Join an outreach', 'We match you with an event or programme that fits your skills.'],
+                        ] as $index => [$step, $copy])
+                            <li class="flex gap-4">
+                                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 font-serif text-lg font-bold text-white ring-1 ring-white/25">{{ $index + 1 }}</span>
+                                <div>
+                                    <p class="font-semibold text-white">{{ $step }}</p>
+                                    <p class="mt-1 text-sm leading-relaxed text-white/75">{{ $copy }}</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ol>
+
+                    <div class="mt-auto pt-10">
+                        <div class="rounded-2xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur">
+                            <p class="text-sm text-white/75">Questions before you apply?</p>
+                            <a href="mailto:hello@fifiawoto.org" class="mt-1 inline-block font-semibold text-white hover:text-gold-300">hello@fifiawoto.org</a>
+                        </div>
                     </div>
+                </aside>
+
+                {{-- Form --}}
+                <div class="card p-6 shadow-[0_24px_60px_-40px_rgba(0,4,78,0.45)] sm:p-10">
+                    <p class="eyebrow">Application</p>
+                    <h2 id="volunteer-form-heading" class="section-title text-heading mt-3">Apply to Volunteer</h2>
+                    <p class="mt-3 max-w-2xl text-base leading-relaxed text-ink-500">
+                        Tell us a little about yourself and how you'd like to contribute. Our volunteer coordinator will be in touch.
+                    </p>
                     @include('components.site.partials.volunteer-form-body')
                 </div>
             </div>

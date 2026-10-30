@@ -73,9 +73,6 @@
                                 <img src="{{ Storage::disk('public')->url($child->public_photo_path) }}" alt="{{ $child->public_display_name }}" loading="lazy" class="aspect-[5/4] w-full object-cover object-center transition duration-500 motion-safe:group-hover:scale-105">
                                 <span class="absolute bottom-4 left-5 rounded-full bg-brand-900 px-4 py-2 text-xs font-semibold text-white">{{ $child->public_country }}</span>
                             </div>
-                            @if (Str::endsWith($child->public_display_name, '(Demo)'))
-                                <p class="bg-cream-100 px-6 py-2 text-xs text-ink-500 sm:px-7">Illustrative foundation photograph</p>
-                            @endif
                             <div class="flex flex-1 flex-col p-6 sm:p-7">
                                 <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">A story to discover <span aria-hidden="true" class="text-gold-500">/</span> {{ $child->date_of_birth->age }} years</p>
                                 <h3 class="mt-3 break-words text-2xl leading-tight text-heading">Meet {{ $child->public_display_name }}</h3>

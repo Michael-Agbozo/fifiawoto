@@ -178,7 +178,7 @@ it('retains selected filter values and links every card to its public profile', 
 
     $response = $this->get(route('sponsor-a-child', ['gender' => 'female', 'age' => '6-11', 'country' => 'Ghana']))
         ->assertOk()->assertSee('Meet Ama (Demo)')
-        ->assertSee('Illustrative foundation photograph')
+        ->assertDontSee('Illustrative foundation photograph')
         ->assertSee('href="'.route('sponsor-a-child.show', $child->public_sponsorship_slug).'"', false);
 
     $document = new DOMDocument;
@@ -192,12 +192,12 @@ it('retains selected filter values and links every card to its public profile', 
     }
 });
 
-it('identifies illustrative photos on demo details without labelling real profiles as demos', function () {
+it('marks demo profiles as previews without labelling real profiles as demos or captioning photos', function () {
     $demo = publicChild(['public_display_name' => 'Ama (Demo)']);
     $real = publicChild();
 
     $this->get(route('sponsor-a-child.show', $demo->public_sponsorship_slug))
-        ->assertOk()->assertSee('Meet Ama (Demo)')->assertSee('Illustrative foundation photograph')
+        ->assertOk()->assertSee('Meet Ama (Demo)')->assertDontSee('Illustrative foundation photograph')
         ->assertSee('An illustrative preview of a longer child profile.')
         ->assertDontSee('An introduction shared with guardian consent.');
     $this->get(route('sponsor-a-child.show', $real->public_sponsorship_slug))
@@ -211,4 +211,14 @@ it('marks sponsor a child as the current nav item on child pages', function () {
     $this->get(route('sponsor-a-child.show', $child->public_sponsorship_slug))
         ->assertOk()
         ->assertSee('class="whitespace-nowrap text-sm font-semibold text-gold-500" wire:navigate>Sponsor a Child</a>', false);
+});
+
+it('shows a breadcrumb back through Sponsor a Child on each profile', function () {
+    $child = publicChild();
+
+    $this->get(route('sponsor-a-child.show', $child->public_sponsorship_slug))
+        ->assertOk()
+        ->assertSee('aria-label="Breadcrumb"', escape: false)
+        ->assertSeeInOrder([route('home'), route('sponsor-a-child'), 'aria-current="page">Ama</span>'], escape: false)
+        ->assertDontSee('All children</a>', escape: false);
 });

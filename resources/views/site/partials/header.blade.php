@@ -14,7 +14,7 @@
     x-data="{ open: false, scrolled: false }"
     x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 8)"
     :class="[scrolled ? '!bg-brand-900 !text-white !shadow-lg' : '', open ? '!rounded-[28px]' : '']"
-    class="sticky top-3 z-40 overflow-clip rounded-full bg-surface text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
+    class="sticky top-3 z-40 mx-2 overflow-clip rounded-full sm:mx-6 lg:mx-10 xl:mx-16 bg-surface text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
 >
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 py-3 pl-2.5 pr-3 sm:pl-3 sm:pr-3 lg:py-3 lg:pl-3 lg:pr-3">
         <a href="{{ route('home') }}" class="flex items-center" aria-label="Fifiawoto Foundation home" wire:navigate>

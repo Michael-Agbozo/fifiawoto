@@ -151,50 +151,61 @@
     </section>
 
     {{-- GLOBAL PRESENCE --}}
-    <section class="section bg-brand-900 text-paper" aria-labelledby="global-presence-heading">
-        <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 md:grid-cols-2 md:items-center lg:px-8">
+    @php
+        $upcomingByCountry = \App\Models\Event::query()->published()->upcoming()->reorder()
+            ->selectRaw('country, count(*) as total')->groupBy('country')->pluck('total', 'country');
+        $countries = [
+            ['Ghana', 'Education support and women’s programmes with partner churches.'],
+            ['Togo', 'Care for widows and families alongside community leaders.'],
+            ['Benin', 'School supplies, health outreach and child sponsorship.'],
+            ['United States', 'Volunteers, donors and the foundation’s board.'],
+        ];
+    @endphp
+    <section class="bg-stage-light section text-white" aria-labelledby="global-presence-heading">
+        <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center lg:gap-16 lg:px-8">
             <div>
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Where we work</p>
-                <h2 id="global-presence-heading" class="section-title reveal mt-3" style="transition-delay: 120ms">A Global Presence</h2>
-                <p class="reveal mt-6 text-sm leading-relaxed text-paper-dim/80" style="transition-delay: 240ms">
-                    The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programs where they're needed most.
+                <p class="eyebrow eyebrow-light reveal-down">Where we work</p>
+                <h2 id="global-presence-heading" class="section-title reveal mt-3 text-white" style="transition-delay: 120ms">A Global Presence</h2>
+                <p class="reveal mt-6 max-w-md text-base leading-relaxed text-white/80" style="transition-delay: 240ms">
+                    The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programmes where they're needed most.
                 </p>
-                <ul class="mt-8 grid grid-cols-2 gap-4 text-sm">
-                    @foreach (['United States', 'Ghana', 'Togo', 'Benin'] as $country)
-                        <li class="flex items-center gap-3 rounded-lg border border-brand-700/40 bg-brand-800/50 px-4 py-3">
-                            <span class="size-2 rounded-full bg-gold-400"></span>
-                            <span class="text-paper">{{ $country }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-                <p class="mt-6 text-xs text-paper-dim/60">An interactive map will replace this list in a later release.</p>
+                <dl class="reveal mt-10 grid max-w-sm grid-cols-2 gap-6 border-t border-white/15 pt-6" style="transition-delay: 320ms">
+                    <div>
+                        <dt class="text-xs font-medium text-white/60">Countries</dt>
+                        <dd class="mt-1 font-serif text-4xl font-bold">4</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-white/60">Upcoming events</dt>
+                        <dd class="mt-1 font-serif text-4xl font-bold">{{ $upcomingByCountry->sum() }}</dd>
+                    </div>
+                </dl>
             </div>
 
-            <div class="relative">
-                <div class="aspect-[4/3] overflow-hidden rounded-2xl border border-brand-700/40 bg-brand-800/40 p-6">
-                    <svg viewBox="0 0 320 220" class="h-full w-full text-label" aria-hidden="true">
-                        <rect x="0" y="0" width="320" height="220" fill="none" />
-                        <g fill="currentColor" opacity="0.45">
-                            <circle cx="70"  cy="90"  r="46" />
-                            <circle cx="170" cy="110" r="36" />
-                            <circle cx="200" cy="140" r="20" />
-                            <circle cx="220" cy="150" r="16" />
-                        </g>
-                        <g fill="var(--color-gold-400)">
-                            <circle cx="70"  cy="90"  r="5" />
-                            <circle cx="170" cy="110" r="5" />
-                            <circle cx="195" cy="138" r="5" />
-                            <circle cx="220" cy="148" r="5" />
-                        </g>
-                        <g fill="var(--color-cream-50)" font-family="ui-sans-serif" font-size="9">
-                            <text x="80"  y="84">United States</text>
-                            <text x="180" y="104">Ghana</text>
-                            <text x="180" y="160">Togo</text>
-                            <text x="230" y="148">Benin</text>
-                        </g>
-                    </svg>
-                </div>
-            </div>
+            <ul class="grid gap-4 sm:grid-cols-2">
+                @foreach ($countries as $i => [$country, $focus])
+                    @php $upcoming = (int) ($upcomingByCountry[$country] ?? 0); @endphp
+                    <li class="reveal-3d" style="transition-delay: {{ $i * 90 }}ms">
+                        <a href="{{ route('events.index', ['q' => $country]) }}" class="tilt group flex h-full flex-col rounded-3xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.12] hover:ring-white/30" wire:navigate>
+                            <span class="flex items-center gap-2.5">
+                                <span class="size-2.5 rounded-full bg-gold-300 shadow-[0_0_14px_rgba(255,176,176,0.9)]" aria-hidden="true"></span>
+                                <span class="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">{{ str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                            </span>
+                            <span class="mt-5 font-serif text-3xl font-bold leading-tight text-white">{{ $country }}</span>
+                            <span class="mt-3 text-sm leading-relaxed text-white/75">{{ $focus }}</span>
+                            <span class="mt-auto flex items-center justify-between gap-3 border-t border-white/15 pt-4 text-sm">
+                                <span class="text-white/70">
+                                    @if ($upcoming > 0)
+                                        {{ $upcoming }} upcoming {{ \Illuminate\Support\Str::plural('event', $upcoming) }}
+                                    @else
+                                        View past events
+                                    @endif
+                                </span>
+                                <span class="grid size-9 place-items-center rounded-full bg-white/10 transition group-hover:bg-gold-500" aria-hidden="true">→</span>
+                            </span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
         </div>
     </section>
 
@@ -216,7 +227,7 @@
             @endphp
 
             @if ($leaders->isNotEmpty())
-                <div class="mt-14 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+                <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ($leaders as $i => $leader)
                         @php
                             $initials = collect(preg_split('/\s+/', trim($leader->name)))
@@ -224,28 +235,36 @@
                                 ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
                                 ->take(2)
                                 ->implode('');
-                            $photo = $leader->photo_path;
-                            $photoSrc = \App\Support\MediaUrl::for($photo);
+                            $photoSrc = \App\Support\MediaUrl::for($leader->photo_path);
+                            $bio = \Illuminate\Support\Str::limit(strip_tags((string) $leader->bio), 180);
                         @endphp
-                        <figure class="reveal group" style="transition-delay: {{ ($i % 4) * 80 }}ms">
-                            <div class="relative aspect-square overflow-hidden rounded-2xl bg-cream-200">
+                        <figure class="reveal-3d" style="transition-delay: {{ ($i % 4) * 90 }}ms">
+                            <div class="tilt group relative aspect-[4/5] overflow-hidden rounded-3xl bg-cream-200 shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)]">
                                 @if ($photoSrc)
                                     <img
                                         src="{{ $photoSrc }}"
                                         alt="{{ $leader->name }}, {{ $leader->role }}"
-                                        class="img-fade absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                                        class="img-fade absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
                                         loading="lazy"
                                         onerror="this.style.display='none'; this.parentElement.querySelector('[data-fallback]').style.display='flex';"
                                     >
                                 @endif
                                 <div data-fallback class="absolute inset-0 {{ $photoSrc ? 'hidden' : 'flex' }} items-center justify-center bg-gradient-to-br from-brand-100 via-cream-200 to-brand-50">
-                                    <span class="font-serif text-4xl font-bold text-heading/70">{{ $initials }}</span>
+                                    <span class="font-serif text-5xl font-bold text-heading/70">{{ $initials }}</span>
+                                </div>
+
+                                {{-- Name plate, with the bio sliding up on hover --}}
+                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/70 to-transparent px-5 pb-5 pt-16 text-white">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-300">{{ $leader->role }}</p>
+                                    <p class="mt-1.5 font-serif text-xl font-bold leading-tight">{{ $leader->name }}</p>
+                                    @if ($bio)
+                                        <p class="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-white/80 opacity-0 transition-all duration-500 group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">{{ $bio }}</p>
+                                    @endif
                                 </div>
                             </div>
-                            <figcaption class="mt-4">
-                                <p class="font-serif text-base font-bold leading-tight text-heading">{{ $leader->name }}</p>
-                                <p class="mt-1 text-xs uppercase tracking-[0.18em] text-ink-500">{{ $leader->role }}</p>
-                            </figcaption>
+                            @if ($bio)
+                                <figcaption class="mt-3 text-sm leading-relaxed text-ink-500 sm:hidden">{{ $bio }}</figcaption>
+                            @endif
                         </figure>
                     @endforeach
                 </div>
@@ -258,7 +277,7 @@
                         Interested in serving on our advisory board, partnering on a program, or supporting a specific country office? We'd love to hear from you.
                     </p>
                 </div>
-                <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-brand-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-gold-500" wire:navigate>
+                <a href="{{ route('contact') }}" class="btn btn-primary shrink-0" wire:navigate>
                     Reach out to the foundation
                     <span aria-hidden="true">→</span>
                 </a>

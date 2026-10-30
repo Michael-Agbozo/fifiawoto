@@ -77,7 +77,6 @@
                                 <img src="{{ Storage::disk('public')->url($child->public_photo_path) }}" alt="{{ $child->public_display_name }}" class="size-20 shrink-0 rounded-full object-cover object-center">
                                 <div class="min-w-0"><h3 class="break-words font-sans text-xl font-semibold text-heading">{{ $child->public_display_name }}</h3><p class="mt-2 text-sm text-ink-500">{{ $child->date_of_birth->age }} years · {{ $child->public_country }}</p></div>
                             </div>
-                            @if (Str::endsWith($child->public_display_name, '(Demo)'))<p class="mt-4 text-xs leading-5 text-ink-500">Demo profile · Illustrative foundation photograph</p>@endif
                             @if ($step === 'summary')
                                 <fieldset class="mt-7"><legend class="text-sm font-semibold text-heading">Choose your monthly pledge <span class="font-normal text-ink-500">({{ $currency }})</span></legend><p class="mt-2 text-xs leading-5 text-ink-500">Suggested support — choose an amount that works for you.</p>
                                     <div class="mt-4 grid grid-cols-3 gap-2">

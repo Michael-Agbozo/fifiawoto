@@ -74,6 +74,8 @@ new class extends Component
     #[Validate('nullable|string|max:4000')]
     public string $notes = '';
 
+    public string $drive_folder_url = '';
+
     #[Locked]
     public string $photo_path = '';
 
@@ -98,6 +100,7 @@ new class extends Component
         return [
             'category' => ['required', Rule::enum(SupportCategory::class)],
             'status' => ['required', Rule::enum(SupportStatus::class)],
+            'drive_folder_url' => Beneficiary::DRIVE_FOLDER_URL_RULES,
         ];
     }
 
@@ -126,6 +129,7 @@ new class extends Component
         $this->status = $b->status->value;
         $this->assigned_to_user_id = $b->assigned_to_user_id;
         $this->notes = (string) $b->notes;
+        $this->drive_folder_url = (string) $b->drive_folder_url;
         $this->photo_path = (string) $b->photo_path;
         $this->photo_upload = null;
         $this->remove_photo = false;
@@ -171,6 +175,7 @@ new class extends Component
             'status' => $data['status'],
             'assigned_to_user_id' => $data['assigned_to_user_id'] ?: null,
             'notes' => $data['notes'] ?: null,
+            'drive_folder_url' => trim($data['drive_folder_url']) ?: null,
             'photo_path' => $photoPath,
         ];
 
@@ -260,7 +265,7 @@ new class extends Component
         $this->reset([
             'editingId', 'showForm', 'full_name', 'date_of_birth', 'gender', 'phone',
             'email', 'country', 'region', 'description', 'assigned_to_user_id', 'notes',
-            'photo_path', 'photo_upload', 'remove_photo',
+            'drive_folder_url', 'photo_path', 'photo_upload', 'remove_photo',
         ]);
         $this->category = '';
         $this->status = 'pending_review';
@@ -492,6 +497,13 @@ new class extends Component
                 <textarea wire:model="notes" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
             </div>
 
+            <div>
+                <label for="beneficiary-drive-folder" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Google Drive folder link</label>
+                <input id="beneficiary-drive-folder" type="url" wire:model="drive_folder_url" placeholder="https://drive.google.com/drive/folders/…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <p class="mt-1 text-xs text-ink-500">Where this person's documents and photos are kept. Paste the folder's share link.</p>
+                @error('drive_folder_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
             <div class="flex flex-wrap gap-3 pt-2">
                 <button type="submit" class="btn btn-primary px-6 py-3 text-sm">{{ $editingId ? 'Save changes' : 'Create record' }}</button>
                 <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
@@ -522,6 +534,11 @@ new class extends Component
                                     <x-admin.avatar :src="$b->photo_path" :name="$b->full_name" size="sm" />
                                     <div>
                                         <a href="{{ route('admin.beneficiaries.show', $b) }}" class="font-semibold text-ink-900 hover:text-gold-500" wire:navigate>{{ $b->full_name }}</a>
+                                        @if ($b->drive_folder_url)
+                                            <a href="{{ $b->drive_folder_url }}" target="_blank" rel="noopener" class="ml-1.5 inline-grid size-6 place-items-center rounded-md align-middle text-ink-500 ring-1 ring-cream-300 transition hover:bg-cream-100 hover:text-heading" title="Open Google Drive folder" aria-label="Open {{ $b->full_name }}'s Google Drive folder">
+                                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+                                            </a>
+                                        @endif
                                         @if ($b->region)
                                             <p class="text-xs text-ink-500">{{ $b->region }}</p>
                                         @endif

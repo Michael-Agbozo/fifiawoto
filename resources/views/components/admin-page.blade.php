@@ -9,7 +9,7 @@
         <div class="-mt-2 mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 @if (filled($kicker))
-                    <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-ink-500">{{ $kicker }}</p>
+                    <p class="eyebrow">{{ $kicker }}</p>
                 @endif
                 @if (filled($description))
                     <p class="mt-1 max-w-2xl text-sm text-ink-500">{{ $description }}</p>

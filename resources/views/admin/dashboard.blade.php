@@ -38,9 +38,7 @@
 
 <x-layouts::admin title="Dashboard">
     {{-- Banner --}}
-    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-6 py-6 text-white shadow-[0_30px_60px_-30px_rgba(0,4,78,0.7)] sm:px-10">
-        <div class="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gold-500/20 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-12 left-20 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+    <section class="bg-fluted rounded-3xl px-6 py-8 text-white shadow-[0_30px_60px_-30px_rgba(0,4,78,0.7)] sm:px-10">
 
         <div class="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="max-w-2xl">

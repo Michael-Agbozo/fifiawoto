@@ -300,7 +300,7 @@
                                 @foreach ($popularCauses as $cause)
                                     <div
                                         class="shrink-0 basis-full md:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-3rem)/3)]"
-                                        @if ($isCopy) aria-hidden="true" inert @else role="group" aria-roledescription="slide" aria-label="{{ $loop->iteration }} of {{ $loop->count }}" @endif
+                                        @if ($isCopy) x-show="looping" aria-hidden="true" inert @else role="group" aria-roledescription="slide" aria-label="{{ $loop->iteration }} of {{ $loop->count }}" @endif
                                     >
                                         @include('site.partials.cause-card', ['cause' => $cause, 'index' => $loop->index])
                                     </div>

@@ -74,3 +74,9 @@ it('rejects empty interests and invalid availability', function () {
         ->call('submit')
         ->assertHasErrors(['interests', 'availability']);
 });
+
+it('shows the volunteer form beside the what happens next steps', function () {
+    $this->get(route('volunteer'))
+        ->assertOk()
+        ->assertSeeInOrder(['What happens next', 'Send your application', 'We get in touch', 'Join an outreach', 'Apply to Volunteer']);
+});

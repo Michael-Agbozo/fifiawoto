@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Support\MediaAlbums;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -38,7 +39,7 @@ class EventController extends Controller
         ]);
     }
 
-    public function show(Event $event): View
+    public function show(Event $event, MediaAlbums $albums): View
     {
         abort_unless(Event::query()->published()->whereKey($event->getKey())->exists(), 404);
 
@@ -46,6 +47,7 @@ class EventController extends Controller
 
         return view('site.events.show', [
             'event' => $event,
+            'gallery' => $albums->forEvent($event),
         ]);
     }
 }

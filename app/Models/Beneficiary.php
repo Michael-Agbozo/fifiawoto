@@ -15,6 +15,9 @@ use Illuminate\Support\Str;
 
 class Beneficiary extends Model
 {
+    /** Validation rules for a link to the beneficiary's Google Drive folder. */
+    public const DRIVE_FOLDER_URL_RULES = ['nullable', 'string', 'max:500', 'url:https', 'regex:#^https://drive\.google\.com/#'];
+
     /** @use HasFactory<BeneficiaryFactory> */
     use HasFactory;
 
@@ -23,7 +26,7 @@ class Beneficiary extends Model
     protected $fillable = [
         'full_name', 'date_of_birth', 'gender', 'phone', 'email', 'country',
         'region', 'category', 'description', 'status', 'assigned_to_user_id',
-        'photo_path', 'notes', 'source_application_id',
+        'photo_path', 'notes', 'drive_folder_url', 'source_application_id',
         'public_sponsorship_id', 'public_sponsorship_slug', 'sponsorship_published', 'public_display_name', 'public_story', 'public_photo_path', 'public_country', 'guardian_consent_at', 'guardian_consent_reference',
         'public_community_story', 'public_country_story',
     ];
@@ -106,6 +109,12 @@ class Beneficiary extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(BeneficiaryDocument::class);
+    }
+
+    /** @return HasMany<SponsorshipPhoto, $this> */
+    public function sponsorshipPhotos(): HasMany
+    {
+        return $this->hasMany(SponsorshipPhoto::class)->orderBy('sort')->orderBy('id');
     }
 
     /** @return HasMany<BeneficiaryTimelineEntry, $this> */

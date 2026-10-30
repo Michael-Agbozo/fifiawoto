@@ -1,9 +1,10 @@
 @props([
     'title' => null,
-    'breadcrumbs' => ['Pages', 'Dashboard'],
+    'breadcrumbs' => null,
 ])
 
 @php
+    $breadcrumbs ??= filled($title) && $title !== 'Dashboard' ? ['Admin', $title] : ['Admin', 'Dashboard'];
     $user = auth()->user();
     $role = $user?->role;
 
@@ -277,17 +278,30 @@
                             <button type="button" onclick="history.forward()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Forward">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg>
                             </button>
-                            <nav class="ml-1 flex items-center gap-1 text-sm" aria-label="Breadcrumb">
-                                @foreach ($breadcrumbs as $i => $crumb)
-                                    @if ($i > 0)
-                                        <span class="text-ink-500">/</span>
-                                    @endif
-                                    @if ($loop->last)
-                                        <span class="font-semibold text-ink-900">{{ $crumb }}</span>
-                                    @else
-                                        <span class="text-ink-500">{{ $crumb }}</span>
-                                    @endif
-                                @endforeach
+                            <nav class="ml-1" aria-label="Breadcrumb">
+                                <ol class="inline-flex items-center gap-1 rounded-full bg-cream-100 py-1 pl-1 pr-3.5 text-sm ring-1 ring-cream-300">
+                                    @foreach ($breadcrumbs as $i => $crumb)
+                                        @if ($i > 0)
+                                            <li aria-hidden="true" class="text-ink-500/60">
+                                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                                            </li>
+                                        @endif
+                                        <li>
+                                            @if ($loop->first && ! $loop->last)
+                                                <a href="{{ route('admin.dashboard') }}" class="group inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1.5 text-ink-500 transition hover:text-heading" wire:navigate>
+                                                    <span class="grid size-6 place-items-center rounded-full bg-surface text-heading ring-1 ring-cream-300 transition group-hover:bg-gold-500 group-hover:text-white group-hover:ring-gold-500" aria-hidden="true">
+                                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+                                                    </span>
+                                                    {{ $crumb }}
+                                                </a>
+                                            @elseif ($loop->last)
+                                                <span class="pl-1 font-semibold text-heading" aria-current="page">{{ $crumb }}</span>
+                                            @else
+                                                <span class="text-ink-500">{{ $crumb }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ol>
                             </nav>
                         </div>
 

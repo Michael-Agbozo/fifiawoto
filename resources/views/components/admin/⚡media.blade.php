@@ -100,6 +100,12 @@ new class extends Component
         abort_unless(auth()->user()?->canDo('media', $this->editingId ? 'update' : 'create'), 403);
 
         $data = $this->validate();
+        $data['path'] = trim($data['path']);
+
+        // A YouTube link is always a video, whatever type was picked.
+        if (\App\Support\MediaLink::parse($data['path'])?->isYouTube()) {
+            $data['type'] = 'video';
+        }
 
         $payload = [
             'type' => $data['type'],
@@ -290,8 +296,15 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">File path</label>
-                    <input type="text" wire:model="path" required placeholder="media/event-12/photo.jpg" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Link or file path</label>
+                    <input type="text" wire:model.live.debounce.400ms="path" required placeholder="YouTube or Google Drive link, or media/photo.jpg" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @php $detectedLink = \App\Support\MediaLink::parse(trim($path)); @endphp
+                    @if ($detectedLink)
+                        <p class="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                            <span class="size-1.5 rounded-full bg-green-600" aria-hidden="true"></span>
+                            {{ $detectedLink->label() }} detected{{ $detectedLink->isYouTube() ? ', saved as a video' : '' }}
+                        </p>
+                    @endif
                     @error('path') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -311,7 +324,14 @@ new class extends Component
                 </div>
             </div>
 
-            <p class="text-xs text-ink-500">File upload UI ships with the storage layer. For now, paste a path that already lives under <code>public/storage/</code> or an external URL.</p>
+            <div class="rounded-xl bg-cream-100 p-4 text-xs leading-relaxed text-ink-700">
+                <p class="font-semibold text-heading">Adding from YouTube or Google Drive</p>
+                <ul class="mt-1.5 list-disc space-y-1 pl-4">
+                    <li><strong>YouTube:</strong> paste the video's link. It plays inside the gallery.</li>
+                    <li><strong>Google Drive:</strong> paste the file's share link and pick <em>Image</em> or <em>Video</em> above. In Drive, set sharing to <em>Anyone with the link</em> or it won't show on the site.</li>
+                    <li><strong>Files on this site:</strong> paste a path under <code>public/storage/</code>.</li>
+                </ul>
+            </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
                 <button type="submit" class="btn btn-primary px-6 py-3 text-sm">{{ $editingId ? 'Save changes' : 'Add media' }}</button>
@@ -327,7 +347,13 @@ new class extends Component
             @foreach ($this->items as $m)
                 <article class="rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                     <div class="aspect-[4/3] overflow-hidden rounded-t-3xl bg-cream-200">
-                        <img src="{{ \App\Support\MediaUrl::for($m->path) }}" alt="{{ $m->caption ?? $m->category->label() }}" class="h-full w-full object-cover" loading="lazy">
+                        @php $mLink = \App\Support\MediaLink::parse($m->path); @endphp
+                        <div class="relative h-full w-full">
+                            <img src="{{ \App\Support\MediaUrl::for($m->poster_path) ?? ($mLink ? $mLink->imageUrl() : \App\Support\MediaUrl::for($m->path)) }}" alt="{{ $m->caption ?? $m->category->label() }}" class="h-full w-full object-cover" loading="lazy">
+                            @if ($mLink)
+                                <span class="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white">{{ $mLink->isYouTube() ? 'YouTube' : 'Google Drive' }}</span>
+                            @endif
+                        </div>
                     </div>
                     <div class="p-4">
                         <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">{{ $m->category->label() }} · {{ $m->type->label() }}</p>

@@ -1,190 +1,198 @@
 <x-layouts::site title="Media Gallery">
     @php
-        // Fallback foundation imagery so the page is never empty even if the admin hasn't
-        // uploaded media items yet. Real DB rows take precedence when present.
-        $fallbacks = collect([
-            (object) ['id' => 'fb-1',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::CommunityOutreach, 'url' => asset('images/foundation/community-1.jpg'),     'caption' => 'Community gathering in the Volta region'],
-            (object) ['id' => 'fb-2',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::EducationPrograms, 'url' => asset('images/foundation/school-donation.jpg'),  'caption' => 'School supplies distribution day'],
-            (object) ['id' => 'fb-3',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::Volunteers,         'url' => asset('images/foundation/outreach-1.jpg'),       'caption' => 'Volunteers at the outreach kick-off'],
-            (object) ['id' => 'fb-4',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::CommunityOutreach, 'url' => asset('images/foundation/outreach-2.webp'),      'caption' => 'Family check-in at the mobile clinic'],
-            (object) ['id' => 'fb-5',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::Events,             'url' => asset('images/foundation/outreach-3.webp'),      'caption' => 'Widows empowerment workshop'],
-            (object) ['id' => 'fb-6',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::CommunityOutreach, 'url' => asset('images/foundation/community-2.jpg'),     'caption' => 'Town-hall in Greater Accra'],
-            (object) ['id' => 'fb-7',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::Volunteers,         'url' => asset('images/foundation/outreach-4.webp'),      'caption' => 'Volunteers preparing care packs'],
-            (object) ['id' => 'fb-8',  'type' => \App\Enums\MediaType::Image, 'category' => \App\Enums\MediaCategory::Events,             'url' => asset('images/foundation/community-3.jpg'),     'caption' => 'Annual gathering with partners'],
+        $usedCategories = $albums->pluck('category')->filter()->unique();
+        $categoryOptions = collect(\App\Enums\MediaCategory::options())->only($usedCategories->all());
+        $years = $albums->pluck('year')->filter()->unique()->sortDesc()->values();
+        $countries = $albums->pluck('country')->filter()->unique()->sort()->values();
+        $albumMeta = $albums->map(fn ($album) => [
+            'key' => $album['key'],
+            'title' => mb_strtolower($album['title']),
+            'category' => $album['category'],
+            'year' => $album['year'],
+            'country' => $album['country'],
+            'date' => $album['date']?->timestamp ?? 0,
+            'count' => $album['photos']->count(),
+        ])->values();
+        $totalPhotos = $albums->sum(fn ($album) => $album['photos']->count());
+        $fallbackPhotos = collect([
+            ['about/team-group.jpg', 'The foundation team and partners'],
+            ['school-donation.jpg', 'School supplies distribution day'],
+            ['outreach-1.jpg', 'Volunteers at the outreach kick-off'],
+            ['outreach-2.webp', 'Family check-in at the mobile clinic'],
+            ['outreach-3.webp', 'Widows empowerment workshop'],
+            ['outreach-4.webp', 'Volunteers preparing care packs'],
         ]);
-
-        // Normalize DB rows + fallbacks into a single shape: { id, type, category, url, caption, event_url, event_title }
-        $tiles = $items->isNotEmpty()
-            ? $items->map(function ($m) {
-                $event = $m->event;
-                $linkable = $event
-                    && $event->status === \App\Enums\EventStatus::Published
-                    && ($event->published_at === null || $event->published_at->lte(now()));
-
-                return (object) [
-                    'id' => $m->id,
-                    'type' => $m->type,
-                    'category' => $m->category,
-                    'url' => \App\Support\MediaUrl::for($m->path),
-                    'poster' => \App\Support\MediaUrl::for($m->poster_path),
-                    'caption' => $m->caption ?: $m->category?->label() ?? '',
-                    'event_url' => $linkable ? route('events.show', $event) : null,
-                    'event_title' => $linkable ? $event->title : null,
-                ];
-            })
-            : $fallbacks->map(fn ($f) => (object) array_merge((array) $f, ['event_url' => null, 'event_title' => null]));
-
-        $categoryOptions = \App\Enums\MediaCategory::options();
     @endphp
 
     <x-site.page-hero
         title="Moments from our work in action."
         breadcrumb="Media Gallery"
-        image="images/foundation/community-2.jpg"
-        alt="Foundation outreach gathering"
+        image="images/foundation/school-donation.jpg"
+        alt="Children holding donated school books"
     >
-        Browse images and clips from outreach programmes, education drives, volunteer days, and community events.
+        Every outreach, donation drive and programme has its own album. Pick one to see all its photos.
     </x-site.page-hero>
 
-    {{-- GALLERY --}}
-    <section class="section" aria-labelledby="gallery-heading">
-        <div
-            x-data="{
-                category: 'all',
-                videoOnly: false,
-                isVisible(card) {
-                    const cat = card.dataset.category;
-                    const type = card.dataset.type;
-                    if (this.videoOnly && type !== 'video') return false;
-                    if (this.category !== 'all' && cat !== this.category) return false;
-                    return true;
-                },
-                applyFilter() {
-                    this.$nextTick(() => {
-                        const cards = this.$refs.grid.querySelectorAll('[data-card]');
-                        cards.forEach(card => {
-                            card.style.display = this.isVisible(card) ? '' : 'none';
-                        });
-                        const empty = this.$refs.empty;
-                        const anyVisible = Array.from(cards).some(c => c.style.display !== 'none');
-                        empty.style.display = anyVisible ? 'none' : '';
-                    });
-                }
-            }"
-            x-init="applyFilter()"
-            class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
-        >
-            <h2 id="gallery-heading" class="sr-only">Gallery</h2>
-
-            {{-- Filter bar --}}
-            <div class="mb-10 flex flex-col gap-4 border-b border-cream-300 pb-5 sm:flex-row sm:items-center sm:justify-between">
-                <div class="-mx-1 flex items-center gap-1 overflow-x-auto px-1 sm:flex-wrap sm:overflow-visible">
-                    <button
-                        type="button"
-                        @click="category = 'all'; applyFilter()"
-                        :class="category === 'all' ? 'border-heading text-heading' : 'border-transparent text-ink-500 hover:text-heading'"
-                        class="shrink-0 border-b-2 px-3 pb-3 pt-1 text-sm font-semibold transition"
-                    >
-                        All
-                    </button>
-                    @foreach ($categoryOptions as $value => $label)
-                        <button
-                            type="button"
-                            @click="category = '{{ $value }}'; applyFilter()"
-                            :class="category === '{{ $value }}' ? 'border-heading text-heading' : 'border-transparent text-ink-500 hover:text-heading'"
-                            class="shrink-0 border-b-2 px-3 pb-3 pt-1 text-sm font-semibold transition"
-                        >
-                            {{ $label }}
-                        </button>
-                    @endforeach
+    {{-- ALBUM INDEX --}}
+    <section
+        class="section"
+        aria-labelledby="gallery-heading"
+        x-data="{
+            albums: @js($albumMeta),
+            q: '',
+            year: '',
+            country: '',
+            category: 'all',
+            sort: 'newest',
+            get shown() {
+                const q = this.q.trim().toLowerCase();
+                const list = this.albums.filter(a =>
+                    (! q || a.title.includes(q))
+                    && (! this.year || String(a.year) === this.year)
+                    && (! this.country || a.country === this.country)
+                    && (this.category === 'all' || a.category === this.category));
+                const by = {
+                    newest: (a, b) => b.date - a.date,
+                    oldest: (a, b) => a.date - b.date,
+                    photos: (a, b) => b.count - a.count || b.date - a.date,
+                    az: (a, b) => a.title.localeCompare(b.title),
+                }[this.sort];
+                return list.sort(by).map(a => a.key);
+            },
+            isShown(key) { return this.shown.includes(key) },
+            orderOf(key) { return this.shown.indexOf(key) },
+            get filtered() { return this.q || this.year || this.country || this.category !== 'all' },
+            reset() { this.q = ''; this.year = ''; this.country = ''; this.category = 'all' },
+        }"
+    >
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="eyebrow">Gallery</p>
+                    <h2 id="gallery-heading" class="section-title mt-3 text-heading">Browse our albums</h2>
                 </div>
-                <label class="inline-flex shrink-0 cursor-pointer select-none items-center gap-3 text-sm font-medium text-ink-700">
-                    <span class="inline-flex items-center gap-1.5">
-                        <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        Videos only
-                    </span>
-                    <span class="relative inline-flex h-5 w-9 items-center">
-                        <input type="checkbox" x-model="videoOnly" @change="applyFilter()" class="peer sr-only">
-                        <span class="absolute inset-0 rounded-full bg-cream-300 transition peer-checked:bg-brand-900"></span>
-                        <span class="absolute left-0.5 top-0.5 size-4 rounded-full bg-surface shadow transition peer-checked:translate-x-4"></span>
-                    </span>
-                </label>
+                @if ($albums->isNotEmpty())
+                    <p class="text-sm text-ink-500" aria-live="polite">
+                        Showing <strong class="font-semibold text-heading" x-text="shown.length">{{ $albums->count() }}</strong> of {{ $albums->count() }} {{ Str::plural('album', $albums->count()) }} · {{ $totalPhotos }} {{ Str::plural('item', $totalPhotos) }}
+                    </p>
+                @endif
             </div>
 
-            {{-- Masonry gallery --}}
-            <div
-                x-ref="grid"
-                class="columns-1 gap-4 sm:columns-2 lg:columns-3"
-            >
-                @foreach ($tiles as $tile)
-                    @php
-                        $isVideo = ($tile->type ?? null) instanceof \App\Enums\MediaType
-                            ? $tile->type === \App\Enums\MediaType::Video
-                            : (string) $tile->type === 'video';
-                        $thumb = $tile->poster ?? $tile->url;
-                        // Videos always open the source URL in a new tab. Images
-                        // navigate to the related event detail page if there is one;
-                        // otherwise the tile is a static image (no link).
-                        $tileHref = $isVideo
-                            ? $tile->url
-                            : ($tile->event_url ?? null);
-                        $tileTarget = $isVideo ? '_blank' : '_self';
-                        $tileRel = $isVideo ? 'noopener' : null;
-                    @endphp
-                    <figure
-                        data-card
-                        data-category="{{ $tile->category?->value }}"
-                        data-type="{{ $isVideo ? 'video' : 'image' }}"
-                        class="group relative mb-4 block break-inside-avoid overflow-hidden rounded-2xl bg-cream-200 shadow-sm ring-1 ring-cream-300 transition hover:-translate-y-0.5 hover:shadow-lg"
-                    >
-                        @if ($tileHref)
-                            <a href="{{ $tileHref }}" @if ($tileTarget !== '_self') target="{{ $tileTarget }}" @endif @if ($tileRel) rel="{{ $tileRel }}" @endif class="block" @if (! $isVideo) wire:navigate @endif>
-                                @if ($thumb)
-                                    <img src="{{ $thumb }}" alt="{{ $tile->caption }}" class="block w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
-                                @endif
-                                @if ($isVideo)
-                                    <div class="absolute inset-0 bg-gradient-to-t from-brand-900/65 via-transparent to-transparent"></div>
-                                    <span class="absolute inset-0 grid place-items-center">
-                                        <span class="grid size-14 place-items-center rounded-full bg-white/90 text-brand-900 shadow-lg backdrop-blur transition group-hover:bg-gold-500 group-hover:text-white">
-                                            <svg class="size-6 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                        </span>
-                                    </span>
-                                    <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
-                                        <svg class="size-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                        Video
-                                    </span>
-                                @endif
-                            </a>
-                        @else
-                            <img src="{{ $tile->url }}" alt="{{ $tile->caption }}" class="block w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
-                        @endif
+            @if ($albums->isNotEmpty())
+                {{-- Filter bar --}}
+                <div class="mt-8 rounded-3xl border border-cream-300 bg-surface p-4 shadow-[0_20px_50px_-35px_rgba(0,4,78,0.4)] sm:p-5">
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
+                        <label class="relative block">
+                            <span class="sr-only">Search albums</span>
+                            <svg class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"/></svg>
+                            <input type="search" x-model="q" placeholder="Search albums…" class="w-full rounded-full border border-cream-300 bg-cream-50 py-3 pl-11 pr-4 text-sm text-heading placeholder-ink-500 focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">Year</span>
+                            <select x-model="year" class="w-full rounded-full border border-cream-300 bg-cream-50 px-4 py-3 text-sm text-heading focus:border-heading focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                                <option value="">All years</option>
+                                @foreach ($years as $y)
+                                    <option value="{{ $y }}">{{ $y }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">Country</span>
+                            <select x-model="country" class="w-full rounded-full border border-cream-300 bg-cream-50 px-4 py-3 text-sm text-heading focus:border-heading focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                                <option value="">All countries</option>
+                                @foreach ($countries as $c)
+                                    <option value="{{ $c }}">{{ $c }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">Sort</span>
+                            <select x-model="sort" class="w-full rounded-full border border-cream-300 bg-cream-50 px-4 py-3 text-sm text-heading focus:border-heading focus:outline-none focus:ring-4 focus:ring-brand-500/15">
+                                <option value="newest">Newest first</option>
+                                <option value="oldest">Oldest first</option>
+                                <option value="photos">Most photos</option>
+                                <option value="az">A to Z</option>
+                            </select>
+                        </label>
+                    </div>
 
-                        @if ($tile->category || $tile->event_title)
-                            <figcaption class="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-900/85 via-brand-900/30 to-transparent p-4 opacity-0 transition group-hover:opacity-100">
-                                <div class="flex flex-wrap items-center gap-1.5">
-                                    @if ($tile->category)
-                                        <span class="inline-flex rounded-full bg-white/95 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-900">{{ $tile->category->label() }}</span>
-                                    @endif
-                                    @if ($tile->event_title)
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-gold-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                                            <svg class="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25M3 18.75A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75"/></svg>
-                                            View event
+                    <div class="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Programme">
+                        <button type="button" @click="category = 'all'" :aria-pressed="category === 'all'" :class="category === 'all' ? 'border-heading bg-heading text-surface' : 'border-cream-300 bg-surface text-ink-700 hover:border-heading'" class="rounded-full border px-4 py-2 text-sm font-medium transition">All programmes</button>
+                        @foreach ($categoryOptions as $value => $label)
+                            <button type="button" @click="category = '{{ $value }}'" :aria-pressed="category === '{{ $value }}'" :class="category === '{{ $value }}' ? 'border-heading bg-heading text-surface' : 'border-cream-300 bg-surface text-ink-700 hover:border-heading'" class="rounded-full border px-4 py-2 text-sm font-medium transition">{{ $label }}</button>
+                        @endforeach
+                        <button type="button" x-show="filtered" x-cloak @click="reset()" class="ml-auto text-sm font-semibold text-label underline-offset-4 hover:underline">Clear filters</button>
+                    </div>
+                </div>
+
+                {{-- One card per album: its cover photo opens the album's own gallery --}}
+                <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($albums as $album)
+                        @php $cover = $album['photos']->first(); @endphp
+                        <li
+                            class="glass-in"
+                            style="--i: {{ $loop->index }}"
+                            x-show="isShown('{{ $album['key'] }}')"
+                            x-transition:enter="transition duration-500 ease-out"
+                            x-transition:enter-start="opacity-0 scale-95 blur-md"
+                            x-transition:enter-end="opacity-100 scale-100 blur-0"
+                            x-transition:leave="transition duration-300 ease-in"
+                            x-transition:leave-start="opacity-100 scale-100 blur-0"
+                            x-transition:leave-end="opacity-0 scale-95 blur-md"
+                            :style="`order: ${orderOf('{{ $album['key'] }}')}; --i: {{ $loop->index }}`"
+                        >
+                            <a href="{{ $album['gallery_url'] }}" class="tilt group relative block overflow-hidden rounded-3xl bg-cream-200 shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)]" wire:navigate>
+                                <div class="relative aspect-[4/5]">
+                                    <img src="{{ $cover['thumb'] }}" alt="" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105">
+                                    <span class="absolute inset-0 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/35 to-transparent" aria-hidden="true"></span>
+
+                                    <span class="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-9 9"/></svg>
+                                        {{ $album['photos']->count() }}
+                                    </span>
+                                    @if ($album['date'])
+                                        <span class="absolute left-4 top-4 rounded-2xl bg-white/95 px-3 py-2 text-center leading-none text-heading shadow">
+                                            <span class="block font-serif text-2xl font-bold">{{ $album['date']->format('d') }}</span>
+                                            <span class="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-500">{{ $album['date']->format('M Y') }}</span>
                                         </span>
                                     @endif
+
+                                    <div class="absolute inset-x-0 bottom-0 p-6 text-white">
+                                        <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-300">{{ \App\Enums\MediaCategory::from($album['category'])->label() }}</p>
+                                        <h3 class="mt-2 font-serif text-2xl font-bold leading-tight">{{ $album['title'] }}</h3>
+                                        @if ($album['place'])
+                                            <p class="mt-2 flex items-center gap-1.5 text-sm text-white/80">
+                                                <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                                                {{ $album['place'] }}
+                                            </p>
+                                        @endif
+                                        <span class="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
+                                            View gallery
+                                            <span class="grid size-8 place-items-center rounded-full bg-white/15 ring-1 ring-white/30 transition group-hover:translate-x-1 group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">→</span>
+                                        </span>
+                                    </div>
                                 </div>
-                                @if ($tile->caption)
-                                    <p class="mt-2 line-clamp-2 text-sm font-medium text-white">{{ $tile->caption }}</p>
-                                @endif
-                            </figcaption>
-                        @endif
-                    </figure>
-                @endforeach
-            </div>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
 
-            <div x-ref="empty" style="display: none;" class="mt-12 rounded-3xl border border-dashed border-cream-300 bg-surface p-12 text-center">
-                <p class="font-serif text-2xl text-heading">No media matches that filter.</p>
-                <p class="mt-2 text-sm text-ink-500">Try a different category or turn off the videos-only toggle.</p>
-            </div>
+                <div x-show="shown.length === 0" x-cloak class="mt-10 rounded-3xl border border-dashed border-cream-300 p-12 text-center">
+                    <p class="font-serif text-2xl font-bold text-heading">No albums match</p>
+                    <p class="mt-2 text-sm text-ink-500">Try another year, country or programme.</p>
+                    <button type="button" class="btn btn-secondary mt-5" @click="reset()">Clear filters</button>
+                </div>
+            @else
+                {{-- No albums yet: show foundation photographs so the page is never empty --}}
+                <ul class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+                    @foreach ($fallbackPhotos as [$file, $caption])
+                        <li class="relative overflow-hidden rounded-2xl bg-cream-200">
+                            <img src="{{ asset('images/foundation/'.$file) }}" alt="{{ $caption }}" loading="lazy" class="aspect-[4/3] h-full w-full object-cover">
+                            <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2.5 pt-8 text-xs text-white">{{ $caption }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </div>
     </section>
 

@@ -50,3 +50,12 @@ it('renders the footer with all three social profiles and no newsletter band', f
         ->assertSee('aria-label="Instagram"', escape: false)
         ->assertSee(route('legal.privacy'));
 });
+
+it('renders the page breadcrumb with a home link, the current page and structured data', function () {
+    $response = $this->get(route('about'))->assertOk();
+
+    $response->assertSee('aria-label="Breadcrumb"', escape: false)
+        ->assertSee('aria-current="page">About</span>', escape: false)
+        ->assertSee('"@type":"BreadcrumbList"', escape: false)
+        ->assertSee('"name":"About"', escape: false);
+});
