@@ -20,12 +20,18 @@
             ['Media Gallery', route('media')],
         ],
         'Get Involved' => [
-            ['Donate', route('donate')],
             ['Sponsor a Child', route('sponsor-a-child')],
             ['Volunteer', route('volunteer')],
             ['Apply for Support', route('apply-for-support')],
-            ['Contact', route('contact')],
+            ['Contact Us', route('contact')],
         ],
+    ];
+
+    $countries = [
+        ['Ghana', 'Education & women'],
+        ['Togo', 'Widows & families'],
+        ['Benin', 'Child sponsorship'],
+        ['United States', 'Donors & board'],
     ];
 
     $legal = [
@@ -37,54 +43,64 @@
 @endphp
 
 {{-- Navy footer: a feature surface, so it reads the same in both themes. --}}
-<footer class="mx-3 mb-3 overflow-hidden rounded-3xl bg-brand-900 text-white sm:mx-4 sm:mb-4 lg:mx-6 lg:mb-6">
-    {{-- Call to action --}}
-    <div class="bg-stage-light">
-        <div class="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-5 py-12 sm:px-6 md:flex-row md:items-center lg:px-8">
+<footer class="relative isolate mx-3 mb-3 overflow-hidden rounded-3xl bg-brand-900 text-white sm:mx-4 sm:mb-4 lg:mx-6 lg:mb-6">
+    {{-- Soft stage glow behind the newsletter --}}
+    <div class="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(86,156,255,0.35),transparent)]" aria-hidden="true"></div>
+
+    <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+        {{-- Newsletter: the footer's lead --}}
+        <div class="grid gap-8 border-b border-white/10 py-14 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16 lg:py-16">
             <div>
-                <p class="eyebrow eyebrow-light">Make a difference today</p>
-                <h2 class="section-title mt-3 text-white">Every gift begins a new chapter.</h2>
+                <p class="eyebrow eyebrow-light">Stay connected</p>
+                <h2 class="section-title mt-3 text-white">Stay close to the work.</h2>
+                <p class="mt-4 max-w-md text-sm leading-relaxed text-white/70 sm:text-base">News from the field, upcoming outreach and new ways to help, a few times a year. No spam, unsubscribe any time.</p>
             </div>
-            <div class="flex flex-wrap gap-3">
-                <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark btn-lg" wire:navigate>Donate</a>
-                <a href="{{ route('sponsor-a-child') }}" class="btn btn-outline-light btn-lg" wire:navigate>Sponsor a Child</a>
+            <div class="[&_.text-red-600]:text-red-300 [&_form]:sm:grid-cols-[1fr_1.4fr_auto] [&_input]:py-3">
+                <livewire:site.newsletter-signup source="footer" :compact="true" />
             </div>
         </div>
-    </div>
 
-    <div class="mx-auto max-w-7xl px-5 pb-10 pt-14 sm:px-6 lg:px-8">
-        <div class="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.5fr]">
-            {{-- Brand --}}
-            <div>
+        {{-- Main columns --}}
+        <div class="grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+            {{-- Legacy card --}}
+            <div class="lg:col-span-4">
                 <a href="{{ route('home') }}" class="inline-block" wire:navigate>
                     <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-14 w-auto">
                 </a>
-                <p class="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
-                    Carrying on the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla by supporting women, children and vulnerable people across the United States, Ghana, Togo and Benin.
-                </p>
-                <p class="mt-5 text-sm text-white/70">
-                    <span class="block text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Email us</span>
-                    <a href="mailto:hello@fifiawoto.org" class="mt-1 inline-block font-semibold text-white hover:text-gold-300">hello@fifiawoto.org</a>
-                </p>
-                @if ($socials)
-                    <div class="mt-6 flex items-center gap-3">
-                        @foreach ($socials as $network => $url)
-                            <a href="{{ $url }}" target="_blank" rel="noopener" class="grid size-10 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-gold-500 hover:ring-gold-500" aria-label="{{ $network }}">
-                                <svg class="size-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">{!! $socialIcons[$network] !!}</svg>
-                            </a>
-                        @endforeach
+                <figure class="mt-7 flex gap-4 rounded-2xl bg-white/5 p-5 ring-1 ring-white/10">
+                    <img src="{{ asset('images/foundation/about/madam-dadaa-portrait.jpg') }}" alt="Madam Dadaa Fifiawoto Nyamadi-Adabla" class="size-16 shrink-0 rounded-full object-cover object-top ring-2 ring-gold-300/60" loading="lazy">
+                    <div>
+                        <blockquote class="font-serif text-lg italic leading-snug text-white">“Compassion is a legacy that never fades.”</blockquote>
+                        <figcaption class="mt-2 text-xs text-white/60">In memory of Madam Dadaa Fifiawoto Nyamadi-Adabla</figcaption>
                     </div>
-                @endif
+                </figure>
+                <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
+                    <a href="mailto:hello@fifiawoto.org" class="group inline-flex items-center gap-2 text-sm font-semibold text-white">
+                        <span class="grid size-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">
+                            <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                        </span>
+                        hello@fifiawoto.org
+                    </a>
+                    @if ($socials)
+                        <div class="flex items-center gap-2">
+                            @foreach ($socials as $network => $url)
+                                <a href="{{ $url }}" target="_blank" rel="noopener" class="grid size-10 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-gold-500 hover:ring-gold-500" aria-label="{{ $network }}">
+                                    <svg class="size-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">{!! $socialIcons[$network] !!}</svg>
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </div>
 
             {{-- Link columns --}}
             @foreach ($columns as $heading => $links)
-                <nav aria-label="{{ $heading }}">
+                <nav class="lg:col-span-2" aria-label="{{ $heading }}">
                     <h3 class="eyebrow eyebrow-light">{{ $heading }}</h3>
-                    <ul class="mt-5 space-y-3 text-sm">
+                    <ul class="mt-5 space-y-3">
                         @foreach ($links as [$label, $url])
                             <li>
-                                <a href="{{ $url }}" class="group inline-flex items-center gap-2 text-white/75 transition hover:text-white" wire:navigate>
+                                <a href="{{ $url }}" class="group inline-flex items-center gap-2 text-[15px] text-white/75 transition hover:text-white" wire:navigate>
                                     <span class="h-px w-0 bg-gold-300 transition-all duration-300 group-hover:w-3" aria-hidden="true"></span>
                                     {{ $label }}
                                 </a>
@@ -94,24 +110,42 @@
                 </nav>
             @endforeach
 
-            {{-- Newsletter --}}
-            <div>
-                <h3 class="eyebrow eyebrow-light">Stay connected</h3>
-                <p class="mt-5 text-sm leading-relaxed text-white/70">News from the field, upcoming events and ways to help, a few times a year.</p>
-                <div class="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
-                    <livewire:site.newsletter-signup source="footer" :compact="true" />
-                </div>
+            {{-- Where we work + give --}}
+            <div class="md:col-span-2 lg:col-span-4">
+                <h3 class="eyebrow eyebrow-light">Where we work</h3>
+                <ul class="mt-5 grid grid-cols-2 gap-3">
+                    @foreach ($countries as [$country, $focus])
+                        <li class="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+                            <span class="flex items-center gap-2 font-serif text-lg font-bold text-white">
+                                <span class="size-2 rounded-full bg-gold-300 shadow-[0_0_10px_rgba(255,176,176,0.8)]" aria-hidden="true"></span>
+                                {{ $country }}
+                            </span>
+                            <span class="mt-0.5 block text-xs text-white/60">{{ $focus }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+                <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark mt-6 w-full" wire:navigate>
+                    Donate to our work
+                    <span aria-hidden="true">→</span>
+                </a>
             </div>
         </div>
+    </div>
 
-        <div class="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/60 lg:flex-row lg:items-center lg:justify-between">
+    {{-- Signature wordmark --}}
+    <div class="pointer-events-none select-none overflow-hidden px-5 sm:px-6 lg:px-8" aria-hidden="true">
+        <p class="mx-auto max-w-7xl translate-y-[18%] text-center font-serif text-[clamp(64px,17vw,250px)] font-bold leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.14)]">Fifiawoto</p>
+    </div>
+
+    {{-- Bottom bar --}}
+    <div class="relative border-t border-white/10 bg-brand-900/80 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 text-xs text-white/60 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
             <p>&copy; {{ now()->year }} Dadaa Fifiawoto Nyamadi Foundation. All rights reserved.</p>
             <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal">
                 @foreach ($legal as [$label, $url])
                     <a href="{{ $url }}" class="hover:text-white" wire:navigate>{{ $label }}</a>
                 @endforeach
             </nav>
-            <p>United States · Ghana · Togo · Benin</p>
         </div>
     </div>
 </footer>

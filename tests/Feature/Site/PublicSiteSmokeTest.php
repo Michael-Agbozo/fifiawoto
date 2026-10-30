@@ -41,7 +41,9 @@ it('renders the footer with a working newsletter form and only configured social
 
     $this->get(route('about'))
         ->assertOk()
-        ->assertSee('Every gift begins a new chapter.')
+        ->assertSee('Stay close to the work.')
+        ->assertSee('Compassion is a legacy that never fades.')
+        ->assertSee(route('donate'))
         ->assertSee('hello@fifiawoto.org')
         ->assertSee('wire:submit="subscribe"', escape: false)
         ->assertSee('https://www.youtube.com/@fifiawoto', escape: false)
