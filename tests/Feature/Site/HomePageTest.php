@@ -73,6 +73,47 @@ it('renders the featured event when one is published and upcoming', function () 
         ->assertSee('43% funded');
 });
 
+it('shows the trusted non-profit welcome with both ways to help', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('A Trusted Non-Profit')
+        ->assertSee('Be a Hero', escape: false)
+        ->assertSee(route('sponsor-a-child'))
+        ->assertSee('Support Now');
+});
+
+it('lists popular causes with raised amounts and progress', function () {
+    $cause = Event::factory()->create([
+        'title' => 'School Supplies Drive',
+        'country' => 'Togo',
+        'goal_cents' => 20_000_00,
+        'starts_at' => now()->addWeeks(3),
+        'status' => EventStatus::Published->value,
+        'published_at' => now()->subDay(),
+    ]);
+    Donation::factory()->for($cause)->create(['amount_cents' => 5_000_00]);
+
+    Event::factory()->create([
+        'title' => 'No Goal Gathering',
+        'goal_cents' => 0,
+        'starts_at' => now()->addWeeks(4),
+    ]);
+
+    $this->get(route('home'))
+        ->assertSee('Find Popular Causes')
+        ->assertSee('School Supplies Drive')
+        ->assertSee('Raised: <b class="font-semibold text-heading">$5,000</b>', escape: false)
+        ->assertSee('25% of', escape: false)
+        ->assertSee(route('events.show', $cause))
+        ->assertDontSee('No Goal Gathering');
+});
+
+it('hides popular causes when no fundraising events are upcoming', function () {
+    Event::query()->delete();
+
+    $this->get(route('home'))->assertDontSee('Find Popular Causes');
+});
+
 it('hides the featured event section when nothing is scheduled', function () {
     Event::query()->delete();
 

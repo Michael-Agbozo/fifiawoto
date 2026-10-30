@@ -169,6 +169,34 @@
     --color-gold-600: #ef938d;
 }
 
+/* Stage-light band: vertical navy-to-blue light columns with a glow rising
+   from the bottom centre. A feature surface, so it reads the same in both
+   themes; text on it is always white. */
+.bg-stage-light {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: #020524;
+}
+
+/* The light columns sit on a blurred layer so their edges soften like
+   stage light while the section's text stays sharp. */
+.bg-stage-light::before {
+    content: "";
+    position: absolute;
+    inset: -24px;
+    z-index: -1;
+    filter: blur(10px);
+    background-image:
+        radial-gradient(ellipse 34% 48% at 50% 82%, rgba(86, 156, 255, 0.75), rgba(86, 156, 255, 0) 70%),
+        linear-gradient(90deg,
+            rgba(0, 0, 0, 0.42) 0 8%, rgba(0, 0, 0, 0.18) 8% 16%, rgba(0, 0, 0, 0.3) 16% 24%,
+            rgba(0, 0, 0, 0.1) 24% 32%, rgba(255, 255, 255, 0.02) 32% 40%, rgba(255, 255, 255, 0.06) 40% 48%,
+            rgba(255, 255, 255, 0.08) 48% 52%, rgba(255, 255, 255, 0.05) 52% 60%, rgba(0, 0, 0, 0.04) 60% 68%,
+            rgba(0, 0, 0, 0.14) 68% 76%, rgba(0, 0, 0, 0.26) 76% 84%, rgba(0, 0, 0, 0.36) 84% 92%, rgba(0, 0, 0, 0.48) 92% 100%),
+        linear-gradient(180deg, #020524 0%, #04104f 34%, #123aa6 72%, #2f7bf0 100%);
+}
+
 /* Smooth theme transition on the structural surfaces that actually
    change colour when the theme flips. Kept narrow (not a universal `*`)
    so scroll + hover transitions on cards/buttons aren't impacted. */

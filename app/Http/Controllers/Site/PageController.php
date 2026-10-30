@@ -18,6 +18,14 @@ class PageController extends Controller
             ->upcoming()
             ->first();
 
+        $popularCauses = Event::query()
+            ->published()
+            ->upcoming()
+            ->where('goal_cents', '>', 0)
+            ->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents')
+            ->limit(3)
+            ->get();
+
         $featuredTestimonials = Testimonial::query()
             ->featured()
             ->ordered()
@@ -33,6 +41,7 @@ class PageController extends Controller
 
         return view('site.home', [
             'featuredEvent' => $featuredEvent,
+            'popularCauses' => $popularCauses,
             'featuredTestimonials' => $featuredTestimonials,
             'instagramHighlights' => $instagramHighlights,
         ]);

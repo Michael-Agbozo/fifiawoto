@@ -106,8 +106,8 @@
         </div>
     </section>
 
-    {{-- IMPACT, red full-width band with 3 big stats --}}
-    <section class="bg-gold-500 py-20 text-white lg:py-24 dark:border-y dark:border-cream-300 dark:bg-cream-100" aria-labelledby="impact-heading">
+    {{-- IMPACT, stage-light blue band with 3 big stats --}}
+    <section class="bg-stage-light py-20 text-white lg:py-24" aria-labelledby="impact-heading">
         <div class="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
             <div class="grid gap-10 lg:grid-cols-[6fr_5fr] lg:items-end lg:gap-16">
                 <div class="reveal-left">
@@ -130,7 +130,7 @@
                 ] as $index => [$value, $suffix, $label])
                     <div class="reveal" style="transition-delay: {{ $index * 160 }}ms">
                         <p
-                            class="font-serif text-6xl font-bold text-heading sm:text-7xl"
+                            class="font-serif text-6xl font-bold text-white sm:text-7xl"
                             data-counter="{{ $value }}"
                             data-suffix="{{ $suffix }}"
                             data-duration="3200"
@@ -141,6 +141,114 @@
             </div>
         </div>
     </section>
+
+    {{-- WELCOME, trusted non-profit intro with two ways to help --}}
+    <section class="relative overflow-hidden bg-surface py-20 lg:py-28" aria-labelledby="welcome-heading">
+        <div class="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
+            <div>
+                <p class="reveal-down font-serif text-lg italic text-gold-500">Welcome, let's make a difference!</p>
+                <h2 id="welcome-heading" class="reveal mt-3 font-serif text-4xl font-bold leading-[1.1] text-heading sm:text-5xl" style="transition-delay: 100ms">
+                    A Trusted Non-Profit<br class="hidden sm:block"> Serving Four Countries
+                </h2>
+                <p class="reveal mt-6 max-w-xl text-base leading-relaxed text-ink-500" style="transition-delay: 160ms">
+                    We work with churches, schools and community leaders in the United States, Ghana, Togo and Benin to support women, children and vulnerable people, so every family has the chance of a new beginning.
+                </p>
+
+                <div class="reveal mt-8 grid gap-6 border-b border-cream-300 pb-8 sm:grid-cols-2" style="transition-delay: 220ms">
+                    <a href="{{ route('donate') }}" class="group flex items-center gap-4" wire:navigate>
+                        <span class="grid size-16 shrink-0 rotate-6 place-items-center rounded-[40%] bg-gold-500 text-white shadow-md transition group-hover:rotate-0">
+                            <svg class="size-7 -rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.8-2.8l-4.2 3.9"/><path d="m2 15 6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.7 2.7 0 0 0 16 4a2.7 2.7 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"/></svg>
+                        </span>
+                        <span class="font-serif text-xl font-bold leading-snug text-heading group-hover:text-gold-500">Be a Hero,<br>Give Today</span>
+                    </a>
+                    <a href="{{ route('sponsor-a-child') }}" class="group flex items-center gap-4" wire:navigate>
+                        <span class="grid size-16 shrink-0 -rotate-6 place-items-center rounded-[40%] bg-brand-900 text-white shadow-md transition group-hover:rotate-0">
+                            <svg class="size-7 rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M12 9v6"/><path d="M8 13l4-2 4 2"/><path d="M10 21l2-6 2 6"/></svg>
+                        </span>
+                        <span class="font-serif text-xl font-bold leading-snug text-heading group-hover:text-gold-500">Help a Child,<br>Become a Sponsor</span>
+                    </a>
+                </div>
+
+                <ul class="reveal mt-8 space-y-3 text-base text-ink-700" style="transition-delay: 280ms">
+                    @foreach ([
+                        'School supplies, uniforms and fees for children in need.',
+                        'Skills and small-business support for women and mothers.',
+                        'Care for widows, orphanages and people living with disabilities.',
+                    ] as $point)
+                        <li class="flex items-start gap-3">
+                            <svg class="mt-1 size-4 shrink-0 text-gold-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8-5.1-8-11.1A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 8 3.3C20 15.9 12 21 12 21z"/></svg>
+                            <span>{{ $point }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <a href="{{ route('donate') }}" class="reveal mt-10 inline-flex items-center justify-center rounded-2xl bg-gold-500 px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-heading hover:text-surface" style="transition-delay: 320ms" wire:navigate>
+                    Support Now
+                </a>
+            </div>
+
+            <div class="reveal-right relative">
+                <div class="absolute -right-6 -top-10 bottom-16 left-24 rounded-tl-[64px] rounded-tr-[32px] bg-cream-100 sm:-right-10" aria-hidden="true"></div>
+                <img
+                    src="{{ asset('images/foundation/about/empowering-hope.jpg') }}"
+                    alt="Children at a foundation outreach day"
+                    class="relative aspect-[5/6] w-full rounded-[28px] object-cover shadow-xl"
+                    loading="lazy"
+                >
+            </div>
+        </div>
+    </section>
+
+    {{-- POPULAR CAUSES, fundraising events with live progress --}}
+    @if ($popularCauses->isNotEmpty())
+        <section class="bg-surface py-20 lg:py-24" aria-labelledby="causes-heading">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <p class="reveal-down font-serif text-lg italic text-gold-500">Our causes</p>
+                    <h2 id="causes-heading" class="reveal mt-2 font-serif text-4xl font-bold text-heading sm:text-5xl" style="transition-delay: 100ms">Find Popular Causes</h2>
+                </div>
+
+                <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($popularCauses as $cause)
+                        @php
+                            $raised = (int) ($cause->raised_cents ?? 0);
+                            $goal = (int) $cause->goal_cents;
+                            $percent = min(100, (int) round($raised / $goal * 100));
+                            $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp'];
+                            $causeImage = \App\Support\MediaUrl::for($cause->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
+                        @endphp
+                        <article class="reveal group flex flex-col overflow-hidden rounded-2xl border border-cream-300 bg-surface shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ $loop->index * 100 }}ms">
+                            <div class="relative">
+                                <div class="aspect-[4/3] overflow-hidden">
+                                    <img src="{{ $causeImage }}" alt="{{ $cause->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
+                                </div>
+                                @if ($cause->country)
+                                    <span class="absolute -bottom-3 left-6 rounded-md bg-brand-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{{ $cause->country }}</span>
+                                @endif
+                            </div>
+                            <div class="flex flex-1 flex-col p-6 pt-7">
+                                <h3 class="font-serif text-2xl font-bold leading-snug text-heading">
+                                    <a href="{{ route('events.show', $cause) }}" class="hover:text-gold-500" wire:navigate>{{ $cause->title }}</a>
+                                </h3>
+                                <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-ink-500">{{ \Illuminate\Support\Str::limit(strip_tags((string) $cause->description), 120) }}</p>
+
+                                <div class="mt-auto pt-6">
+                                    <div class="relative h-1.5 rounded-full bg-cream-300" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $percent }}% of goal raised">
+                                        <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
+                                    </div>
+                                    <div class="mt-3 flex justify-between gap-3 text-sm text-ink-500">
+                                        <span>Raised: <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($raised) }}</b></span>
+                                        <span>{{ $percent }}% of <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($goal) }}</b></span>
+                                    </div>
+                                    <a href="{{ route('events.show', $cause) }}" class="mt-5 flex w-full items-center justify-center rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-heading hover:text-surface" wire:navigate>View Cause</a>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
 
     {{-- PROGRAMS --}}
     <section class="bg-cream-50 py-24" aria-labelledby="programs-heading">
