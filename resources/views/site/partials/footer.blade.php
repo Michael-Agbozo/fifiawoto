@@ -1,9 +1,9 @@
 @php
-    $socials = array_filter([
-        'Instagram' => config('social.instagram'),
-        'Facebook' => config('social.facebook'),
-        'YouTube' => config('social.youtube'),
-    ]);
+    $socials = [
+        'Instagram' => config('social.instagram') ?: 'https://instagram.com',
+        'Facebook' => config('social.facebook') ?: 'https://facebook.com',
+        'YouTube' => config('social.youtube') ?: 'https://youtube.com',
+    ];
 
     $socialIcons = [
         'Instagram' => '<path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 1.92c-3.15 0-3.51.01-4.74.07-1.04.05-1.61.22-1.98.36-.5.2-.85.43-1.23.8-.37.38-.6.73-.8 1.23-.14.37-.31.94-.36 1.98-.06 1.23-.07 1.59-.07 4.74s.01 3.51.07 4.74c.05 1.04.22 1.61.36 1.98.2.5.43.85.8 1.23.38.37.73.6 1.23.8.37.14.94.31 1.98.36 1.23.06 1.59.07 4.74.07s3.51-.01 4.74-.07c1.04-.05 1.61-.22 1.98-.36.5-.2.85-.43 1.23-.8.37-.38.6-.73.8-1.23.14-.37.31-.94.36-1.98.06-1.23.07-1.59.07-4.74s-.01-3.51-.07-4.74c-.05-1.04-.22-1.61-.36-1.98-.2-.5-.43-.85-.8-1.23-.38-.37-.73-.6-1.23-.8-.37-.14-.94-.31-1.98-.36-1.23-.06-1.59-.07-4.74-.07zm0 3.27a4.65 4.65 0 1 1 0 9.3 4.65 4.65 0 0 1 0-9.3zm0 1.92a2.73 2.73 0 1 0 0 5.46 2.73 2.73 0 0 0 0-5.46zm5.9-2.13a1.09 1.09 0 1 1-2.18 0 1.09 1.09 0 0 1 2.18 0z"/>',
@@ -27,12 +27,7 @@
         ],
     ];
 
-    $countries = [
-        ['Ghana', 'Education & women'],
-        ['Togo', 'Widows & families'],
-        ['Benin', 'Child sponsorship'],
-        ['United States', 'Donors & board'],
-    ];
+    $countries = ['Ghana', 'Togo', 'Benin', 'United States'];
 
     $legal = [
         ['Privacy Policy', route('legal.privacy')],
@@ -48,32 +43,16 @@
     <div class="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(86,156,255,0.35),transparent)]" aria-hidden="true"></div>
 
     <div class="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-        {{-- Newsletter: the footer's lead --}}
-        <div class="grid gap-8 border-b border-white/10 py-14 lg:grid-cols-[1fr_1.1fr] lg:items-center lg:gap-16 lg:py-16">
-            <div>
-                <p class="eyebrow eyebrow-light">Stay connected</p>
-                <h2 class="section-title mt-3 text-white">Stay close to the work.</h2>
-                <p class="mt-4 max-w-md text-sm leading-relaxed text-white/70 sm:text-base">News from the field, upcoming outreach and new ways to help, a few times a year. No spam, unsubscribe any time.</p>
-            </div>
-            <div class="[&_.text-red-600]:text-red-300 [&_form]:sm:grid-cols-[1fr_1.4fr_auto] [&_input]:py-3">
-                <livewire:site.newsletter-signup source="footer" :compact="true" />
-            </div>
-        </div>
-
         {{-- Main columns --}}
-        <div class="grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-10">
+        <div class="grid gap-12 py-14 md:grid-cols-2 lg:grid-cols-12 lg:gap-10 lg:py-16">
             {{-- Legacy card --}}
             <div class="lg:col-span-4">
                 <a href="{{ route('home') }}" class="inline-block" wire:navigate>
                     <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-14 w-auto">
                 </a>
-                <figure class="mt-7 flex gap-4 rounded-2xl bg-white/5 p-5 ring-1 ring-white/10">
-                    <img src="{{ asset('images/foundation/about/madam-dadaa-portrait.jpg') }}" alt="Madam Dadaa Fifiawoto Nyamadi-Adabla" class="size-16 shrink-0 rounded-full object-cover object-top ring-2 ring-gold-300/60" loading="lazy">
-                    <div>
-                        <blockquote class="font-serif text-lg italic leading-snug text-white">“Compassion is a legacy that never fades.”</blockquote>
-                        <figcaption class="mt-2 text-xs text-white/60">In memory of Madam Dadaa Fifiawoto Nyamadi-Adabla</figcaption>
-                    </div>
-                </figure>
+                <p class="mt-6 max-w-sm text-sm leading-relaxed text-white/70">
+                    The Fifiawoto Foundation works to empower communities through compassion, service, and sustainable development initiatives across the United States, Ghana, Togo, and Benin.
+                </p>
                 <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
                     <a href="mailto:hello@fifiawoto.org" class="group inline-flex items-center gap-2 text-sm font-semibold text-white">
                         <span class="grid size-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">
@@ -81,15 +60,13 @@
                         </span>
                         hello@fifiawoto.org
                     </a>
-                    @if ($socials)
-                        <div class="flex items-center gap-2">
-                            @foreach ($socials as $network => $url)
-                                <a href="{{ $url }}" target="_blank" rel="noopener" class="grid size-10 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-gold-500 hover:ring-gold-500" aria-label="{{ $network }}">
-                                    <svg class="size-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">{!! $socialIcons[$network] !!}</svg>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="flex items-center gap-2">
+                        @foreach ($socials as $network => $url)
+                            <a href="{{ $url }}" target="_blank" rel="noopener" class="grid size-10 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:bg-gold-500 hover:ring-gold-500" aria-label="{{ $network }}">
+                                <svg class="size-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">{!! $socialIcons[$network] !!}</svg>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -114,13 +91,10 @@
             <div class="md:col-span-2 lg:col-span-4">
                 <h3 class="eyebrow eyebrow-light">Where we work</h3>
                 <ul class="mt-5 grid grid-cols-2 gap-3">
-                    @foreach ($countries as [$country, $focus])
-                        <li class="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
-                            <span class="flex items-center gap-2 font-serif text-lg font-bold text-white">
-                                <span class="size-2 rounded-full bg-gold-300 shadow-[0_0_10px_rgba(255,176,176,0.8)]" aria-hidden="true"></span>
-                                {{ $country }}
-                            </span>
-                            <span class="mt-0.5 block text-xs text-white/60">{{ $focus }}</span>
+                    @foreach ($countries as $country)
+                        <li class="flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 font-serif text-lg font-bold text-white ring-1 ring-white/10">
+                            <span class="size-2 rounded-full bg-gold-300 shadow-[0_0_10px_rgba(255,176,176,0.8)]" aria-hidden="true"></span>
+                            {{ $country }}
                         </li>
                     @endforeach
                 </ul>

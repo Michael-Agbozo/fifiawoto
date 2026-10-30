@@ -1,43 +1,74 @@
 <x-layouts::site :title="null">
-    {{-- HERO, inset as a rounded card inside the framed shell --}}
-    <section class="relative isolate mx-3 mt-3 overflow-hidden rounded-3xl sm:mx-4 sm:mt-4 lg:mx-6 lg:mt-6">
-        {{-- Real foundation photograph (school donation outreach in Ghana) --}}
-        <img
-            src="{{ asset('images/foundation/school-donation.jpg') }}"
-            alt="Schoolchildren in Ghana holding exercise books donated by the Fifiawoto Foundation"
-            class="absolute inset-0 -z-20 h-full w-full object-cover"
-            fetchpriority="high"
-        >
+    {{-- HERO: blurred fluted-blue photo panel, headline left, layered 3D photo stack right --}}
+    <section class="bg-fluted relative mx-3 mt-3 rounded-3xl text-white sm:mx-4 sm:mt-4 lg:mx-6 lg:mt-6" aria-labelledby="hero-heading">
+        <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:px-8 lg:pb-24 lg:pt-20">
+            {{-- Copy --}}
+            <div class="relative z-10">
 
-        {{-- Brand gradient overlay (matches the WordPress reference: transparent → deep navy, ~80% bottom opacity) --}}
-        <div
-            class="absolute inset-0 -z-10"
-            style="background-image: linear-gradient(178deg, rgba(0, 4, 78, 0) 0%, rgba(0, 4, 78, 0.8) 98%);"
-        ></div>
+                <h1 id="hero-heading" class="animate-fade-in font-serif text-[48px] leading-[0.95] tracking-[-0.03em] text-white [text-shadow:0_2px_30px_rgba(2,8,48,0.45)] sm:text-[64px] lg:text-[72px] xl:text-[84px]" style="animation-delay: 120ms">
+                    <span class="block font-semibold">Empowering</span>
+                    <span class="mt-1 block bg-gradient-to-r sm:whitespace-nowrap from-[#ffc9c9] via-[#ffe4e1] to-white bg-clip-text pb-2 pr-2 font-medium italic tracking-[-0.02em] text-transparent [text-shadow:none]">New Beginnings</span>
+                </h1>
 
-        {{-- Inner content: standard centered container (max-width) --}}
-        <div class="mx-auto flex min-h-[480px] max-w-3xl flex-col items-center justify-center px-5 py-20 text-center text-white sm:min-h-[640px] sm:px-6 sm:py-32 lg:min-h-[720px] lg:py-40">
-            <h1 class="reveal-down font-serif text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[80px] lg:leading-none">
-                Empowering<br>New Beginnings
-            </h1>
-            <p class="reveal mt-6 max-w-xl text-sm font-medium leading-relaxed text-white/95 sm:mt-8 sm:text-base lg:text-lg" style="transition-delay: 200ms">
-                Transforming lives, one step at a time through compassion, service, and community empowerment.
-            </p>
-            <div class="reveal mt-8 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-10 sm:w-auto sm:gap-4" style="transition-delay: 400ms">
-                <a
-                    href="{{ route('donate') }}"
-                    class="btn btn-light btn-lg w-full sm:w-auto"
-                    wire:navigate
-                >
-                    Donate
-                </a>
-                <a
-                    href="{{ route('contact') }}"
-                    class="btn btn-primary btn-on-dark btn-lg w-full sm:w-auto"
-                    wire:navigate
-                >
-                    Get In Touch
-                </a>
+                <p class="animate-fade-in mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg" style="animation-delay: 220ms">
+                    Transforming lives, one step at a time, through compassion, service and community empowerment across the United States, Ghana, Togo and Benin.
+                </p>
+
+                <div class="animate-fade-in mt-9 flex flex-wrap gap-3" style="animation-delay: 320ms">
+                    <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark btn-lg" wire:navigate>
+                        Donate
+                        <span aria-hidden="true">→</span>
+                    </a>
+                    <a href="{{ route('sponsor-a-child') }}" class="btn btn-outline-light btn-lg" wire:navigate>Sponsor a Child</a>
+                    <a href="{{ route('contact') }}" class="btn btn-lg px-3 text-white/80 underline-offset-4 hover:text-white hover:underline" wire:navigate>Get In Touch</a>
+                </div>
+
+                <dl class="animate-fade-in mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7" style="animation-delay: 420ms">
+                    @foreach ([[520, '+', 'Children supported'], [18, '+', 'Communities'], [4, '', 'Countries']] as [$value, $suffix, $label])
+                        <div>
+                            <dt class="text-xs font-medium text-white/60">{{ $label }}</dt>
+                            <dd class="mt-1 font-serif text-3xl font-bold text-white sm:text-4xl" data-counter="{{ $value }}" data-suffix="{{ $suffix }}" data-duration="2200">{{ $value }}{{ $suffix }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+
+            {{-- Layered photo stack --}}
+            <div class="relative mx-auto w-full max-w-[560px] [perspective:1400px]" aria-hidden="true">
+                <div data-float class="relative aspect-[1/1.02]">
+                    <img
+                        src="{{ asset('images/foundation/school-donation.jpg') }}"
+                        alt=""
+                        class="absolute inset-x-[8%] top-[4%] h-[78%] w-[84%] rounded-[32px] object-cover shadow-[0_40px_80px_-30px_rgba(0,0,0,0.75)] ring-1 ring-white/20"
+                        fetchpriority="high"
+                    >
+                    <img
+                        src="{{ asset('images/foundation/outreach-2.webp') }}"
+                        alt=""
+                        class="absolute bottom-0 left-0 h-[42%] w-[38%] -rotate-6 rounded-3xl object-cover shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)] ring-4 ring-[#06104f]"
+                    >
+                    <img
+                        src="{{ asset('images/foundation/outreach-3.webp') }}"
+                        alt=""
+                        class="absolute -right-2 bottom-[8%] h-[36%] w-[32%] rotate-6 rounded-3xl object-cover shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)] ring-4 ring-[#0b2a8a]"
+                    >
+
+                    {{-- Floating glass chips --}}
+                    <div class="absolute -left-3 top-[10%] animate-[float-chip_6s_ease-in-out_infinite] rounded-2xl bg-white/10 px-4 py-3 text-left ring-1 ring-white/25 backdrop-blur-md sm:-left-8">
+                        <p class="flex items-center gap-2 text-sm font-semibold text-white">
+                            <span class="size-2 rounded-full bg-gold-300" aria-hidden="true"></span>
+                            Volta Region, Ghana
+                        </p>
+                        <p class="mt-0.5 text-xs text-white/70">School bags handed out this term</p>
+                    </div>
+                    @if ($featuredEvent)
+                        <div class="absolute -right-2 top-[44%] max-w-[230px] animate-[float-chip_6s_ease-in-out_-3s_infinite] rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl sm:-right-6">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-500">Next outreach</p>
+                            <p class="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-[#00044e]">{{ $featuredEvent->title }}</p>
+                            <p class="mt-1 text-xs text-[#5a5a5a]">{{ $featuredEvent->starts_at?->format('j M Y') }}</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </section>
@@ -204,48 +235,91 @@
     @if ($popularCauses->isNotEmpty())
         <section class="section bg-surface" aria-labelledby="causes-heading">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="text-center">
-                    <p class="eyebrow reveal-down">Our causes</p>
-                    <h2 id="causes-heading" class="section-title text-heading reveal mt-2" style="transition-delay: 100ms">Find Popular Causes</h2>
-                </div>
+                <div
+                    x-data="{
+                        count: {{ $popularCauses->count() }},
+                        index: 0,
+                        per: 3,
+                        animate: true,
+                        timer: null,
+                        get looping() { return this.count > this.per },
+                        get active() { return this.index % this.count },
+                        measure() { this.per = window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 768 ? 2 : 1) },
+                        next() { if (! this.looping) return; this.animate = true; this.index++ },
+                        prev() {
+                            if (! this.looping) return;
+                            if (this.index === 0) {
+                                this.animate = false;
+                                this.index = this.count;
+                                requestAnimationFrame(() => requestAnimationFrame(() => { this.animate = true; this.index-- }));
+                            } else { this.animate = true; this.index-- }
+                        },
+                        go(i) { this.animate = true; this.index = i },
+                        settle() { if (this.index >= this.count) { this.animate = false; this.index -= this.count } },
+                        start() {
+                            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                            this.stop();
+                            this.timer = setInterval(() => this.next(), 5000);
+                        },
+                        stop() { clearInterval(this.timer); this.timer = null },
+                    }"
+                    x-init="measure(); start()"
+                    @resize.window.debounce.150ms="measure(); if (index >= count) { animate = false; index = 0 }"
+                    @mouseenter="stop()"
+                    @mouseleave="start()"
+                    @focusin="stop()"
+                    @focusout="start()"
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="Popular causes"
+                >
+                    <div class="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+                        <div>
+                            <p class="eyebrow reveal-down">Our causes</p>
+                            <h2 id="causes-heading" class="section-title text-heading reveal mt-2" style="transition-delay: 100ms">Find Popular Causes</h2>
+                        </div>
+                        <div class="flex items-center gap-3" x-show="looping" x-cloak>
+                            <button type="button" class="btn btn-ghost size-12 p-0" @click="prev()" aria-label="Previous cause">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button type="button" class="btn btn-primary size-12 p-0" @click="next()" aria-label="Next cause">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach ($popularCauses as $cause)
-                        @php
-                            $raised = (int) ($cause->raised_cents ?? 0);
-                            $goal = (int) $cause->goal_cents;
-                            $percent = min(100, (int) round($raised / $goal * 100));
-                            $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp'];
-                            $causeImage = \App\Support\MediaUrl::for($cause->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
-                        @endphp
-                        <article class="reveal-3d tilt group flex flex-col overflow-hidden rounded-2xl border border-cream-300 bg-surface shadow-sm hover:shadow-lg" style="transition-delay: {{ $loop->index * 100 }}ms">
-                            <div class="relative">
-                                <div class="aspect-[4/3] overflow-hidden">
-                                    <img src="{{ $causeImage }}" alt="{{ $cause->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
-                                </div>
-                                @if ($cause->country)
-                                    <span class="absolute -bottom-3 left-6 rounded-md bg-brand-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">{{ $cause->country }}</span>
-                                @endif
-                            </div>
-                            <div class="flex flex-1 flex-col p-6 pt-7">
-                                <h3 class="font-serif text-2xl font-bold leading-snug text-heading">
-                                    <a href="{{ route('events.show', $cause) }}" class="hover:text-gold-500" wire:navigate>{{ $cause->title }}</a>
-                                </h3>
-                                <p class="mt-3 line-clamp-2 text-sm leading-relaxed text-ink-500">{{ \Illuminate\Support\Str::limit(strip_tags((string) $cause->description), 120) }}</p>
+                    {{-- Track: the list is drawn twice so sliding past the last cause flows straight into the first. --}}
+                    <div class="reveal -mx-2 mt-12 overflow-hidden px-2 py-4" style="transition-delay: 160ms">
+                        <div
+                            class="flex gap-6"
+                            :class="animate ? 'transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]' : ''"
+                            :style="`transform: translateX(calc(-${index} * (100% + 1.5rem) / ${per}))`"
+                            @transitionend.self="settle()"
+                        >
+                            @foreach ([false, true] as $isCopy)
+                                @foreach ($popularCauses as $cause)
+                                    <div
+                                        class="shrink-0 basis-full md:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-3rem)/3)]"
+                                        @if ($isCopy) aria-hidden="true" inert @else role="group" aria-roledescription="slide" aria-label="{{ $loop->iteration }} of {{ $loop->count }}" @endif
+                                    >
+                                        @include('site.partials.cause-card', ['cause' => $cause, 'index' => $loop->index])
+                                    </div>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    </div>
 
-                                <div class="mt-auto pt-6">
-                                    <div class="relative h-1.5 rounded-full bg-cream-300" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $percent }}% of goal raised">
-                                        <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
-                                    </div>
-                                    <div class="mt-3 flex justify-between gap-3 text-sm text-ink-500">
-                                        <span>Raised: <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($raised) }}</b></span>
-                                        <span>{{ $percent }}% of <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($goal) }}</b></span>
-                                    </div>
-                                    <a href="{{ route('events.show', $cause) }}" class="btn btn-primary mt-5 w-full" wire:navigate>View Cause</a>
-                                </div>
-                            </div>
-                        </article>
-                    @endforeach
+                    <div class="mt-6 flex justify-center gap-2" x-show="looping" x-cloak>
+                        @foreach ($popularCauses as $cause)
+                            <button
+                                type="button"
+                                class="h-2 rounded-full transition-all duration-300"
+                                :class="active === {{ $loop->index }} ? 'w-8 bg-gold-500' : 'w-2 bg-cream-300 hover:bg-ink-500'"
+                                @click="go({{ $loop->index }})"
+                                aria-label="Show cause {{ $loop->iteration }}"
+                            ></button>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </section>
@@ -313,157 +387,6 @@
                 <a href="{{ route('volunteer') }}" class="btn btn-light btn-lg shrink-0" wire:navigate>
                     Volunteer with us
                 </a>
-            </div>
-        </div>
-    </section>
-
-    {{-- INSTAGRAM SLIDER --}}
-    @php
-        $instagramUrl = config('social.instagram');
-        $highlights = $instagramHighlights ?? collect();
-
-        // Always end up with at least 6 tiles. Use DB posts when present, otherwise
-        // foundation imagery linking to the live profile so the slider never looks empty.
-        if ($highlights->isNotEmpty()) {
-            $slides = $highlights->map(fn ($post) => [
-                'permalink' => $post->permalink,
-                'thumb' => $post->previewImageUrl(),
-                'caption' => $post->caption ?: 'View on Instagram',
-                'is_video' => ($post->media_type ?? null) === 'VIDEO',
-            ])->values()->all();
-        } else {
-            $slides = [
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-1.jpg'),     'caption' => 'Community gathering in the Volta region',  'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/school-donation.jpg'), 'caption' => 'Back-to-school distribution day',          'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-1.jpg'),      'caption' => 'Outreach kickoff with local partners',     'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-2.webp'),     'caption' => 'Mobile health clinic in action',           'is_video' => true],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-3.webp'),     'caption' => 'Widows empowerment workshop',              'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-2.jpg'),     'caption' => 'Greater Accra town-hall',                  'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-4.webp'),     'caption' => 'Volunteers prepping care packs',           'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-3.jpg'),     'caption' => 'Annual gathering with partners',           'is_video' => false],
-            ];
-        }
-        $slideCount = count($slides);
-    @endphp
-    <section class="section bg-cream-100" aria-labelledby="instagram-heading">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="eyebrow">Instagram</p>
-                    <h2 id="instagram-heading" class="section-title text-heading mt-3">Follow Our Journey</h2>
-                    <p class="mt-2 text-sm text-ink-500">@<a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="font-semibold text-label hover:text-gold-500">the_fifiawotofoundation</a> · highlights from the feed</p>
-                </div>
-                <a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-brand-900 px-5 py-2.5 text-sm font-semibold text-paper transition hover:bg-gold-500">
-                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.5.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.5-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.5-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.5.5-1 .9-1.4.4-.4.9-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.5-1.3.9-.4.4-.7.8-.9 1.3-.2.4-.3 1-.4 2.1-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.7.4 2.1.2.5.5.9.9 1.3.4.4.8.7 1.3.9.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.5 1.3-.9.4-.4.7-.8.9-1.3.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.5-.9-.9-1.3-.4-.4-.8-.7-1.3-.9-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1Zm0 3.1a5 5 0 1 1 0 9.9 5 5 0 0 1 0-9.9Zm0 1.8a3.2 3.2 0 1 0 0 6.3 3.2 3.2 0 0 0 0-6.3Zm5.1-2a1.2 1.2 0 1 1 0 2.3 1.2 1.2 0 0 1 0-2.3Z"/>
-                    </svg>
-                    Follow Us on Instagram
-                </a>
-            </div>
-
-            {{-- Sliding strip --}}
-            <div
-                x-data="{
-                    active: 0,
-                    count: {{ $slideCount }},
-                    perPage: 4,
-                    perPageFor() {
-                        if (window.matchMedia('(min-width: 1024px)').matches) return 4;
-                        if (window.matchMedia('(min-width: 640px)').matches) return 3;
-                        return 2;
-                    },
-                    stops() { return Math.max(1, this.count - this.perPage + 1); },
-                    next() { this.active = (this.active + 1) % this.stops(); },
-                    go(i) { this.active = i; },
-                    autoplay: null,
-                    start() {
-                        this.perPage = this.perPageFor();
-                        if (this.count > this.perPage) {
-                            this.autoplay = setInterval(() => this.next(), 4000);
-                        }
-                    },
-                    stop() { clearInterval(this.autoplay); this.autoplay = null; },
-                    handleResize() {
-                        const next = this.perPageFor();
-                        if (next !== this.perPage) {
-                            this.perPage = next;
-                            this.active = Math.min(this.active, this.stops() - 1);
-                            this.stop();
-                            this.start();
-                        }
-                    }
-                }"
-                x-init="start(); $watch('active', () => {}); window.addEventListener('resize', () => handleResize())"
-                @mouseenter="stop()"
-                @mouseleave="start()"
-                class="relative mt-10"
-                aria-roledescription="carousel"
-                aria-label="Instagram highlights"
-            >
-                <div class="overflow-x-clip py-2">
-                    <div
-                        class="-mx-2 flex transition-transform duration-700 ease-out"
-                        :style="`transform: translateX(calc(-${active} * (100% / ${perPage})))`"
-                    >
-                        @foreach ($slides as $i => $slide)
-                            <div class="w-1/2 shrink-0 px-2 sm:w-1/3 lg:w-1/4">
-                                <a
-                                    href="{{ $slide['permalink'] }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    aria-label="{{ \Illuminate\Support\Str::limit($slide['caption'], 80) }}"
-                                    class="group relative block aspect-square overflow-hidden rounded-2xl bg-cream-200 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                                >
-                                    @if ($slide['thumb'])
-                                        <img
-                                            src="{{ $slide['thumb'] }}"
-                                            alt="{{ $slide['caption'] }}"
-                                            loading="lazy"
-                                            class="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.05]"
-                                        >
-                                    @endif
-                                    <span class="absolute inset-0 bg-gradient-to-t from-brand-900/55 via-transparent to-transparent opacity-0 transition group-hover:opacity-100"></span>
-                                    @if ($slide['is_video'])
-                                        <span class="absolute inset-0 grid place-items-center">
-                                            <span class="grid size-12 place-items-center rounded-full bg-white/90 text-brand-900 shadow-lg backdrop-blur transition group-hover:bg-gold-500 group-hover:text-white">
-                                                <svg class="size-5 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                            </span>
-                                        </span>
-                                    @endif
-                                    <span class="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 text-brand-900 shadow backdrop-blur transition group-hover:bg-gold-500 group-hover:text-white">
-                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                            <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.5.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.5-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.5-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.5.5-1 .9-1.4.4-.4.9-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 5.1a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Z"/>
-                                        </svg>
-                                    </span>
-                                    {{-- Hover overlay with caption + clear "open on IG" affordance --}}
-                                    <span class="pointer-events-none absolute inset-x-2 bottom-2 flex flex-col gap-1.5 opacity-0 transition group-hover:opacity-100">
-                                        @if ($slide['caption'])
-                                            <span class="line-clamp-2 rounded-md bg-black/65 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">{{ $slide['caption'] }}</span>
-                                        @endif
-                                        <span class="inline-flex items-center gap-1.5 self-start rounded-md bg-gold-500 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
-                                            View on Instagram
-                                            <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3 10 14M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg>
-                                        </span>
-                                    </span>
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                @if ($slideCount > 4)
-                    <div class="mt-6 flex justify-center gap-2" role="tablist">
-                        @for ($i = 0; $i < $slideCount - 3; $i++)
-                            <button
-                                type="button"
-                                @click="go({{ $i }})"
-                                :class="active === {{ $i }} ? 'w-10 bg-brand-900' : 'w-3 bg-brand-100 hover:bg-brand-300'"
-                                class="h-3 rounded-full transition-all"
-                                aria-label="Go to slide {{ $i + 1 }}"
-                            ></button>
-                        @endfor
-                    </div>
-                @endif
             </div>
         </div>
     </section>

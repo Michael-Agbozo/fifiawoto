@@ -5,6 +5,7 @@ use App\Models\Donation;
 use App\Models\Event;
 use App\Models\InstagramPost;
 use App\Models\Testimonial;
+use Database\Seeders\EventSeeder;
 
 it('renders every PRD-mandated section on the home page', function () {
     Event::factory()->create([
@@ -25,7 +26,6 @@ it('renders every PRD-mandated section on the home page', function () {
         'A Future of Hope',
         'Real impact, measured',
         'Our Programs and Initiatives',
-        'Follow Our Journey',
         'Stories of Impact',
         'Upcoming Outreach',
         'Stay Connected',
@@ -42,6 +42,23 @@ it('exposes both hero CTAs', function () {
 
 it('leaves the media gallery to its own page', function () {
     $this->get(route('home'))->assertOk()->assertDontSee('Our Work in Action');
+});
+
+it('leads with the new hero, its calls to action and the next outreach', function () {
+    Event::factory()->create([
+        'title' => 'Hero Spotlight Outreach',
+        'starts_at' => now()->addWeeks(3)->setTime(9, 0),
+        'status' => EventStatus::Published->value,
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('id="hero-heading"', escape: false)
+        ->assertSeeInOrder(['Empowering', 'New Beginnings', route('donate'), route('sponsor-a-child'), 'Get In Touch'], escape: false)
+        ->assertSee('Next outreach')
+        ->assertSee('Hero Spotlight Outreach')
+        ->assertSee(now()->addWeeks(3)->format('j M Y'));
 });
 
 it('lists all five core programs', function () {
@@ -123,6 +140,19 @@ it('fills the stories carousel with featured stories first and more beyond three
     expect(strpos($response->getContent(), 'Featured Voice'))->toBeLessThan(strpos($response->getContent(), 'Fourth Plus Voice'));
 });
 
+it('loops every upcoming fundraiser through the causes carousel', function () {
+    $this->seed(EventSeeder::class);
+
+    $response = $this->get(route('home'))->assertOk()
+        ->assertSee('aria-label="Popular causes"', escape: false)
+        ->assertSee('aria-label="Next cause"', escape: false)
+        ->assertSee('Annual Fundraising Dinner — Washington, DC', escape: false)
+        ->assertSee('aria-label="5 of 5"', escape: false);
+
+    // Each cause is drawn twice (the second, inert copy makes the loop seamless).
+    expect(substr_count($response->getContent(), 'Back-to-School Supplies Drive — Lomé</a>'))->toBe(2);
+});
+
 it('hides popular causes when no fundraising events are upcoming', function () {
     Event::query()->delete();
 
@@ -136,7 +166,7 @@ it('hides the featured event section when nothing is scheduled', function () {
         ->assertDontSee('Upcoming Outreach');
 });
 
-it('falls back to media_url for Instagram image posts without a thumbnail', function () {
+it('no longer shows the Instagram strip on the home page', function () {
     InstagramPost::factory()->create([
         'is_approved' => true,
         'is_hidden' => false,
@@ -148,5 +178,6 @@ it('falls back to media_url for Instagram image posts without a thumbnail', func
 
     $this->get(route('home'))
         ->assertOk()
-        ->assertSee('https://cdn.example.test/ig-image-only.jpg', false);
+        ->assertDontSee('Follow Our Journey')
+        ->assertDontSee('https://cdn.example.test/ig-image-only.jpg', false);
 });

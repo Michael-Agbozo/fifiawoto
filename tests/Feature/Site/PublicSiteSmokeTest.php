@@ -36,17 +36,17 @@ it('exposes the primary navigation links on every page', function (string $route
     'contact',
 ]);
 
-it('renders the footer with a working newsletter form and only configured social profiles', function () {
+it('renders the footer with all three social profiles and no newsletter band', function () {
     config(['social.facebook' => null, 'social.youtube' => 'https://www.youtube.com/@fifiawoto']);
 
     $this->get(route('about'))
         ->assertOk()
-        ->assertSee('Stay close to the work.')
-        ->assertSee('Compassion is a legacy that never fades.')
+        ->assertDontSee('Stay close to the work.')
+        ->assertDontSee('In memory of Madam Dadaa')
         ->assertSee(route('donate'))
         ->assertSee('hello@fifiawoto.org')
-        ->assertSee('wire:submit="subscribe"', escape: false)
         ->assertSee('https://www.youtube.com/@fifiawoto', escape: false)
-        ->assertDontSee('href="https://facebook.com"', escape: false)
+        ->assertSee('href="https://facebook.com"', escape: false)
+        ->assertSee('aria-label="Instagram"', escape: false)
         ->assertSee(route('legal.privacy'));
 });

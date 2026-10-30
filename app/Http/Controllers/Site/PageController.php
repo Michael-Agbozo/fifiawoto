@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
-use App\Models\InstagramPost;
 use App\Models\MediaItem;
 use App\Models\Testimonial;
 use Illuminate\Contracts\View\View;
@@ -23,7 +22,7 @@ class PageController extends Controller
             ->upcoming()
             ->where('goal_cents', '>', 0)
             ->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents')
-            ->limit(3)
+            ->limit(9)
             ->get();
 
         // Featured stories lead the home carousel, then the rest fill it out.
@@ -33,18 +32,10 @@ class PageController extends Controller
             ->limit(9)
             ->get();
 
-        $instagramHighlights = InstagramPost::query()
-            ->where('is_approved', true)
-            ->where('is_hidden', false)
-            ->orderByDesc('posted_at')
-            ->limit(6)
-            ->get();
-
         return view('site.home', [
             'featuredEvent' => $featuredEvent,
             'popularCauses' => $popularCauses,
             'featuredTestimonials' => $featuredTestimonials,
-            'instagramHighlights' => $instagramHighlights,
         ]);
     }
 
