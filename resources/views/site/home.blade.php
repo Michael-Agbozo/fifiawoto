@@ -459,4 +459,5 @@
 
     {{-- NEWSLETTER --}}
     <livewire:site.newsletter-signup source="home" />
+<section class="mx-6 mb-12 rounded-3xl bg-brand-900 px-7 py-12 text-white sm:px-12"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-8"><div><p class="text-xs font-semibold uppercase tracking-widest text-gold-300">Help hope grow</p><h2 class="mt-3 text-3xl sm:text-4xl">A connection. A brighter tomorrow.</h2><p class="mt-4 max-w-xl text-white/80">Explore child sponsorship and talk with our team about making a lasting difference.</p></div><a href="{{ route('sponsor-a-child') }}" class="rounded-full bg-gold-500 px-7 py-3 font-bold text-white">Sponsor a Child →</a></div></section>
 </x-layouts::site>

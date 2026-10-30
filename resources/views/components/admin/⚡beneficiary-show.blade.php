@@ -21,6 +21,22 @@ new class extends Component
 
     public Beneficiary $beneficiary;
 
+    public string $publicDisplayName = '';
+
+    public string $publicStory = '';
+    public string $publicCommunityStory = '';
+    public string $publicCountryStory = '';
+
+    public string $publicCountry = '';
+
+    public string $guardianConsentReference = '';
+
+    public bool $guardianConsent = false;
+
+    public bool $sponsorshipPublished = false;
+
+    public $sponsorshipPhoto = null;
+
     /** Only changed server-side (openFolder/goUp/…) so it can't be pointed at another beneficiary's folder. */
     #[Locked]
     public ?int $currentFolderId = null;
@@ -60,6 +76,78 @@ new class extends Component
         abort_unless(auth()->user()?->canDo('beneficiaries', 'view'), 403);
 
         $this->beneficiary = $beneficiary->load(['assignedTo', 'folders', 'timeline.recordedBy', 'documents']);
+        $this->publicDisplayName = $beneficiary->public_display_name ?? '';
+        $this->publicStory = $beneficiary->public_story ?? '';
+        $this->publicCommunityStory = $beneficiary->public_community_story ?? '';
+        $this->publicCountryStory = $beneficiary->public_country_story ?? '';
+        $this->publicCountry = $beneficiary->public_country ?? '';
+        $this->guardianConsentReference = $beneficiary->guardian_consent_reference ?? '';
+        $this->guardianConsent = $beneficiary->guardian_consent_at !== null;
+        $this->sponsorshipPublished = (bool) $beneficiary->sponsorship_published;
+    }
+
+    public function saveSponsorship(): void
+    {
+        abort_unless(auth()->user()?->refresh()->canDo('beneficiaries', 'update'), 403);
+        $this->beneficiary->refresh();
+        $this->validate([
+            'publicDisplayName' => 'nullable|string|max:60',
+            'publicStory' => 'nullable|string|max:12000',
+            'publicCommunityStory' => 'nullable|string|max:12000',
+            'publicCountryStory' => 'nullable|string|max:12000',
+            'publicCountry' => 'nullable|string|max:80',
+            'guardianConsentReference' => 'nullable|string|max:255',
+            'sponsorshipPhoto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ]);
+        if (! $this->guardianConsent) {
+            $this->sponsorshipPublished = false;
+        }
+        if ($this->sponsorshipPublished) {
+            $this->validate([
+                'publicDisplayName' => 'required|string|max:60',
+                'publicStory' => 'required|string|max:12000',
+                'publicCountry' => 'required|string|max:80',
+                'guardianConsentReference' => 'required|string|max:255',
+                'guardianConsent' => 'accepted',
+            ]);
+            if (! $this->beneficiary->date_of_birth || $this->beneficiary->date_of_birth->isFuture() || $this->beneficiary->date_of_birth->age >= 18 || ! in_array($this->beneficiary->status, [SupportStatus::Active, SupportStatus::Approved], true)) {
+                $this->addError('sponsorshipPublished', 'Only active or approved children under 18 can be published.');
+
+                return;
+            }
+            if (! $this->sponsorshipPhoto && ! $this->beneficiary->public_photo_path) {
+                $this->addError('sponsorshipPhoto', 'Upload a separate photo approved for public use.');
+
+                return;
+            }
+        }
+        $oldPhoto = $this->beneficiary->public_photo_path;
+        $photo = $oldPhoto;
+        if ($this->sponsorshipPhoto && $this->sponsorshipPublished) {
+            $photo = $this->sponsorshipPhoto->store('sponsorship', 'public');
+        }
+        if (! $this->guardianConsent) {
+            $this->sponsorshipPublished = false;
+        }
+        if (! $this->sponsorshipPublished) {
+            $photo = null;
+        }
+        $this->beneficiary->update([
+            'public_display_name' => trim($this->publicDisplayName),
+            'public_story' => trim($this->publicStory),
+            'public_community_story' => trim($this->publicCommunityStory),
+            'public_country_story' => trim($this->publicCountryStory),
+            'public_country' => trim($this->publicCountry),
+            'public_photo_path' => $photo,
+            'sponsorship_published' => $this->sponsorshipPublished,
+            'guardian_consent_at' => $this->guardianConsent ? ($this->beneficiary->guardian_consent_at ?? now()) : null,
+            'guardian_consent_reference' => $this->guardianConsent ? trim($this->guardianConsentReference) : null,
+        ]);
+        if ($oldPhoto && $oldPhoto !== $photo && preg_match('~^sponsorship/[A-Za-z0-9_-]+\.[a-zA-Z]+$~', $oldPhoto)) {
+            Storage::disk('public')->delete($oldPhoto);
+        }
+        $this->reset('sponsorshipPhoto');
+        $this->flashMessage = 'Public sponsorship settings saved.';
     }
 
     // ---------- Status / quick actions ----------
@@ -410,6 +498,25 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
+    @if (auth()->user()?->canDo('beneficiaries', 'update'))
+    <section class="mb-6 rounded-3xl border border-brand-100 bg-surface p-6">
+        <h2 class="text-2xl text-heading">Public child sponsorship</h2>
+        <p class="mt-2 text-sm text-ink-500">Opt in only with recorded guardian consent. Use an alias or safe first name, an approved story without identifying details, and a separate public photo. Private case details are never copied. Unpublishing removes the public photo; upload it again to republish.</p>
+        <form wire:submit="saveSponsorship" class="mt-5 space-y-4">
+            @foreach (['publicDisplayName' => 'Safe public display name', 'publicCountry' => 'Public country', 'guardianConsentReference' => 'Private guardian consent record reference'] as $field => $label)
+            <label class="block text-sm text-heading">{{ $label }}<input wire:model="{{ $field }}" class="mt-2 block w-full rounded-xl border border-brand-200 bg-surface p-3">@error($field)<span class="text-red-600">{{ $message }}</span>@enderror</label>
+            @endforeach
+            @foreach (['publicStory' => 'Overview', 'publicCommunityStory' => 'Community', 'publicCountryStory' => 'Country'] as $field => $label)
+                <label class="block text-sm text-heading">{{ $label }} — approved public content<textarea wire:model="{{ $field }}" rows="8" maxlength="12000" class="mt-2 block w-full rounded-xl border border-brand-200 bg-surface p-3"></textarea>@error($field)<span class="text-red-600">{{ $message }}</span>@enderror</label>
+            @endforeach
+            <label class="block text-sm text-heading">Separate approved public photo<input type="file" wire:model="sponsorshipPhoto" accept="image/jpeg,image/png,image/webp" class="mt-2 block w-full">@error('sponsorshipPhoto')<span class="text-red-600">{{ $message }}</span>@enderror</label>
+            <label class="flex items-start gap-3 text-sm text-heading"><input type="checkbox" wire:model="guardianConsent">I have verified and recorded guardian consent to publish this name, story, country, age, gender and photo.</label>@error('guardianConsent')<p class="text-red-600">{{ $message }}</p>@enderror
+            <label class="flex gap-3 text-sm text-heading"><input type="checkbox" wire:model="sponsorshipPublished">Publish approved sponsorship profile</label>@error('sponsorshipPublished')<p class="text-red-600">{{ $message }}</p>@enderror
+            <button wire:loading.attr="disabled" class="rounded-xl bg-gold-500 px-5 py-3 font-semibold text-white disabled:opacity-50">Save public profile</button>
+        </form>
+    </section>
+    @endif
+
     @if ($flashMessage)
         <div role="status" class="flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
             <span>{{ $flashMessage }}</span>

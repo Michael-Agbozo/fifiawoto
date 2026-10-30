@@ -11,7 +11,7 @@ class SitemapController extends Controller
     /** Named routes of the static public pages listed in the sitemap. */
     public const STATIC_ROUTES = [
         'home', 'about', 'events.index', 'volunteer', 'apply-for-support', 'donate',
-        'testimonials', 'media', 'contact',
+        'testimonials', 'media', 'contact', 'sponsor-a-child',
         'legal.privacy', 'legal.terms', 'legal.cookies', 'legal.disclaimer',
     ];
 

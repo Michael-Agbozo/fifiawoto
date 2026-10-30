@@ -31,12 +31,22 @@ new class extends Component
     #[Validate('accepted')]
     public bool $consent = false;
 
+    #[\Livewire\Attributes\Locked]
+    public ?string $sponsorshipProfile = null;
+
     public bool $submitted = false;
 
     /** Pre-select the subject from links like /contact?subject=donation. */
-    public function mount(): void
+    public function mount(?string $sponsorshipProfile = null): void
     {
+        $this->sponsorshipProfile = $sponsorshipProfile;
+        if ($sponsorshipProfile) {
+            abort_unless(\App\Models\Beneficiary::query()->publicSponsorship()->where('public_sponsorship_id', $sponsorshipProfile)->exists(), 404);
+        }
         $this->subject = ContactSubject::tryFrom((string) request()->query('subject'))?->value ?? '';
+        if ($this->sponsorshipProfile) {
+            $this->subject = ContactSubject::Sponsorship->value;
+        }
     }
 
     /**
@@ -53,6 +63,13 @@ new class extends Component
 
     public function submit(): void
     {
+        if ($this->submitted) {
+            return;
+        }
+        if ($this->sponsorshipProfile) {
+            $child = \App\Models\Beneficiary::query()->publicSponsorship()->where('public_sponsorship_id', $this->sponsorshipProfile)->firstOrFail();
+            $this->subject = ContactSubject::Sponsorship->value;
+        }
         $key = 'public-form:contact:'.(request()->ip() ?? 'anon');
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
@@ -72,6 +89,9 @@ new class extends Component
 
         $data = $this->validate();
 
+        if (isset($child)) {
+            $data['message'] = 'Sponsorship enquiry: '.$child->public_display_name.' ('.$child->public_sponsorship_id.")\n\n".$data['message'];
+        }
         RateLimiter::hit($key, 60);
 
         ContactMessage::query()->create([
@@ -101,6 +121,9 @@ new class extends Component
     {
         return [
             'subjectOptions' => ContactSubject::options(),
+            'sponsorshipName' => $this->sponsorshipProfile
+                ? \App\Models\Beneficiary::query()->publicSponsorship()->where('public_sponsorship_id', $this->sponsorshipProfile)->firstOrFail()->public_display_name
+                : null,
         ];
     }
 }; ?>
@@ -110,9 +133,13 @@ new class extends Component
         <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Send a Message</p>
-                <h2 id="contact-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Contact the Foundation</h2>
+                <h2 id="contact-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $sponsorshipName ? 'Enquire about supporting '.$sponsorshipName : 'Contact the Foundation' }}</h2>
                 <p class="mt-3 text-sm text-ink-500">
-                    We welcome inquiries from individuals, organizations, and partners interested in supporting the mission.
+                    @if ($sponsorshipName)
+                        Your enquiry is about {{ $sponsorshipName }}. Our team will help you explore sponsorship and explain the next steps.
+                    @else
+                        We welcome inquiries from individuals, organizations, and partners interested in supporting the mission.
+                    @endif
                 </p>
             </div>
 
@@ -120,7 +147,7 @@ new class extends Component
                 <div role="status" class="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-sm text-heading-soft">
                     <p class="font-semibold text-heading">Message received.</p>
                     <p class="mt-1 text-ink-500">
-                        Thank you for reaching out, a member of the team will respond shortly.
+                        Thank you for reaching out. The team will follow up to discuss next steps. @if ($sponsorshipProfile) This enquiry does not confirm sponsorship or take a payment. @endif
                     </p>
                 </div>
             @else
@@ -150,13 +177,16 @@ new class extends Component
                         </div>
                         <div>
                             <label for="contact-subject" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Subject</label>
-                            <select id="contact-subject" wire:model.live="subject" required
-                                class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
-                                <option value="">Select a subject…</option>
-                                @foreach ($subjectOptions as $value => $label)
-                                    <option value="{{ $value }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <div class="relative mt-2">
+                                <select id="contact-subject" wire:model.live="subject" required
+                                    class="w-full appearance-none rounded-md border border-brand-200 bg-cream-50 py-2.5 pl-3 pr-12 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 forced-colors:appearance-auto">
+                                    <option value="">Select a subject…</option>
+                                    @foreach ($subjectOptions as $value => $label)
+                                        <option value="{{ $value }}" @selected($subject === $value)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <svg aria-hidden="true" class="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-label forced-colors:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m5 7.5 5 5 5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </div>
                             @error('subject') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
@@ -179,7 +209,7 @@ new class extends Component
                         <button type="submit"
                             class="inline-flex items-center justify-center rounded-full bg-gold-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-900 disabled:opacity-60"
                             wire:loading.attr="disabled">
-                            <span wire:loading.remove>Send Message</span>
+                            <span wire:loading.remove>{{ $sponsorshipProfile ? 'Send sponsorship enquiry' : 'Send Message' }}</span>
                             <span wire:loading>Sending…</span>
                         </button>
                     </div>

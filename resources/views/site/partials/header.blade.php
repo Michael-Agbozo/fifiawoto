@@ -2,6 +2,7 @@
     $navItems = [
         ['label' => 'Home',      'route' => 'home'],
         ['label' => 'About',     'route' => 'about'],
+        ['label' => 'Sponsor a Child', 'route' => 'sponsor-a-child'],
         ['label' => 'Events',    'route' => 'events.index'],
         ['label' => 'Volunteer', 'route' => 'volunteer'],
         ['label' => 'Contact',   'route' => 'contact'],
@@ -32,9 +33,9 @@
             >
         </a>
 
-        <nav class="hidden lg:flex lg:items-center lg:gap-10">
+        <nav class="hidden lg:flex lg:items-center lg:gap-5">
             @foreach ($navItems as $item)
-                @php $isCurrent = request()->routeIs($item['route']); @endphp
+                @php $isCurrent = request()->routeIs($item['route'], $item['route'].'.*'); @endphp
                 @if ($isCurrent)
                     <a href="{{ route($item['route']) }}" class="text-sm font-semibold text-gold-500" wire:navigate>{{ $item['label'] }}</a>
                 @else
@@ -89,7 +90,7 @@
     <div x-show="open" x-cloak class="lg:hidden">
         <nav class="space-y-1 border-t border-cream-300 bg-cream-50 px-4 pb-6 pt-2 sm:px-6">
             @foreach ($navItems as $item)
-                @php $isCurrent = request()->routeIs($item['route']); @endphp
+                @php $isCurrent = request()->routeIs($item['route'], $item['route'].'.*'); @endphp
                 <a
                     href="{{ route($item['route']) }}"
                     @class([
