@@ -210,5 +210,5 @@ it('marks sponsor a child as the current nav item on child pages', function () {
     $child = publicChild();
     $this->get(route('sponsor-a-child.show', $child->public_sponsorship_slug))
         ->assertOk()
-        ->assertSee('class="text-sm font-semibold text-gold-500" wire:navigate>Sponsor a Child</a>', false);
+        ->assertSee('class="whitespace-nowrap text-sm font-semibold text-gold-500" wire:navigate>Sponsor a Child</a>', false);
 });

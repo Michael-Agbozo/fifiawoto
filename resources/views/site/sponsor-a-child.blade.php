@@ -5,7 +5,7 @@
                 <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">A future with possibility</p>
                 <h1 class="mt-4 text-4xl text-heading sm:text-5xl lg:text-6xl">Sponsor a child.<br>Help hope grow.</h1>
                 <p class="mt-6 max-w-xl text-lg leading-relaxed text-heading-soft">Walk alongside a child’s journey — and help open doors to learning, wellbeing and a brighter tomorrow.</p>
-                <a href="#children" class="mt-8 inline-flex rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-brand-900">Meet the children ↓</a>
+                <a href="#children" class="mt-8 inline-flex rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-heading hover:text-surface">Meet the children ↓</a>
             </div>
             <img src="{{ asset('images/foundation/school-donation.jpg') }}" alt="Foundation education outreach with school supplies" class="aspect-[4/3] w-full rounded-3xl object-cover">
         </div>
@@ -55,7 +55,7 @@
                         <svg aria-hidden="true" class="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-label forced-colors:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m5 7.5 5 5 5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </div>
                 </div>
-                <button class="rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-brand-900">Find a child</button>
+                <button class="rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-heading hover:text-surface">Find a child</button>
             </form>
         </div>
         <div class="mx-auto mt-14 max-w-7xl">

@@ -37,12 +37,12 @@
             @foreach ($navItems as $item)
                 @php $isCurrent = request()->routeIs($item['route'], $item['route'].'.*'); @endphp
                 @if ($isCurrent)
-                    <a href="{{ route($item['route']) }}" class="text-sm font-semibold text-gold-500" wire:navigate>{{ $item['label'] }}</a>
+                    <a href="{{ route($item['route']) }}" class="whitespace-nowrap text-sm font-semibold text-gold-500" wire:navigate>{{ $item['label'] }}</a>
                 @else
                     <a
                         href="{{ route($item['route']) }}"
                         :class="scrolled ? '!text-white/85 hover:!text-white' : ''"
-                        class="text-sm font-medium text-ink-700 transition-colors hover:text-gold-500"
+                        class="whitespace-nowrap text-sm font-medium text-ink-700 transition-colors hover:text-gold-500"
                         wire:navigate
                     >
                         {{ $item['label'] }}

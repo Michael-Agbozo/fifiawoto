@@ -65,7 +65,7 @@
                 <p class="mt-5 leading-7 text-paper-dim">Choose how you would like to support {{ $child->public_display_name }}, then review your sponsorship request on the next screen. Our team will confirm the arrangements with you.</p>
             </div>
             <div class="flex max-w-sm flex-col items-start gap-5">
-                <a href="{{ route('sponsor-a-child.checkout', $child->public_sponsorship_slug) }}" class="inline-flex rounded-full bg-gold-500 px-7 py-4 text-sm font-bold text-white transition hover:bg-gold-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Sponsor {{ $child->public_display_name }} <span aria-hidden="true" class="ml-3">→</span></a>
+                <a href="{{ route('sponsor-a-child.checkout', $child->public_sponsorship_slug) }}" class="inline-flex rounded-full bg-gold-500 px-7 py-4 text-sm font-bold text-white transition hover:bg-white hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Sponsor {{ $child->public_display_name }} <span aria-hidden="true" class="ml-3">→</span></a>
             </div>
         </div>
     </section>
