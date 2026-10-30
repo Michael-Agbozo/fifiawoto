@@ -153,7 +153,7 @@
                         class="{{ $widthClass }} shrink-0 px-2.5"
                         :class="(active <= {{ $i }} && {{ $i }} < active + perPage) ? 'opacity-100' : 'opacity-60'"
                     >
-                        <article class="group relative h-full overflow-hidden rounded-3xl bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200">
+                        <article class="tilt group relative h-full overflow-hidden rounded-3xl bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200">
                             <div class="relative flex h-full flex-col p-7">
                                 <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-900 via-brand-500 to-gold-500"></div>
 

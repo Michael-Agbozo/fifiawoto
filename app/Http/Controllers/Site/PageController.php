@@ -26,10 +26,11 @@ class PageController extends Controller
             ->limit(3)
             ->get();
 
+        // Featured stories lead the home carousel, then the rest fill it out.
         $featuredTestimonials = Testimonial::query()
-            ->featured()
+            ->orderByDesc('featured')
             ->ordered()
-            ->limit(3)
+            ->limit(9)
             ->get();
 
         $instagramHighlights = InstagramPost::query()

@@ -73,7 +73,7 @@
             </div>
 
             {{-- RIGHT: scattered photo collage --}}
-            <div class="relative grid grid-cols-2 gap-4 lg:gap-6" aria-hidden="true">
+            <div class="relative grid grid-cols-2 gap-4 lg:gap-6" data-float aria-hidden="true">
                 <div class="space-y-4 lg:space-y-6 lg:pt-2">
                     <img
                         src="{{ asset('images/foundation/school-donation.jpg') }}"
@@ -190,6 +190,7 @@
             <div class="reveal-right relative">
                 <div class="absolute -right-6 -top-10 bottom-16 left-24 rounded-tl-[64px] rounded-tr-[32px] bg-cream-100 sm:-right-10" aria-hidden="true"></div>
                 <img
+                    data-float
                     src="{{ asset('images/foundation/about/empowering-hope.jpg') }}"
                     alt="Children at a foundation outreach day"
                     class="relative aspect-[5/6] w-full rounded-[28px] object-cover shadow-xl"
@@ -217,7 +218,7 @@
                             $fallbacks = ['images/foundation/school-donation.jpg', 'images/foundation/outreach-1.jpg', 'images/foundation/outreach-4.webp'];
                             $causeImage = \App\Support\MediaUrl::for($cause->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
-                        <article class="reveal group flex flex-col overflow-hidden rounded-2xl border border-cream-300 bg-surface shadow-sm transition hover:-translate-y-1 hover:shadow-lg" style="transition-delay: {{ $loop->index * 100 }}ms">
+                        <article class="reveal-3d tilt group flex flex-col overflow-hidden rounded-2xl border border-cream-300 bg-surface shadow-sm hover:shadow-lg" style="transition-delay: {{ $loop->index * 100 }}ms">
                             <div class="relative">
                                 <div class="aspect-[4/3] overflow-hidden">
                                     <img src="{{ $causeImage }}" alt="{{ $cause->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy">
@@ -270,18 +271,34 @@
                 </div>
             </div>
 
-            <x-site.feature-carousel
-                noun="program"
-                :per-page="4"
-                :cta="['Learn more', route('about')]"
-                :items="[
-                    ['icon' => 'women',     'title' => 'Women Empowerment',                  'copy' => 'Training, mentorship, and financial empowerment for women.'],
-                    ['icon' => 'education', 'title' => 'Child Education Support',            'copy' => 'Educational materials, scholarships, and mentorship for children.'],
-                    ['icon' => 'support',   'title' => 'Support for Vulnerable Populations', 'copy' => 'Helping widows, orphanages, and individuals facing hardship.'],
-                    ['icon' => 'community', 'title' => 'Community Development',              'copy' => 'Outreach programs and infrastructure for stronger communities.'],
-                    ['icon' => 'global',    'title' => 'Global Outreach',                    'copy' => 'Humanitarian support across the United States, Ghana, Togo, and Benin.'],
-                ]"
-            />
+            {{-- Photo bento: the lead programme spans two rows, four tiles beside it --}}
+            <div class="grid gap-5 sm:grid-cols-2 lg:auto-rows-[300px] lg:grid-cols-4">
+                @foreach ([
+                    ['Child Education Support',            'Books, uniforms, school fees and mentorship, so children can stay in class and keep learning.', 'images/foundation/outreach-1.jpg',               'lg:col-span-2 lg:row-span-2'],
+                    ['Women Empowerment',                  'Training, mentorship and small-business support that help mothers provide for their families.', 'images/foundation/community-2.jpg',              ''],
+                    ['Support for Vulnerable Populations', 'Care for widows, orphanages and people facing hardship, met with dignity.',                     'images/foundation/about/serving-with-heart.jpg', ''],
+                    ['Community Development',              'Outreach and infrastructure chosen with communities, built to last.',                           'images/foundation/community-1.jpg',              ''],
+                    ['Global Outreach',                    'Humanitarian support across the United States, Ghana, Togo and Benin.',                         'images/foundation/about/team-group.jpg',         ''],
+                ] as $index => [$title, $copy, $image, $span])
+                    <a
+                        href="{{ route('about') }}"
+                        class="reveal-3d tilt group relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden rounded-3xl p-6 text-white shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)] sm:p-7 {{ $span }} {{ $index === 0 ? 'sm:col-span-2 sm:min-h-[420px]' : '' }}"
+                        style="transition-delay: {{ $index * 90 }}ms"
+                        wire:navigate
+                    >
+                        <img src="{{ asset($image) }}" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-110" loading="lazy">
+                        <span class="absolute inset-0 -z-10 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/45 to-transparent transition-opacity duration-500 group-hover:from-[#00044e]" aria-hidden="true"></span>
+
+                        <span class="font-mono text-xs font-semibold tracking-[0.2em] text-white/70">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }} / 05</span>
+                        <h3 class="mt-2 font-serif font-bold leading-tight text-white {{ $index === 0 ? 'text-3xl sm:text-4xl lg:text-5xl' : 'text-2xl' }}">{{ $title }}</h3>
+                        <p class="mt-3 max-w-md text-sm leading-relaxed text-white/80 {{ $index === 0 ? 'sm:text-base' : 'line-clamp-2' }}">{{ $copy }}</p>
+                        <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                            Learn more
+                            <span class="grid size-8 place-items-center rounded-full bg-white/15 ring-1 ring-white/30 backdrop-blur transition group-hover:translate-x-1 group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">→</span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
         </div>
     </section>
 
@@ -296,44 +313,6 @@
                 <a href="{{ route('volunteer') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-surface px-7 py-3.5 text-sm font-bold text-gold-600 shadow-sm transition hover:bg-brand-900 hover:text-white" wire:navigate>
                     Volunteer with us
                 </a>
-            </div>
-        </div>
-    </section>
-
-    {{-- MEDIA GALLERY PREVIEW --}}
-    <section class="py-20" aria-labelledby="gallery-heading">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Media Gallery</p>
-                    <h2 id="gallery-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Our Work in Action</h2>
-                    <p class="mt-3 max-w-2xl text-sm text-ink-500">
-                        Moments from outreach programs, volunteer initiatives, and community activities organized by the foundation.
-                    </p>
-                </div>
-                <a href="{{ route('media') }}" class="text-sm font-semibold text-label hover:text-gold-500" wire:navigate>View all →</a>
-            </div>
-
-            <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                @foreach ([
-                    ['Community Outreach',  'images/foundation/school-donation.jpg'],
-                    ['Education Support',   'images/foundation/outreach-1.jpg'],
-                    ['Volunteer Activities','images/foundation/outreach-4.webp'],
-                    ['Events',              'images/foundation/outreach-3.webp'],
-                ] as $index => [$category, $image])
-                    <figure class="reveal group relative aspect-[4/5] overflow-hidden rounded-3xl shadow-sm" style="transition-delay: {{ $index * 100 }}ms">
-                        <img
-                            src="{{ asset($image) }}"
-                            alt="{{ $category }}, Fifiawoto Foundation outreach moment"
-                            class="img-fade absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                            loading="lazy"
-                        >
-                        <div class="absolute inset-0 bg-gradient-to-t from-brand-900/85 via-brand-900/20 to-transparent"></div>
-                        <figcaption class="absolute inset-x-0 bottom-0 p-5">
-                            <span class="inline-flex rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-brand-900 shadow">{{ $category }}</span>
-                        </figcaption>
-                    </figure>
-                @endforeach
             </div>
         </div>
     </section>
@@ -504,7 +483,7 @@
                     : $fallbackTestimonials;
             @endphp
 
-            <x-site.testimonial-carousel :testimonials="$testimonials" :per-view="2" />
+            <x-site.testimonial-carousel :testimonials="$testimonials" :per-view="3" />
 
             <div class="mt-10 flex justify-center">
                 <a href="{{ route('testimonials') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>

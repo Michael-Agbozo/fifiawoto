@@ -4,6 +4,7 @@ use App\Enums\EventStatus;
 use App\Models\Donation;
 use App\Models\Event;
 use App\Models\InstagramPost;
+use App\Models\Testimonial;
 
 it('renders every PRD-mandated section on the home page', function () {
     Event::factory()->create([
@@ -24,7 +25,6 @@ it('renders every PRD-mandated section on the home page', function () {
         'A Future of Hope',
         'Real impact, measured',
         'Our Programs and Initiatives',
-        'Our Work in Action',
         'Follow Our Journey',
         'Stories of Impact',
         'Upcoming Outreach',
@@ -38,6 +38,10 @@ it('exposes both hero CTAs', function () {
     $this->get(route('home'))
         ->assertSee('Donate')
         ->assertSee('Get In Touch');
+});
+
+it('leaves the media gallery to its own page', function () {
+    $this->get(route('home'))->assertOk()->assertDontSee('Our Work in Action');
 });
 
 it('lists all five core programs', function () {
@@ -106,6 +110,17 @@ it('lists popular causes with raised amounts and progress', function () {
         ->assertSee('25% of', escape: false)
         ->assertSee(route('events.show', $cause))
         ->assertDontSee('No Goal Gathering');
+});
+
+it('fills the stories carousel with featured stories first and more beyond three', function () {
+    Testimonial::factory()->featured()->create(['author_name' => 'Featured Voice', 'sort' => 50]);
+    Testimonial::factory()->count(3)->create(['featured' => false]);
+    Testimonial::factory()->create(['author_name' => 'Fourth Plus Voice', 'featured' => false, 'sort' => 99]);
+
+    $response = $this->get(route('home'))->assertOk()->assertSee('Stories of Impact');
+
+    $response->assertSee('Featured Voice')->assertSee('Fourth Plus Voice');
+    expect(strpos($response->getContent(), 'Featured Voice'))->toBeLessThan(strpos($response->getContent(), 'Fourth Plus Voice'));
 });
 
 it('hides popular causes when no fundraising events are upcoming', function () {

@@ -70,7 +70,7 @@
             <p class="mt-7 text-sm text-ink-500">{{ $children->total() }} {{ Str::plural('profile', $children->total()) }}</p>
             <div class="mt-5 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
                 @forelse ($children as $child)
-                    <article class="group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-brand-100 bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] transition-shadow hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
+                    <article class="tilt group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-brand-100 bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] transition-shadow hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
                         <a href="{{ route('sponsor-a-child.show', $child->public_sponsorship_slug) }}" class="flex h-full flex-col focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold-500">
                             <div class="relative overflow-hidden bg-cream-100">
                                 <img src="{{ Storage::disk('public')->url($child->public_photo_path) }}" alt="{{ $child->public_display_name }}" loading="lazy" class="aspect-[5/4] w-full object-cover object-center transition duration-500 motion-safe:group-hover:scale-105">

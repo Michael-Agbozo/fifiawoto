@@ -184,9 +184,10 @@
 .bg-stage-light::before {
     content: "";
     position: absolute;
-    inset: -24px;
+    inset: -24px -8%;
     z-index: -1;
     filter: blur(10px);
+    animation: stage-sway 16s ease-in-out infinite;
     background-image:
         radial-gradient(ellipse 34% 48% at 50% 82%, rgba(86, 156, 255, 0.75), rgba(86, 156, 255, 0) 70%),
         linear-gradient(90deg,
@@ -195,6 +196,11 @@
             rgba(255, 255, 255, 0.08) 48% 52%, rgba(255, 255, 255, 0.05) 52% 60%, rgba(0, 0, 0, 0.04) 60% 68%,
             rgba(0, 0, 0, 0.14) 68% 76%, rgba(0, 0, 0, 0.26) 76% 84%, rgba(0, 0, 0, 0.36) 84% 92%, rgba(0, 0, 0, 0.48) 92% 100%),
         linear-gradient(180deg, #020524 0%, #04104f 34%, #123aa6 72%, #2f7bf0 100%);
+}
+
+@keyframes stage-sway {
+    0%, 100% { transform: translateX(0) scaleY(1); opacity: 1; }
+    50% { transform: translateX(-4%) scaleY(1.05); opacity: 0.88; }
 }
 
 /* Smooth theme transition on the structural surfaces that actually
@@ -270,6 +276,9 @@ figure {
 .reveal-left  { transform: translateX(-48px); }
 .reveal-right { transform: translateX(48px); }
 .reveal-zoom  { transform: scale(0.88); }
+/* `reveal-3d` tips back and rises, like a card standing up off the table. */
+.reveal-3d    { opacity: 0; transform: perspective(1200px) rotateX(22deg) translateY(64px) scale(0.96); transform-origin: 50% 100%;
+                transition: opacity 1200ms cubic-bezier(0.16, 1, 0.3, 1), transform 1200ms cubic-bezier(0.16, 1, 0.3, 1); }
 
 .reveal.is-visible,
 .reveal-fade.is-visible,
@@ -277,10 +286,53 @@ figure {
 .reveal-down.is-visible,
 .reveal-left.is-visible,
 .reveal-right.is-visible,
-.reveal-zoom.is-visible {
+.reveal-zoom.is-visible,
+.reveal-3d.is-visible {
     opacity: 1;
     transform: none;
 }
+
+/* ------------------------------------------------------------------
+ | 3D tilt cards (.tilt)
+ |
+ | Cards lean toward the pointer with a soft light sheen. JS sets
+ | --tilt-x/--tilt-y/--sheen-x/--sheen-y and toggles .is-tilting only on
+ | devices with a fine pointer, so touch screens and reduced motion get
+ | the plain card. Declared after the reveal rules so a card that has
+ | finished revealing hands its transform over to the tilt.
+ ------------------------------------------------------------------ */
+.tilt { position: relative; }
+.tilt.is-tilting {
+    transform: perspective(1000px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+    transition: transform 120ms linear, box-shadow 300ms ease;
+}
+.tilt.is-settling {
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+    transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tilt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(420px circle at var(--sheen-x, 50%) var(--sheen-y, 0%), rgba(255, 255, 255, 0.22), transparent 45%);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    z-index: 2;
+}
+.tilt.is-tilting::after { opacity: 1; }
+
+/* Feature photos float gently and lean toward the pointer (JS sets --float-x/--float-y). */
+[data-float] {
+    transform: perspective(1100px) rotateY(var(--float-x, 0deg)) rotateX(var(--float-y, 0deg)) translateY(var(--float-lift, 0px));
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: float-bob 7s ease-in-out infinite;
+}
+@keyframes float-bob {
+    50% { --float-lift: -10px; }
+}
+@property --float-lift { syntax: '<length>'; inherits: false; initial-value: 0px; }
 
 /* Counter animation — used by [data-counter] elements. The CSS just sets up
    a font-variant for stable digit width so the number doesn't jiggle as it
@@ -317,7 +369,10 @@ img.img-fade[data-loaded="true"] {
     .reveal-down,
     .reveal-left,
     .reveal-right,
-    .reveal-zoom {
+    .reveal-zoom,
+    .reveal-3d,
+    .tilt,
+    [data-float] {
         opacity: 1 !important;
         transform: none !important;
     }

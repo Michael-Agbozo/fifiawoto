@@ -57,7 +57,7 @@ function markRevealVisible(el) {
 function setupObservers() {
     if (typeof IntersectionObserver === 'undefined') {
         // Bail out gracefully on ancient browsers — show everything immediately.
-        document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom')
+        document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d')
             .forEach((el) => el.classList.add('is-visible'))
         document.querySelectorAll('[data-counter]:not([data-counted="true"])')
             .forEach((el) => {
@@ -92,7 +92,7 @@ function setupObservers() {
         { threshold: 0.4 },
     )
 
-    document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom')
+    document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d')
         .forEach((el) => {
             if (!el.classList.contains('is-visible')) revealObserver.observe(el)
         })
@@ -112,9 +112,72 @@ function setupImageFade() {
     })
 }
 
+/**
+ * 3D motion only runs where it reads well: a fine pointer that can hover,
+ * and no reduced-motion preference. Touch screens keep the plain layout.
+ */
+function canUse3dMotion() {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/** Cards with `.tilt` lean toward the pointer and catch a light sheen. */
+function setupTilt() {
+    if (!canUse3dMotion()) return
+
+    document.querySelectorAll('.tilt:not([data-tilt-bound])').forEach((card) => {
+        card.dataset.tiltBound = 'true'
+        let settleTimer = null
+
+        card.addEventListener('pointermove', (event) => {
+            const rect = card.getBoundingClientRect()
+            const x = (event.clientX - rect.left) / rect.width
+            const y = (event.clientY - rect.top) / rect.height
+            clearTimeout(settleTimer)
+            card.classList.remove('is-settling')
+            card.classList.add('is-tilting')
+            card.style.setProperty('--tilt-x', `${((x - 0.5) * 10).toFixed(2)}deg`)
+            card.style.setProperty('--tilt-y', `${((0.5 - y) * 10).toFixed(2)}deg`)
+            card.style.setProperty('--sheen-x', `${(x * 100).toFixed(1)}%`)
+            card.style.setProperty('--sheen-y', `${(y * 100).toFixed(1)}%`)
+        })
+
+        card.addEventListener('pointerleave', () => {
+            card.classList.remove('is-tilting')
+            card.classList.add('is-settling')
+            settleTimer = setTimeout(() => card.classList.remove('is-settling'), 500)
+        })
+    })
+}
+
+/** Feature photos with `data-float` lean toward the pointer across their section. */
+function setupFloat() {
+    if (!canUse3dMotion()) return
+
+    document.querySelectorAll('[data-float]:not([data-float-bound])').forEach((photo) => {
+        photo.dataset.floatBound = 'true'
+        const area = photo.closest('section') ?? photo.parentElement
+
+        area.addEventListener('pointermove', (event) => {
+            const rect = area.getBoundingClientRect()
+            const x = (event.clientX - rect.left) / rect.width - 0.5
+            const y = (event.clientY - rect.top) / rect.height - 0.5
+            photo.style.setProperty('--float-x', `${(x * 12).toFixed(2)}deg`)
+            photo.style.setProperty('--float-y', `${(-y * 8).toFixed(2)}deg`)
+        })
+
+        area.addEventListener('pointerleave', () => {
+            photo.style.setProperty('--float-x', '0deg')
+            photo.style.setProperty('--float-y', '0deg')
+        })
+    })
+}
+
 function init() {
     setupObservers()
     setupImageFade()
+    setupTilt()
+    setupFloat()
 }
 
 document.addEventListener('DOMContentLoaded', init)
