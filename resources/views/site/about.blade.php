@@ -122,25 +122,25 @@
                 ];
             @endphp
 
-            <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-5 lg:grid-cols-3 xl:grid-cols-5">
                 @foreach ($values as $value)
                     @if ($value['highlight'])
-                        <article class="group flex flex-col justify-between rounded-3xl bg-brand-900 p-7 text-white shadow-[0_18px_50px_-20px_rgba(0,4,78,0.45)] transition hover:-translate-y-1">
+                        <article class="group col-span-2 flex flex-col justify-between rounded-3xl bg-brand-900 p-5 text-white sm:col-span-1 sm:p-7 shadow-[0_18px_50px_-20px_rgba(0,4,78,0.45)] transition hover:-translate-y-1">
                             <div>
                                 <div class="grid size-11 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $valueIcons[$value['icon']] !!}</svg>
                                 </div>
-                                <h3 class="mt-8 font-serif text-xl font-bold leading-tight">{{ $value['title'] }}</h3>
+                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight sm:mt-8 sm:text-xl">{{ $value['title'] }}</h3>
                                 <p class="mt-2 text-sm leading-relaxed text-white/75">{{ $value['copy'] }}</p>
                             </div>
                         </article>
                     @else
-                        <article class="group flex flex-col justify-between rounded-3xl bg-surface p-7 ring-1 ring-cream-300 transition hover:-translate-y-1 hover:ring-brand-200 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
+                        <article class="group flex flex-col justify-between rounded-3xl bg-surface p-5 ring-1 sm:p-7 ring-cream-300 transition hover:-translate-y-1 hover:ring-brand-200 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
                             <div>
                                 <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-label ring-1 ring-brand-100">
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $valueIcons[$value['icon']] !!}</svg>
                                 </div>
-                                <h3 class="mt-8 font-serif text-xl font-bold leading-tight text-ink-900">{{ $value['title'] }}</h3>
+                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight text-ink-900 sm:mt-8 sm:text-xl">{{ $value['title'] }}</h3>
                                 <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ $value['copy'] }}</p>
                             </div>
                         </article>
@@ -181,18 +181,18 @@
                 </dl>
             </div>
 
-            <ul class="grid gap-4 sm:grid-cols-2">
+            <ul class="grid grid-cols-2 gap-3 sm:gap-4">
                 @foreach ($countries as $i => [$country, $focus])
                     @php $upcoming = (int) ($upcomingByCountry[$country] ?? 0); @endphp
                     <li class="reveal-3d" style="transition-delay: {{ $i * 90 }}ms">
-                        <a href="{{ route('events.index', ['q' => $country]) }}" class="tilt group flex h-full flex-col rounded-3xl bg-white/[0.07] p-6 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.12] hover:ring-white/30" wire:navigate>
+                        <a href="{{ route('events.index', ['q' => $country]) }}" class="tilt group flex h-full flex-col rounded-3xl bg-white/[0.07] p-4 ring-1 sm:p-6 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.12] hover:ring-white/30" wire:navigate>
                             <span class="flex items-center gap-2.5">
                                 <span class="size-2.5 rounded-full bg-gold-300 shadow-[0_0_14px_rgba(255,176,176,0.9)]" aria-hidden="true"></span>
                                 <span class="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">{{ str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             </span>
-                            <span class="mt-5 font-serif text-3xl font-bold leading-tight text-white">{{ $country }}</span>
-                            <span class="mt-3 text-sm leading-relaxed text-white/75">{{ $focus }}</span>
-                            <span class="mt-auto flex items-center justify-between gap-3 border-t border-white/15 pt-4 text-sm">
+                            <span class="mt-4 font-serif text-xl font-bold leading-tight text-white sm:mt-5 sm:text-3xl">{{ $country }}</span>
+                            <span class="mt-2 text-xs leading-relaxed text-white/75 sm:mt-3 sm:text-sm">{{ $focus }}</span>
+                            <span class="mt-auto flex items-center justify-between gap-3 border-t border-white/15 pt-4 text-xs sm:text-sm">
                                 <span class="text-white/70">
                                     @if ($upcoming > 0)
                                         {{ $upcoming }} upcoming {{ \Illuminate\Support\Str::plural('event', $upcoming) }}
@@ -200,7 +200,7 @@
                                         View past events
                                     @endif
                                 </span>
-                                <span class="grid size-9 place-items-center rounded-full bg-white/10 transition group-hover:bg-gold-500" aria-hidden="true">→</span>
+                                <span class="hidden size-9 shrink-0 place-items-center rounded-full bg-white/10 transition group-hover:bg-gold-500 sm:grid" aria-hidden="true">→</span>
                             </span>
                         </a>
                     </li>
@@ -227,7 +227,7 @@
             @endphp
 
             @if ($leaders->isNotEmpty())
-                <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-6 lg:grid-cols-4">
                     @foreach ($leaders as $i => $leader)
                         @php
                             $initials = collect(preg_split('/\s+/', trim($leader->name)))
@@ -254,17 +254,14 @@
                                 </div>
 
                                 {{-- Name plate, with the bio sliding up on hover --}}
-                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/70 to-transparent px-5 pb-5 pt-16 text-white">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-300">{{ $leader->role }}</p>
-                                    <p class="mt-1.5 font-serif text-xl font-bold leading-tight">{{ $leader->name }}</p>
+                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/70 to-transparent px-3 pb-3 pt-12 text-white sm:px-5 sm:pb-5 sm:pt-16">
+                                    <p class="text-[9px] font-semibold uppercase tracking-[0.16em] text-gold-300 sm:text-[11px] sm:tracking-[0.22em]">{{ $leader->role }}</p>
+                                    <p class="mt-1 font-serif text-base font-bold leading-tight sm:mt-1.5 sm:text-xl">{{ $leader->name }}</p>
                                     @if ($bio)
                                         <p class="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-white/80 opacity-0 transition-all duration-500 group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">{{ $bio }}</p>
                                     @endif
                                 </div>
                             </div>
-                            @if ($bio)
-                                <figcaption class="mt-3 text-sm leading-relaxed text-ink-500 sm:hidden">{{ $bio }}</figcaption>
-                            @endif
                         </figure>
                     @endforeach
                 </div>

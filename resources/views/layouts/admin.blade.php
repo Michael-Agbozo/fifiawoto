@@ -343,7 +343,7 @@
                         </div>
                     </header>
 
-                    <main class="flex-1 bg-surface px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
+                    <main class="admin-content min-w-0 flex-1 bg-surface px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
                         @if ($title)
                             <div class="mb-6">
                                 <h1 class="font-serif text-2xl font-bold text-ink-900 sm:text-3xl">{{ $title }}</h1>

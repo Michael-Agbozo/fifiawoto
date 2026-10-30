@@ -45,7 +45,7 @@
         <p class="text-xs text-ink-500">Each point = a calendar month</p>
     </div>
     <div class="mt-5 overflow-x-auto">
-        <svg viewBox="0 0 {{ $width }} {{ $height + 30 }}" preserveAspectRatio="none" class="h-48 w-full min-w-[600px]">
+        <svg viewBox="0 0 {{ $width }} {{ $height + 30 }}" preserveAspectRatio="none" class="h-48 w-full">
             <defs>
                 <linearGradient id="overviewArea" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stop-color="#c1932b" stop-opacity="0.35"/>

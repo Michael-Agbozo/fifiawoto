@@ -173,7 +173,30 @@ function setupFloat() {
     })
 }
 
+/**
+ * Copy each admin table's column headings onto its cells as data-label so
+ * the stacked phone layout in app.css can show which value is which.
+ */
+function labelStackedTables() {
+    document.querySelectorAll('.admin-content table:not(.no-stack)').forEach((table) => {
+        const headings = [...table.querySelectorAll(':scope > thead th')].map((th) => th.textContent.trim())
+        if (headings.length === 0) return
+        table.querySelectorAll(':scope > tbody > tr').forEach((row) => {
+            [...row.children].forEach((cell, index) => {
+                cell.dataset.label = cell.cellIndex === index ? (headings[index] ?? '') : ''
+            })
+            const lastCell = row.lastElementChild
+            const lastHeading = (headings[headings.length - 1] ?? '').replace(/\u00a0/g, '').trim()
+            lastCell?.classList.toggle(
+                'is-row-actions',
+                row.children.length > 1 && /^(actions?|)$/i.test(lastHeading),
+            )
+        })
+    })
+}
+
 function init() {
+    labelStackedTables()
     setupObservers()
     setupImageFade()
     setupTilt()
@@ -185,6 +208,11 @@ document.addEventListener('DOMContentLoaded', init)
 // Re-run after Livewire `wire:navigate` swaps a new page in — without this
 // the next page's reveal targets never get observed.
 document.addEventListener('livewire:navigated', init)
+
+// Livewire re-renders replace table rows, so relabel after every update.
+document.addEventListener('livewire:init', () => {
+    window.Livewire.hook('morphed', () => labelStackedTables())
+})
 
 /* ------------------------------------------------------------------
  * Theme store

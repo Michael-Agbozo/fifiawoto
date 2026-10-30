@@ -19,20 +19,20 @@
                 </p>
             </div>
 
-            <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-5 lg:grid-cols-4">
                 @foreach ([
                     ['amount' => '$25',  'label' => 'A child\'s term', 'copy' => 'Notebooks, exercise books, and uniform basics for one child for a school term.', 'icon' => 'm12 6.5-9 4 9 4 9-4-9-4Zm0 8.5L4 11.5v4l8 3.5 8-3.5v-4l-8 3.5Z'],
                     ['amount' => '$60',  'label' => 'A health check',  'copy' => 'Mobile-clinic consultation, basic medication, and follow-up for a family of four.', 'icon' => 'M19.5 12.572 12 20l-7.5-7.428a5 5 0 1 1 7.5-6.566 5 5 0 1 1 7.5 6.566Z'],
                     ['amount' => '$150', 'label' => 'A widow\'s start', 'copy' => 'Seed capital and training for a widow joining the livelihood empowerment programme.',  'icon' => 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm-4 7c-4.4 0-8 2.7-8 6v2h16v-2c0-3.3-3.6-6-8-6Z'],
                     ['amount' => '$500', 'label' => 'A whole programme',  'copy' => 'Sponsors a single outreach event in one community — staff, supplies, and transport.',     'icon' => 'M3.75 6h16.5v3H3.75V6Zm0 4.5h16.5v3H3.75v-3Zm0 4.5h16.5v3H3.75v-3Z'],
                 ] as $i => $tier)
-                    <article class="reveal flex h-full flex-col rounded-3xl bg-surface p-6 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200" style="transition-delay: {{ $i * 100 }}ms">
-                        <div class="grid size-12 place-items-center rounded-xl bg-gold-500/10 text-gold-500">
+                    <article class="reveal flex h-full flex-col rounded-3xl bg-surface p-4 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200 sm:p-6" style="transition-delay: {{ $i * 100 }}ms">
+                        <div class="grid size-10 place-items-center rounded-xl bg-gold-500/10 text-gold-500 sm:size-12">
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $tier['icon'] }}"/></svg>
                         </div>
-                        <p class="mt-5 font-serif text-3xl font-bold text-heading">{{ $tier['amount'] }}</p>
+                        <p class="mt-4 font-serif text-2xl font-bold text-heading sm:mt-5 sm:text-3xl">{{ $tier['amount'] }}</p>
                         <p class="eyebrow mt-1">{{ $tier['label'] }}</p>
-                        <p class="mt-3 flex-1 text-sm leading-relaxed text-ink-500">{{ $tier['copy'] }}</p>
+                        <p class="mt-2 flex-1 text-xs leading-relaxed text-ink-500 sm:mt-3 sm:text-sm">{{ $tier['copy'] }}</p>
                     </article>
                 @endforeach
             </div>

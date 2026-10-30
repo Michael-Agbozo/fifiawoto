@@ -12,7 +12,7 @@
 <header
     wire:transition="site-header"
     x-data="{ open: false, scrolled: false }"
-    x-init="window.addEventListener('scroll', () => scrolled = window.scrollY > 8)"
+    x-init="scrolled = window.scrollY > 8; window.addEventListener('scroll', () => scrolled = window.scrollY > 8)"
     :class="[scrolled ? '!bg-brand-900 !text-white !shadow-lg' : '', open ? '!rounded-[28px]' : '']"
     class="sticky top-3 z-40 mx-2 overflow-clip rounded-full sm:mx-6 lg:mx-10 xl:mx-16 bg-surface text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
 >

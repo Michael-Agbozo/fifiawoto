@@ -89,10 +89,10 @@
                 ];
             @endphp
 
-            <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-5 lg:grid-cols-3 xl:grid-cols-5">
                 @foreach ($opportunities as $i => $opportunity)
                     @if ($opportunity['highlight'])
-                        <article class="reveal group flex flex-col justify-between rounded-3xl bg-brand-900 p-7 text-white shadow-[0_18px_50px_-20px_rgba(0,4,78,0.45)] transition hover:-translate-y-1" style="transition-delay: {{ $i * 100 }}ms">
+                        <article class="reveal group col-span-2 flex flex-col justify-between rounded-3xl bg-brand-900 p-5 text-white sm:col-span-1 sm:p-7 shadow-[0_18px_50px_-20px_rgba(0,4,78,0.45)] transition hover:-translate-y-1" style="transition-delay: {{ $i * 100 }}ms">
                             <div>
                                 <div class="flex items-center justify-between">
                                     <div class="grid size-11 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
@@ -100,12 +100,12 @@
                                     </div>
                                     <span class="rounded-full bg-gold-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-gold-300">{{ $opportunity['tag'] }}</span>
                                 </div>
-                                <h3 class="mt-8 font-serif text-xl font-bold leading-tight">{{ $opportunity['title'] }}</h3>
+                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight sm:mt-8 sm:text-xl">{{ $opportunity['title'] }}</h3>
                                 <p class="mt-2 text-sm leading-relaxed text-white/75">{{ $opportunity['copy'] }}</p>
                             </div>
                         </article>
                     @else
-                        <article class="reveal group flex flex-col justify-between rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200" style="transition-delay: {{ $i * 100 }}ms">
+                        <article class="reveal group flex flex-col justify-between rounded-3xl bg-surface p-4 shadow sm:p-7-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 transition hover:-translate-y-1 hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)] hover:ring-brand-200" style="transition-delay: {{ $i * 100 }}ms">
                             <div>
                                 <div class="flex items-center justify-between">
                                     <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-label ring-1 ring-brand-100">
@@ -113,8 +113,8 @@
                                     </div>
                                     <span class="rounded-full bg-cream-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500">{{ $opportunity['tag'] }}</span>
                                 </div>
-                                <h3 class="mt-8 font-serif text-xl font-bold leading-tight text-ink-900">{{ $opportunity['title'] }}</h3>
-                                <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ $opportunity['copy'] }}</p>
+                                <h3 class="mt-4 font-serif text-base font-bold leading-tight text-ink-900 sm:mt-8 sm:text-xl">{{ $opportunity['title'] }}</h3>
+                                <p class="mt-2 text-xs leading-relaxed text-ink-500 sm:text-sm">{{ $opportunity['copy'] }}</p>
                             </div>
                         </article>
                     @endif
@@ -134,17 +134,19 @@
                 </p>
             </div>
 
-            <ol class="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            <ol class="mt-10 grid gap-3 sm:mt-14 md:grid-cols-2 md:gap-5 lg:grid-cols-4">
                 @foreach ([
                     ['Apply',       'Fill in the short form below. Tell us what you\'d like to do and how much time you can offer.'],
                     ['Brief call',  'A coordinator gets in touch within 48 hours to learn what you\'re hoping for and answer any questions.'],
                     ['Orientation', 'Short onboarding (in-person or video) covering programmes, safeguarding, and what to expect on-site.'],
                     ['First role',  'You\'re matched to an active programme. The team supports you through your first shift and every shift after.'],
                 ] as $i => [$step, $copy])
-                    <li class="reveal relative flex h-full flex-col rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: {{ $i * 100 }}ms">
-                        <span class="grid size-10 place-items-center rounded-2xl bg-gold-500 font-serif text-base font-bold text-white">{{ $i + 1 }}</span>
-                        <h3 class="mt-5 font-serif text-lg font-bold text-heading">{{ $step }}</h3>
-                        <p class="mt-2 flex-1 text-sm leading-relaxed text-ink-500">{{ $copy }}</p>
+                    <li class="reveal relative flex h-full gap-4 rounded-3xl bg-surface p-5 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100 md:flex-col md:gap-0 md:p-7" style="transition-delay: {{ $i * 100 }}ms">
+                        <span class="grid size-10 shrink-0 place-items-center rounded-2xl bg-gold-500 font-serif text-base font-bold text-white">{{ $i + 1 }}</span>
+                        <div class="flex flex-1 flex-col">
+                            <h3 class="font-serif text-lg font-bold text-heading md:mt-5">{{ $step }}</h3>
+                            <p class="mt-1 flex-1 text-sm leading-relaxed text-ink-500 md:mt-2">{{ $copy }}</p>
+                        </div>
                     </li>
                 @endforeach
             </ol>

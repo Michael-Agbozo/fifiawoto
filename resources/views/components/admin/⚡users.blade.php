@@ -858,21 +858,21 @@ new class extends Component
             @endphp
 
             <div class="overflow-x-auto rounded-2xl border border-cream-200">
-                <table class="w-full text-sm">
+                <table class="no-stack w-full text-sm">
                     <thead class="bg-cream-100/60 text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
                         <tr>
-                            <th class="px-4 py-3 text-left">Section</th>
+                            <th class="px-3 py-3 text-left sm:px-4">Section</th>
                             @foreach ($allActionLabels as $actionKey => $actionLabel)
-                                <th class="px-2 py-3 text-center w-20">{{ $actionLabel }}</th>
+                                <th class="w-12 px-1 py-3 text-center text-[10px] tracking-normal sm:w-20 sm:px-2 sm:text-xs sm:tracking-[0.18em]">{{ $actionLabel }}</th>
                             @endforeach
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-cream-200">
                         @foreach ($registry as $resource => $config)
                             <tr class="hover:bg-cream-100/40">
-                                <td class="px-4 py-3 font-semibold text-ink-900">{{ $config['label'] }}</td>
+                                <td class="px-3 py-3 font-semibold text-ink-900 sm:px-4">{{ $config['label'] }}</td>
                                 @foreach ($allActionLabels as $actionKey => $actionLabel)
-                                    <td class="px-2 py-3 text-center">
+                                    <td class="px-1 py-3 text-center sm:px-2">
                                         @if (array_key_exists($actionKey, $config['actions']))
                                             @php
                                                 $permKey = $resource.'.'.$actionKey;

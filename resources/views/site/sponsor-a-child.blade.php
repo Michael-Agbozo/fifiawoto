@@ -65,20 +65,20 @@
             </div>
             <p class="mt-4 max-w-2xl text-ink-500">Meet children whose guardians have approved these public introductions. Our team will guide you through the support options available.</p>
             <p class="mt-7 text-sm text-ink-500">{{ $children->total() }} {{ Str::plural('profile', $children->total()) }}</p>
-            <div class="mt-5 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
+            <div class="mt-5 grid grid-cols-2 gap-3 sm:gap-7 xl:grid-cols-3">
                 @forelse ($children as $child)
                     <article class="tilt group flex min-w-0 flex-col overflow-hidden rounded-3xl border border-brand-100 bg-surface shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] transition-shadow hover:shadow-[0_18px_50px_-20px_rgba(0,4,78,0.25)]">
                         <a href="{{ route('sponsor-a-child.show', $child->public_sponsorship_slug) }}" class="flex h-full flex-col focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-gold-500">
                             <div class="relative overflow-hidden bg-cream-100">
                                 <img src="{{ Storage::disk('public')->url($child->public_photo_path) }}" alt="{{ $child->public_display_name }}" loading="lazy" class="aspect-[5/4] w-full object-cover object-center transition duration-500 motion-safe:group-hover:scale-105">
-                                <span class="absolute bottom-4 left-5 rounded-full bg-brand-900 px-4 py-2 text-xs font-semibold text-white">{{ $child->public_country }}</span>
+                                <span class="absolute bottom-2 left-2 rounded-full bg-brand-900 px-2.5 py-1 text-[10px] font-semibold text-white sm:bottom-4 sm:left-5 sm:px-4 sm:py-2 sm:text-xs">{{ $child->public_country }}</span>
                             </div>
-                            <div class="flex flex-1 flex-col p-6 sm:p-7">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-500">A story to discover <span aria-hidden="true" class="text-gold-500">/</span> {{ $child->date_of_birth->age }} years</p>
-                                <h3 class="mt-3 break-words text-2xl leading-tight text-heading">Meet {{ $child->public_display_name }}</h3>
-                                <p class="mt-4 line-clamp-3 break-words text-sm leading-7 text-ink-500">{{ $child->public_story }}</p>
-                                <div class="mt-auto pt-6">
-                                    <span class="flex items-center justify-between gap-3 border-t border-brand-100 pt-5 text-sm font-bold text-label transition-colors group-hover:text-gold-500">Read my story <span aria-hidden="true" class="flex size-10 shrink-0 items-center justify-center rounded-full bg-cream-100 text-lg transition-colors group-hover:bg-gold-500 group-hover:text-white">→</span></span>
+                            <div class="flex flex-1 flex-col p-3 sm:p-7">
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-500 sm:text-xs sm:tracking-[0.2em]"><span class="hidden sm:inline">A story to discover <span aria-hidden="true" class="text-gold-500">/</span> </span>{{ $child->date_of_birth->age }} years</p>
+                                <h3 class="mt-1.5 break-words text-lg leading-tight text-heading sm:mt-3 sm:text-2xl">Meet {{ $child->public_display_name }}</h3>
+                                <p class="mt-4 hidden break-words text-sm leading-7 text-ink-500 sm:line-clamp-3">{{ $child->public_story }}</p>
+                                <div class="mt-auto pt-3 sm:pt-6">
+                                    <span class="flex items-center justify-between gap-2 border-t border-brand-100 pt-3 text-xs font-bold sm:gap-3 sm:pt-5 sm:text-sm text-label transition-colors group-hover:text-gold-500">Read my story <span aria-hidden="true" class="flex size-8 shrink-0 items-center justify-center rounded-full bg-cream-100 text-base sm:size-10 sm:text-lg transition-colors group-hover:bg-gold-500 group-hover:text-white">→</span></span>
                                 </div>
                             </div>
                         </a>
@@ -98,12 +98,14 @@
         <div class="mx-auto max-w-7xl">
             <p class="eyebrow eyebrow-light">How it works</p>
             <h2 class="section-title mt-4 max-w-2xl">One thoughtful step.<br>A world of possibility.</h2>
-            <div class="mt-12 grid gap-10 md:grid-cols-3">
+            <div class="mt-8 grid gap-5 sm:mt-12 md:grid-cols-3 md:gap-10">
                 @foreach ([['01', 'Find a connection', 'Read a child’s approved introduction and learn about their hopes.'], ['02', 'Choose your support', 'Choose a suggested monthly pledge or your own amount, then review your sponsorship request.'], ['03', 'Support the journey', 'Agree the next steps with our team, including how appropriate updates can be shared.']] as [$number, $heading, $copy])
-                    <div class="border-t border-white/25 pt-6">
-                        <p class="text-sm font-bold text-gold-300">{{ $number }}</p>
-                        <h3 class="mt-4 text-2xl">{{ $heading }}</h3>
-                        <p class="mt-4 leading-relaxed text-white/80">{{ $copy }}</p>
+                    <div class="flex gap-4 border-t border-white/25 pt-5 md:block md:pt-6">
+                        <p class="text-sm font-bold text-gold-300 max-md:mt-1">{{ $number }}</p>
+                        <div>
+                            <h3 class="text-xl md:mt-4 md:text-2xl">{{ $heading }}</h3>
+                            <p class="mt-2 text-sm leading-relaxed text-white/80 md:mt-4 md:text-base">{{ $copy }}</p>
+                        </div>
                     </div>
                 @endforeach
             </div>

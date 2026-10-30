@@ -539,3 +539,60 @@ img.img-fade[data-loaded="true"] {
 @media (prefers-reduced-motion: reduce) {
     .glass-in, .glass-in > :first-child::after { animation: none !important; }
 }
+
+/* ------------------------------------------------------------------
+ | Stacked admin tables on phones
+ |
+ | Inside `.admin-content`, every <table> (unless it opts out with
+ | `.no-stack`) collapses into one card per row below the md breakpoint,
+ | so nothing needs a sideways scroll. Each cell is labelled from its
+ | column header by labelStackedTables() in resources/js/app.js.
+ ------------------------------------------------------------------ */
+@media (max-width: 47.99rem) {
+    .admin-content table:not(.no-stack),
+    .admin-content table:not(.no-stack) > tbody,
+    .admin-content table:not(.no-stack) > tbody > tr,
+    .admin-content table:not(.no-stack) > tbody > tr > td {
+        display: block;
+        width: 100%;
+        max-width: none;
+    }
+    .admin-content table:not(.no-stack) > thead { display: none; }
+    .admin-content table:not(.no-stack) > tbody > tr:not([style*="display: none"]) {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.25rem;
+        padding: 0.875rem 1rem;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td:first-child,
+    .admin-content table:not(.no-stack) > tbody > tr > td[colspan] { grid-column: 1 / -1; }
+    .admin-content table:not(.no-stack) > tbody > tr > td.is-row-actions {
+        position: absolute;
+        top: 0.625rem;
+        right: 0.75rem;
+        width: auto;
+        padding: 0 !important;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td.is-row-actions::before { content: none !important; }
+    .admin-content table:not(.no-stack) > tbody > tr > td:first-child:not(.is-row-actions) { padding-right: 3rem !important; }
+    .admin-content table:not(.no-stack) > tbody > tr > td {
+        padding: 0.25rem 0 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td > .justify-end { justify-content: flex-start; }
+    .admin-content table:not(.no-stack) > tbody > tr > td[data-label]:not([data-label=""])::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 0.125rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-ink-500, #6b6b85);
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td[colspan]::before { content: none; }
+}

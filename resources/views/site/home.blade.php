@@ -14,18 +14,18 @@
                     Transforming lives, one step at a time, through compassion, service and community empowerment across the United States, Ghana, Togo and Benin.
                 </p>
 
-                <div class="animate-fade-in mt-9 flex flex-wrap gap-3" style="animation-delay: 320ms">
+                <div class="animate-fade-in mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap" style="animation-delay: 320ms">
                     <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark btn-lg" wire:navigate>
                         Donate
                         <span aria-hidden="true">→</span>
                     </a>
                     <a href="{{ route('sponsor-a-child') }}" class="btn btn-outline-light btn-lg" wire:navigate>Sponsor a Child</a>
-                    <a href="{{ route('contact') }}" class="btn btn-lg px-3 text-white/80 underline-offset-4 hover:text-white hover:underline" wire:navigate>Get In Touch</a>
+                    <a href="{{ route('contact') }}" class="btn btn-lg text-white/80 sm:px-3 underline-offset-4 hover:text-white hover:underline" wire:navigate>Get In Touch</a>
                 </div>
 
                 <dl class="animate-fade-in mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7" style="animation-delay: 420ms">
                     @foreach ([[520, '+', 'Children supported'], [18, '+', 'Communities'], [4, '', 'Countries']] as [$value, $suffix, $label])
-                        <div>
+                        <div class="flex flex-col justify-between">
                             <dt class="text-xs font-medium text-white/60">{{ $label }}</dt>
                             <dd class="mt-1 font-serif text-3xl font-bold text-white sm:text-4xl" data-counter="{{ $value }}" data-suffix="{{ $suffix }}" data-duration="2200">{{ $value }}{{ $suffix }}</dd>
                         </div>
@@ -34,7 +34,7 @@
             </div>
 
             {{-- Layered photo stack --}}
-            <div class="relative mx-auto w-full max-w-[560px] [perspective:1400px]" aria-hidden="true">
+            <div class="relative mx-auto hidden w-full max-w-[560px] [perspective:1400px] sm:block" aria-hidden="true">
                 <div data-float class="relative aspect-[1/1.02]">
                     <img
                         src="{{ asset('images/foundation/school-donation.jpg') }}"
@@ -115,7 +115,7 @@
                     <img
                         src="{{ asset('images/foundation/outreach-3.webp') }}"
                         alt=""
-                        class="aspect-[3/4] w-full rounded-[28px] object-cover shadow-md"
+                        class="hidden aspect-[3/4] w-full rounded-[28px] object-cover shadow-md sm:block"
                         loading="lazy"
                     >
                 </div>
@@ -129,7 +129,7 @@
                     <img
                         src="{{ asset('images/foundation/outreach-1.jpg') }}"
                         alt=""
-                        class="aspect-[5/4] w-full rounded-[28px] object-cover shadow-md"
+                        class="hidden aspect-[5/4] w-full rounded-[28px] object-cover shadow-md sm:block"
                         loading="lazy"
                     >
                 </div>
@@ -153,20 +153,20 @@
                 </p>
             </div>
 
-            <div class="mt-16 grid grid-cols-1 gap-10 pt-12 sm:grid-cols-3">
+            <div class="mt-12 grid grid-cols-3 gap-4 pt-4 sm:mt-16 sm:gap-10 sm:pt-12">
                 @foreach ([
                     [520, '+', 'Children Supported'],
                     [18,  '+', 'Communities Reached'],
-                    [4,   '+', 'Countries Impacted'],
+                    [4,   '',  'Countries Impacted'],
                 ] as $index => [$value, $suffix, $label])
                     <div class="reveal" style="transition-delay: {{ $index * 160 }}ms">
                         <p
-                            class="font-serif text-6xl font-bold text-white sm:text-7xl"
+                            class="font-serif text-4xl font-bold text-white sm:text-6xl lg:text-7xl"
                             data-counter="{{ $value }}"
                             data-suffix="{{ $suffix }}"
                             data-duration="3200"
                         >0{{ $suffix }}</p>
-                        <p class="mt-3 text-sm font-medium uppercase tracking-[0.18em] text-white/85">{{ $label }}</p>
+                        <p class="mt-3 text-[11px] font-medium uppercase tracking-[0.12em] text-white/85 sm:text-sm sm:tracking-[0.18em]">{{ $label }}</p>
                     </div>
                 @endforeach
             </div>
@@ -346,7 +346,7 @@
             </div>
 
             {{-- Photo bento: the lead programme spans two rows, four tiles beside it --}}
-            <div class="grid gap-5 sm:grid-cols-2 lg:auto-rows-[300px] lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:auto-rows-[minmax(300px,auto)] lg:grid-cols-4">
                 @foreach ([
                     ['Child Education Support',            'Books, uniforms, school fees and mentorship, so children can stay in class and keep learning.', 'images/foundation/outreach-1.jpg',               'lg:col-span-2 lg:row-span-2'],
                     ['Women Empowerment',                  'Training, mentorship and small-business support that help mothers provide for their families.', 'images/foundation/community-2.jpg',              ''],
@@ -356,7 +356,7 @@
                 ] as $index => [$title, $copy, $image, $span])
                     <a
                         href="{{ route('about') }}"
-                        class="reveal-3d tilt group relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden rounded-3xl p-6 text-white shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)] sm:p-7 {{ $span }} {{ $index === 0 ? 'sm:col-span-2 sm:min-h-[420px]' : '' }}"
+                        class="reveal-3d tilt group relative isolate flex min-h-[220px] flex-col justify-end overflow-hidden rounded-3xl p-6 sm:min-h-[300px] text-white shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)] sm:p-7 {{ $span }} {{ $index === 0 ? 'sm:col-span-2 sm:min-h-[420px]' : '' }}"
                         style="transition-delay: {{ $index * 90 }}ms"
                         wire:navigate
                     >
@@ -364,7 +364,7 @@
                         <span class="absolute inset-0 -z-10 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/45 to-transparent transition-opacity duration-500 group-hover:from-[#00044e]" aria-hidden="true"></span>
 
                         <span class="font-mono text-xs font-semibold tracking-[0.2em] text-white/70">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }} / 05</span>
-                        <h3 class="mt-2 font-serif font-bold leading-tight text-white {{ $index === 0 ? 'text-3xl sm:text-4xl lg:text-5xl' : 'text-2xl' }}">{{ $title }}</h3>
+                        <h3 class="mt-2 font-serif font-bold leading-tight text-white {{ $index === 0 ? 'text-3xl sm:text-4xl lg:text-5xl' : 'text-xl xl:text-2xl' }}">{{ $title }}</h3>
                         <p class="mt-3 max-w-md text-sm leading-relaxed text-white/80 {{ $index === 0 ? 'sm:text-base' : 'line-clamp-2' }}">{{ $copy }}</p>
                         <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
                             Learn more
@@ -469,5 +469,18 @@
 
     {{-- NEWSLETTER --}}
     <livewire:site.newsletter-signup source="home" />
-<section class="mx-6 mb-12 rounded-3xl bg-brand-900 px-7 py-12 text-white sm:px-12"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-8"><div><p class="text-xs font-semibold uppercase tracking-widest text-gold-300">Help hope grow</p><h2 class="section-title mt-3">A connection. A brighter tomorrow.</h2><p class="mt-4 max-w-xl text-white/80">Explore child sponsorship and talk with our team about making a lasting difference.</p></div><a href="{{ route('sponsor-a-child') }}" class="btn btn-primary">Sponsor a Child →</a></div></section>
+
+    {{-- SPONSORSHIP CTA --}}
+    <section class="bg-surface pb-12" aria-labelledby="sponsor-cta-heading">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand-900 px-7 py-10 text-white sm:flex-row sm:items-center sm:px-12 sm:py-12">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-gold-300">Help hope grow</p>
+                    <h2 id="sponsor-cta-heading" class="section-title mt-3">A connection. A brighter tomorrow.</h2>
+                    <p class="mt-4 max-w-xl text-white/80">Explore child sponsorship and talk with our team about making a lasting difference.</p>
+                </div>
+                <a href="{{ route('sponsor-a-child') }}" class="btn btn-primary shrink-0" wire:navigate>Sponsor a Child <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
+    </section>
 </x-layouts::site>

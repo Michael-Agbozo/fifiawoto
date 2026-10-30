@@ -61,13 +61,13 @@
                 type="button"
                 @click="prev()"
                 aria-label="Previous testimonials"
-                class="grid size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                class="hidden size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
             </button>
 
-            <div class="overflow-hidden">
-                <div class="relative" style="min-height: 22rem;">
+            <div class="-mx-4 -mb-10 overflow-hidden px-4 pb-10">
+                <div class="relative sm:min-h-[22rem]">
                     @foreach ($pages as $pageIndex => $pageItems)
                         <div
                             x-show="active === {{ $pageIndex }}"
@@ -87,6 +87,7 @@
                         >
                             @foreach ($pageItems as $testimonial)
                                 @php
+                                    $isExtraCard = $perView > 1 && ! $loop->first;
                                     $photo = $testimonial->photo_path ?? null;
                                     $initials = collect(preg_split('/\s+/', trim((string) $testimonial->author_name)))
                                         ->filter()
@@ -96,7 +97,9 @@
                                 @endphp
                                 <figure
                                     @class([
-                                        'flex h-full flex-col justify-between rounded-3xl border border-brand-100 bg-surface shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
+                                        'h-full flex-col justify-between rounded-3xl border border-brand-100 bg-surface shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
+                                        'hidden md:flex' => $isExtraCard,
+                                        'flex' => ! $isExtraCard,
                                         'items-center px-6 py-10 text-center sm:px-12 sm:py-12' => $perView === 1,
                                         'px-6 py-8 text-left sm:px-8 sm:py-10' => $perView > 1,
                                     ])
@@ -153,23 +156,31 @@
                 type="button"
                 @click="next()"
                 aria-label="Next testimonials"
-                class="grid size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                class="hidden size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
             </button>
         </div>
 
         @if ($pages->count() > 1)
-            <div class="mt-6 flex justify-center gap-2">
-                @foreach ($pages as $pageIndex => $pageItems)
-                    <button
-                        type="button"
-                        @click="go({{ $pageIndex }})"
-                        :class="active === {{ $pageIndex }} ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100 hover:bg-brand-300'"
-                        class="h-2.5 rounded-full transition-all {{ $pageIndex === 0 ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100' }}"
-                        aria-label="Show testimonials page {{ $pageIndex + 1 }}"
-                    ></button>
-                @endforeach
+            <div class="mt-6 flex items-center justify-center gap-4">
+                <button type="button" @click="prev()" aria-label="Previous testimonials" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <div class="flex gap-2">
+                    @foreach ($pages as $pageIndex => $pageItems)
+                        <button
+                            type="button"
+                            @click="go({{ $pageIndex }})"
+                            :class="active === {{ $pageIndex }} ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100 hover:bg-brand-300'"
+                            class="h-2.5 rounded-full transition-all"
+                            aria-label="Show testimonials page {{ $pageIndex + 1 }}"
+                        ></button>
+                    @endforeach
+                </div>
+                <button type="button" @click="next()" aria-label="Next testimonials" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
+                </button>
             </div>
         @endif
     </div>

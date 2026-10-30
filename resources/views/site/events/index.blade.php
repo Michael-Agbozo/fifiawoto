@@ -105,7 +105,7 @@
                     @endif
                 </div>
             @else
-                <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div class="mt-8 grid gap-4 sm:mt-10 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     @foreach ($upcoming as $i => $event)
                         @php
                             $raised = (int) ($event->raised_cents ?? 0);
@@ -115,7 +115,7 @@
                             $heroImage = \App\Support\MediaUrl::for($event->hero_image_path ?: $fallbacks[$loop->index % count($fallbacks)]);
                         @endphp
                         <article class="reveal-3d tilt group flex h-full flex-col overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-sm hover:shadow-lg" style="transition-delay: {{ ($i % 3) * 100 }}ms">
-                            <div class="relative aspect-[5/3] overflow-hidden">
+                            <div class="relative aspect-[2/1] overflow-hidden sm:aspect-[5/3]">
                                 <img
                                     src="{{ $heroImage }}"
                                     alt="{{ $event->title }}"
@@ -123,7 +123,7 @@
                                     loading="lazy"
                                 >
                             </div>
-                            <div class="flex flex-1 flex-col p-6">
+                            <div class="flex flex-1 flex-col p-5 sm:p-6">
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
                                     {{ $event->starts_at?->format('M j, Y') }}
                                 </p>
@@ -136,7 +136,7 @@
                                     <svg class="size-3.5 text-ink-500/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4-3.5-7-7-7-11a7 7 0 0 1 14 0c0 4-3 7.5-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
                                     {{ $event->location }}
                                 </p>
-                                <p class="mt-3 text-sm text-ink-500 line-clamp-3">
+                                <p class="mt-3 hidden text-sm text-ink-500 sm:line-clamp-3">
                                     {{ \Illuminate\Support\Str::limit(strip_tags($event->description), 160) }}
                                 </p>
 
@@ -152,7 +152,7 @@
                                     </div>
                                 @endif
 
-                                <div class="mt-6 flex flex-wrap items-center gap-2 pt-auto">
+                                <div class="mt-auto flex flex-wrap items-center gap-2 pt-5 sm:pt-6">
                                     <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>Read More</a>
                                     <x-site.event-actions :event="$event" variant="light" size="sm" />
                                 </div>
@@ -176,7 +176,7 @@
                     <p class="eyebrow reveal-right">{{ $past->count() }} completed</p>
                 </div>
 
-                <div class="mt-10 grid gap-6 lg:grid-cols-2">
+                <div class="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-6">
                     @foreach ($past as $i => $event)
                         @php
                             $raised = (int) ($event->raised_cents ?? 0);
@@ -194,16 +194,16 @@
                                     loading="lazy"
                                 >
                                 <div class="absolute inset-0 bg-gradient-to-t from-brand-900/55 via-transparent to-transparent"></div>
-                                <span class="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-900 shadow-sm">
+                                <span class="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2 py-1 text-[9px] sm:left-4 sm:top-4 sm:px-3 sm:text-[10px] font-bold uppercase tracking-[0.18em] text-brand-900 shadow-sm">
                                     <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                     Completed
                                 </span>
                             </a>
-                            <div class="flex flex-1 flex-col p-6 sm:p-7">
+                            <div class="flex flex-1 flex-col p-3 sm:p-7">
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
                                     {{ $event->starts_at?->format('M j, Y') }}
                                 </p>
-                                <h3 class="mt-2 font-serif text-xl text-heading sm:text-2xl">
+                                <h3 class="mt-1 font-serif text-base leading-snug text-heading sm:mt-2 sm:text-2xl">
                                     <a href="{{ route('events.show', $event) }}" class="hover:text-gold-600" wire:navigate>
                                         {{ $event->title }}
                                     </a>
@@ -212,15 +212,15 @@
                                     <svg class="size-3.5 text-ink-500/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4-3.5-7-7-7-11a7 7 0 0 1 14 0c0 4-3 7.5-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
                                     {{ $event->location }}
                                 </p>
-                                <p class="mt-3 text-sm leading-relaxed text-ink-500 line-clamp-3">
+                                <p class="mt-3 hidden text-sm leading-relaxed text-ink-500 sm:line-clamp-3">
                                     {{ \Illuminate\Support\Str::limit(strip_tags($event->description), 200) }}
                                 </p>
 
                                 @if ($goal > 0)
-                                    <div class="mt-5">
-                                        <div class="flex items-center justify-between text-xs text-ink-500">
+                                    <div class="mt-3 sm:mt-5">
+                                        <div class="flex flex-wrap items-center justify-between gap-x-2 text-[11px] text-ink-500 sm:text-xs">
                                             <span><strong class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</strong> raised</span>
-                                            <span>{{ $percent }}% of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span>
+                                            <span>{{ $percent }}%<span class="hidden sm:inline"> of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span></span>
                                         </div>
                                         <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-brand-100">
                                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
@@ -228,7 +228,7 @@
                                     </div>
                                 @endif
 
-                                <div class="mt-6 pt-auto">
+                                <div class="mt-auto hidden pt-6 sm:block">
                                     <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>
                                         See impact
                                         <span aria-hidden="true">→</span>
