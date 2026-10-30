@@ -134,34 +134,35 @@
 .dark {
     color-scheme: dark;
 
-    /* Surfaces: canvas (cream-200) darkest, cards/inputs (surface, cream-50)
-       one step up, tinted rows/hover (cream-100) slightly raised. */
-    --color-surface:   #14184a;
-    --color-cream-50:  #14184a;
-    --color-cream-100: #1a1f57;
-    --color-cream-200: #080a26;
-    --color-cream-300: #2e3470;
+    /* Neutral charcoal surfaces: canvas (cream-200) darkest, cards/inputs
+       (surface, cream-50) one step up, tinted rows/hover (cream-100) slightly
+       raised. Navy strips (brand-900) stand out against the grey. */
+    --color-surface:   #181b22;
+    --color-cream-50:  #181b22;
+    --color-cream-100: #20242d;
+    --color-cream-200: #0f1115;
+    --color-cream-300: #2c313c;
 
     /* Text */
-    --color-heading:      #eef0ff;
-    --color-heading-soft: #dfe2fb;
-    --color-label:        #b8bdf0;
-    --color-ink-500: #a5a8c4;
-    --color-ink-700: #d1d4e8;
+    --color-heading:      #f5f6f8;
+    --color-heading-soft: #e4e6eb;
+    --color-label:        #c9cdd6;
+    --color-ink-500: #9da3ae;
+    --color-ink-700: #d0d3da;
     --color-ink-900: #ffffff;
 
-    /* Brand tints used for chips, light borders and focus rings. The deep
-       steps (600–900) stay navy so strips, buttons and overlays keep their
-       look in both modes. */
-    --color-brand-50:  #1d2160;
-    --color-brand-100: #2b3175;
-    --color-brand-200: #3d4389;
-    --color-brand-300: #6f76c1;
-    --color-brand-400: #8b91d9;
-    --color-brand-500: #9aa1e6;
+    /* Neutral tints used for chips, light borders and focus rings, with a
+       faint navy cast on the focus step. The deep steps (600–900) stay navy
+       so strips, buttons and overlays keep their look in both modes. */
+    --color-brand-50:  #1f232c;
+    --color-brand-100: #2a2f3a;
+    --color-brand-200: #3a404c;
+    --color-brand-300: #6b7282;
+    --color-brand-400: #8b92a3;
+    --color-brand-500: #a9b0cf;
 
-    /* Red accent lifted just enough for small red text to read on navy
-       (~4.3:1) while white text on red fills stays ~4:1 and on-brand. */
+    /* Red accent lifted just enough for small red text to read on charcoal
+       (~4.5:1) while white text on red fills stays ~4:1 and on-brand. */
     --color-gold-500: #f22b2b;
     --color-gold-600: #ff7a7a;
 }
