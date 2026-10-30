@@ -11,7 +11,7 @@
                 @endif
             </figure>
             <div class="min-w-0 py-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold-500">A future with possibility</p>
+                <p class="eyebrow">A future with possibility</p>
                 <h1 id="profile-heading" class="mt-5 break-words text-4xl leading-tight text-heading sm:text-5xl lg:text-6xl">Meet {{ $child->public_display_name }}</h1>
                 <p class="mt-6 max-w-md text-lg leading-relaxed text-heading-soft">Every connection begins with getting to know someone. Take a moment to read {{ $child->public_display_name }}’s story.</p>
                 <dl class="mt-8 grid grid-cols-2 gap-5 border-t border-brand-100 pt-6">
@@ -24,8 +24,8 @@
     <section aria-labelledby="story-heading" class="mx-auto max-w-6xl px-6 py-14 sm:px-10 sm:py-20">
         <div class="grid gap-8 lg:grid-cols-[1fr_2fr] lg:gap-16">
             <header>
-                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold-500">In their own chapter</p>
-                <h2 id="story-heading" class="mt-4 break-words text-3xl text-heading sm:text-4xl">A little more about {{ $child->public_display_name }}</h2>
+                <p class="eyebrow">In their own chapter</p>
+                <h2 id="story-heading" class="section-title text-heading mt-4 break-words">A little more about {{ $child->public_display_name }}</h2>
                 <p class="mt-5 max-w-xs text-sm leading-7 text-ink-500">
                     @if (Str::endsWith($child->public_display_name, '(Demo)'))
                         An illustrative preview of a longer child profile. Real introductions are shared only with guardian consent.
@@ -60,8 +60,8 @@
     <section aria-labelledby="support-heading" class="mx-3 rounded-3xl bg-brand-900 px-6 py-12 text-white sm:mx-4 sm:px-10 lg:mx-6">
         <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
             <div class="max-w-xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-gold-300">The next chapter</p>
-                <h2 id="support-heading" class="mt-4 text-3xl sm:text-4xl">A connection starts with you.</h2>
+                <p class="eyebrow eyebrow-light">The next chapter</p>
+                <h2 id="support-heading" class="section-title mt-4">A connection starts with you.</h2>
                 <p class="mt-5 leading-7 text-paper-dim">Choose how you would like to support {{ $child->public_display_name }}, then review your sponsorship request on the next screen. Our team will confirm the arrangements with you.</p>
             </div>
             <div class="flex max-w-sm flex-col items-start gap-5">

@@ -56,7 +56,7 @@
                         placeholder="you@example.com"
                         class="w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
                     >
-                    <button type="submit" class="rounded-lg bg-gold-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-900">
+                    <button type="submit" class="btn btn-primary">
                         Subscribe
                     </button>
                 </form>

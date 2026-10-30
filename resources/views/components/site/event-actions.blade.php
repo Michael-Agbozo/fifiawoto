@@ -48,7 +48,7 @@
                     $percent = (int) min(100, round($raised / $goal * 100));
                 @endphp
                 <div class="rounded-2xl bg-cream-50 p-4">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-gold-500">Progress so far</p>
+                    <p class="eyebrow">Progress so far</p>
                     <p class="mt-1 font-serif text-2xl font-bold text-heading">{{ \App\Support\Money::fromCents((int) $raised) }} <span class="font-sans text-sm font-normal text-ink-500">of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span></p>
                     <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-brand-100">
                         <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
@@ -63,7 +63,7 @@
             <a href="{{ route('contact') }}{{ $event ? '?subject=donation&event='.$event->slug : '?subject=donation' }}" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900" wire:navigate>
                 Coordinate a gift →
             </a>
-            <button type="button" @click="donateOpen = false" class="inline-flex items-center justify-center rounded-2xl border-2 border-brand-100 px-6 py-3 text-sm font-semibold text-heading transition hover:border-heading">
+            <button type="button" @click="donateOpen = false" class="btn btn-secondary">
                 Not now
             </button>
         </div>

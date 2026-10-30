@@ -1,15 +1,12 @@
 <x-layouts::site title="Sponsor a Child" description="Explore child sponsorship with Fifiawoto. Meet children whose families have agreed to share their stories and enquire about supporting their future.">
-    <section class="mx-3 mt-3 rounded-3xl bg-brand-50 px-6 pb-24 pt-14 sm:mx-4 sm:px-10 lg:mx-6 lg:px-16 lg:pt-20">
-        <div class="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">A future with possibility</p>
-                <h1 class="mt-4 text-4xl text-heading sm:text-5xl lg:text-6xl">Sponsor a child.<br>Help hope grow.</h1>
-                <p class="mt-6 max-w-xl text-lg leading-relaxed text-heading-soft">Walk alongside a child’s journey — and help open doors to learning, wellbeing and a brighter tomorrow.</p>
-                <a href="#children" class="mt-8 inline-flex rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-heading hover:text-surface">Meet the children ↓</a>
-            </div>
-            <img src="{{ asset('images/foundation/school-donation.jpg') }}" alt="Foundation education outreach with school supplies" class="aspect-[4/3] w-full rounded-3xl object-cover">
-        </div>
-    </section>
+    <x-site.page-hero
+        title="Sponsor a Child"
+        breadcrumb="Sponsor a Child"
+        image="images/foundation/school-donation.jpg"
+        alt="Foundation education outreach with school supplies"
+    >
+        Walk alongside a child’s journey, and help open doors to learning, wellbeing and a brighter tomorrow.
+    </x-site.page-hero>
     <section id="children" aria-labelledby="children-heading" class="scroll-mt-32 px-5 pb-20 sm:px-10 lg:px-16">
         <div class="relative mx-auto -mt-10 max-w-6xl">
             <form method="GET" action="{{ route('sponsor-a-child') }}#children" class="grid items-end gap-5 rounded-3xl border border-brand-100 bg-surface p-6 shadow-xl sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_auto]">
@@ -55,14 +52,14 @@
                         <svg aria-hidden="true" class="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-label forced-colors:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m5 7.5 5 5 5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </div>
                 </div>
-                <button class="rounded-full bg-gold-500 px-7 py-3 font-bold text-white hover:bg-heading hover:text-surface">Find a child</button>
+                <button class="btn btn-primary">Find a child</button>
             </form>
         </div>
         <div class="mx-auto mt-14 max-w-7xl">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Small beginnings · lasting change</p>
-                    <h2 id="children-heading" class="mt-3 text-3xl text-heading sm:text-4xl">A connection that starts with care.</h2>
+                    <p class="eyebrow">Small beginnings · lasting change</p>
+                    <h2 id="children-heading" class="section-title text-heading mt-3">A connection that starts with care.</h2>
                 </div>
                 <a href="{{ route('sponsor-a-child') }}#children" class="font-semibold text-label underline underline-offset-4">Reset filters</a>
             </div>
@@ -100,10 +97,10 @@
             <div class="mt-10">{{ $children->onEachSide(1)->links() }}</div>
         </div>
     </section>
-    <section class="bg-brand-900 px-6 py-20 text-white sm:px-10">
+    <section class="section bg-brand-900 px-6 text-white sm:px-10">
         <div class="mx-auto max-w-7xl">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-300">How it works</p>
-            <h2 class="mt-4 max-w-2xl text-4xl">One thoughtful step.<br>A world of possibility.</h2>
+            <p class="eyebrow eyebrow-light">How it works</p>
+            <h2 class="section-title mt-4 max-w-2xl">One thoughtful step.<br>A world of possibility.</h2>
             <div class="mt-12 grid gap-10 md:grid-cols-3">
                 @foreach ([['01', 'Find a connection', 'Read a child’s approved introduction and learn about their hopes.'], ['02', 'Choose your support', 'Choose a suggested monthly pledge or your own amount, then review your sponsorship request.'], ['03', 'Support the journey', 'Agree the next steps with our team, including how appropriate updates can be shared.']] as [$number, $heading, $copy])
                     <div class="border-t border-white/25 pt-6">
@@ -115,10 +112,10 @@
             </div>
         </div>
     </section>
-    <section class="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-2 lg:px-10">
+    <section class="section mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-2 lg:px-10">
         <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Care beyond a profile</p>
-            <h2 class="mt-4 text-4xl text-heading">A child’s dignity comes first.</h2>
+            <p class="eyebrow">Care beyond a profile</p>
+            <h2 class="section-title text-heading mt-4">A child’s dignity comes first.</h2>
             <p class="mt-6 leading-relaxed text-ink-500">Sponsorship begins with listening. We work with families to understand their priorities, from education and school supplies to wellbeing and everyday essentials. Our team can explain what support is currently needed.</p>
             <p class="mt-4 leading-relaxed text-ink-500">Connections and updates are coordinated by the foundation, with the child’s safety and guardian’s wishes at the centre.</p>
         </div>

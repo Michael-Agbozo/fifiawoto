@@ -7,7 +7,7 @@
     />
 
     {{-- OUR LEGACY · Serving with Heart --}}
-    <section class="py-20 lg:py-24" aria-labelledby="legacy-heading">
+    <section class="section" aria-labelledby="legacy-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-8">
             <div class="reveal-left">
                 <img
@@ -18,8 +18,8 @@
                 >
             </div>
             <div class="reveal-right" style="transition-delay: 160ms">
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Our Legacy</p>
-                <h2 id="legacy-heading" class="mt-3 font-serif text-4xl font-bold leading-[1.1] text-gold-500 sm:text-5xl lg:text-[52px]">Serving with Heart</h2>
+                <p class="eyebrow">Our Legacy</p>
+                <h2 id="legacy-heading" class="section-title text-heading mt-3">Serving with Heart</h2>
                 <p class="mt-7 text-base leading-relaxed text-ink-500">
                     The Fifiawoto Foundation, established in honour of the esteemed Madam Dadaa Fifiawoto Nyamadi-Adabla, embodies the spirit of compassion and service that she exemplified throughout her life. Like the revered Mother Teresa, Madam Dadaa Fifiawoto was a dedicated humanitarian who devoted herself to the well-being of her community, her church (Apostles Revelation Society), and humanity at large. In her memory, her descendants founded the Fifiawoto Foundation to continue her legacy of selfless service.
                 </p>
@@ -31,7 +31,7 @@
     </section>
 
     {{-- LEGACY QUOTE BAND --}}
-    <section class="bg-brand-200/80 py-16 sm:py-20" aria-label="Foundation tribute">
+    <section class="section bg-brand-200/80" aria-label="Foundation tribute">
         <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <div class="reveal-down mx-auto grid size-14 place-items-center overflow-hidden rounded-full bg-surface shadow-[0_10px_30px_-15px_rgba(0,4,78,0.4)] ring-4 ring-white">
                 <img
@@ -48,23 +48,23 @@
     </section>
 
     {{-- MISSION + VISION --}}
-    <section class="bg-surface py-20 lg:py-28" aria-labelledby="mission-vision-heading">
+    <section class="section bg-surface" aria-labelledby="mission-vision-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
             {{-- LEFT: heading + Mission/Vision copy --}}
             <div>
-                <h2 id="mission-vision-heading" class="reveal-left font-serif text-4xl font-bold leading-[1.1] text-gold-500 sm:text-5xl lg:text-[52px]">
+                <h2 id="mission-vision-heading" class="section-title text-heading reveal-left">
                     Empowering Hope,<br>Inspiring Change
                 </h2>
 
                 <div class="reveal mt-8 space-y-8" style="transition-delay: 160ms">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Mission</p>
+                        <p class="eyebrow">Mission</p>
                         <p class="mt-3 text-base leading-relaxed text-ink-500">
                             To honour the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla by empowering and uplifting underserved communities through comprehensive support and sustainable initiatives, with a focus on women, children, and vulnerable individuals.
                         </p>
                     </div>
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Vision</p>
+                        <p class="eyebrow">Vision</p>
                         <p class="mt-3 text-base leading-relaxed text-ink-500">
                             To create a world where every individual, regardless of their circumstances, has the opportunity for a new beginning and a brighter future, inspired by the enduring values of compassion, service, and community.
                         </p>
@@ -97,11 +97,11 @@
     </section>
 
     {{-- VALUES --}}
-    <section class="bg-cream-50 py-20" aria-labelledby="values-heading">
+    <section class="section bg-cream-50" aria-labelledby="values-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What we stand for</p>
-                <h2 id="values-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Core Values</h2>
+                <p class="eyebrow reveal-down">What we stand for</p>
+                <h2 id="values-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Core Values</h2>
             </div>
 
             @php
@@ -151,11 +151,11 @@
     </section>
 
     {{-- GLOBAL PRESENCE --}}
-    <section class="bg-brand-900 py-20 text-paper" aria-labelledby="global-presence-heading">
+    <section class="section bg-brand-900 text-paper" aria-labelledby="global-presence-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 md:grid-cols-2 md:items-center lg:px-8">
             <div>
                 <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Where we work</p>
-                <h2 id="global-presence-heading" class="reveal mt-3 font-serif text-3xl sm:text-4xl" style="transition-delay: 120ms">A Global Presence</h2>
+                <h2 id="global-presence-heading" class="section-title reveal mt-3" style="transition-delay: 120ms">A Global Presence</h2>
                 <p class="reveal mt-6 text-sm leading-relaxed text-paper-dim/80" style="transition-delay: 240ms">
                     The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programs where they're needed most.
                 </p>
@@ -199,11 +199,11 @@
     </section>
 
     {{-- LEADERSHIP --}}
-    <section class="bg-cream-50 py-24" aria-labelledby="leadership-heading">
+    <section class="section bg-cream-50" aria-labelledby="leadership-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Our leadership</p>
-                <h2 id="leadership-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">
+                <p class="eyebrow">Our leadership</p>
+                <h2 id="leadership-heading" class="section-title text-heading mt-3">
                     Meet the leadership team
                 </h2>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
@@ -253,7 +253,7 @@
 
             <div class="mt-14 flex flex-col items-center justify-between gap-4 rounded-3xl border border-brand-100 bg-surface/70 p-8 backdrop-blur sm:flex-row">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Get involved</p>
+                    <p class="eyebrow">Get involved</p>
                     <p class="mt-2 max-w-xl text-sm text-ink-700">
                         Interested in serving on our advisory board, partnering on a program, or supporting a specific country office? We'd love to hear from you.
                     </p>

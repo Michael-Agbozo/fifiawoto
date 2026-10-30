@@ -408,3 +408,69 @@ img.img-fade[data-loaded="true"] {
         font-family: inherit;
     }
 }
+
+/* ------------------------------------------------------------------
+ | Shared UI standard
+ |
+ | One definition for the pieces every page repeats, so the public site
+ | and admin stay uniform. They live in the components layer, so a view
+ | can still add spacing, width or a colour override with a utility.
+ |
+ |   .btn + .btn-primary | .btn-secondary | .btn-light | .btn-outline-light
+ |        + .btn-sm | .btn-lg            — every call-to-action
+ |   .eyebrow (+ .eyebrow-light)         — the small label above a title
+ |   .section-title / .section-intro     — section headings and lead copy
+ |   .section                            — vertical rhythm for page sections
+ |   .card                               — the standard surface for cards
+ ------------------------------------------------------------------ */
+@layer components {
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-align: center;
+        border: 2px solid transparent;
+        transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+        cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:focus-visible { outline: 2px solid var(--color-gold-500); outline-offset: 3px; }
+    .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
+    .btn-lg { padding: 0.875rem 2rem; font-size: 1rem; line-height: 1.5rem; }
+
+    .btn-primary { background-color: var(--color-gold-500); color: #ffffff; box-shadow: 0 10px 24px -14px var(--color-gold-500); }
+    .btn-primary:hover { background-color: var(--color-heading); color: var(--color-surface); box-shadow: none; }
+    /* Primary on a navy band or photo: hovering turns it white instead of navy. */
+    .btn-on-dark:hover { background-color: #ffffff; color: #00044e; }
+    .btn-secondary { border-color: var(--color-heading); color: var(--color-heading); background-color: transparent; }
+    .btn-secondary:hover { background-color: var(--color-heading); color: var(--color-surface); }
+    /* Neutral action (filters, toolbars, secondary admin actions). */
+    .btn-ghost { border-width: 1px; border-color: var(--color-cream-300); background-color: var(--color-surface); color: var(--color-ink-700); font-weight: 600; }
+    .btn-ghost:hover { border-color: var(--color-heading); color: var(--color-heading); }
+    /* On photos and navy bands (never flip with the theme). */
+    .btn-light { background-color: #ffffff; color: #00044e; }
+    .btn-light:hover { background-color: var(--color-gold-500); color: #ffffff; }
+    .btn-outline-light { border-color: rgba(255, 255, 255, 0.6); color: #ffffff; background-color: transparent; }
+    .btn-outline-light:hover { background-color: #ffffff; border-color: #ffffff; color: #00044e; }
+
+    .eyebrow { font-size: 0.75rem; line-height: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3em; color: var(--color-gold-500); }
+    .eyebrow-light { color: var(--color-gold-300); }
+
+    .section-title { font-family: var(--font-serif); font-weight: 700; font-size: 1.875rem; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
+    @media (min-width: 40rem) { .section-title { font-size: 2.25rem; } }
+    @media (min-width: 64rem) { .section-title { font-size: 2.75rem; } }
+    .section-intro { font-size: 1rem; line-height: 1.7; color: var(--color-ink-500); max-width: 42rem; }
+
+    .section { padding-block: 5rem; }
+    @media (min-width: 64rem) { .section { padding-block: 6rem; } }
+
+    .card { border-radius: 1.5rem; border: 1px solid var(--color-cream-300); background-color: var(--color-surface); box-shadow: 0 1px 2px rgba(0, 4, 78, 0.05); }
+}

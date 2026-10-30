@@ -512,7 +512,7 @@ new class extends Component
             <label class="block text-sm text-heading">Separate approved public photo<input type="file" wire:model="sponsorshipPhoto" accept="image/jpeg,image/png,image/webp" class="mt-2 block w-full">@error('sponsorshipPhoto')<span class="text-red-600">{{ $message }}</span>@enderror</label>
             <label class="flex items-start gap-3 text-sm text-heading"><input type="checkbox" wire:model="guardianConsent">I have verified and recorded guardian consent to publish this name, story, country, age, gender and photo.</label>@error('guardianConsent')<p class="text-red-600">{{ $message }}</p>@enderror
             <label class="flex gap-3 text-sm text-heading"><input type="checkbox" wire:model="sponsorshipPublished">Publish approved sponsorship profile</label>@error('sponsorshipPublished')<p class="text-red-600">{{ $message }}</p>@enderror
-            <button wire:loading.attr="disabled" class="rounded-xl bg-gold-500 px-5 py-3 font-semibold text-white disabled:opacity-50">Save public profile</button>
+            <button wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-50 px-5 py-3">Save public profile</button>
         </form>
     </section>
     @endif
@@ -614,11 +614,11 @@ new class extends Component
                         <p class="text-xs text-ink-500">Drag-style explorer · click any folder to open it</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button type="button" wire:click="startCreateFolder" class="inline-flex items-center gap-1.5 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
+                        <button type="button" wire:click="startCreateFolder" class="btn btn-ghost gap-1.5 px-3 py-2 text-xs">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 11v6m-3-3h6"/></svg>
                             New folder
                         </button>
-                        <button type="button" wire:click="startUpload" class="inline-flex items-center gap-1.5 rounded-xl bg-gold-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+                        <button type="button" wire:click="startUpload" class="btn btn-primary gap-1.5 px-3 py-2 text-xs">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 20h16"/></svg>
                             Upload files
                         </button>
@@ -644,7 +644,7 @@ new class extends Component
                         @endif
                     @endforeach
                     @if ($this->currentFolder)
-                        <button type="button" wire:click="goUp" class="ml-auto inline-flex items-center gap-1 rounded-md border border-cream-300 px-2 py-1 font-semibold transition hover:border-heading hover:text-heading">
+                        <button type="button" wire:click="goUp" class="btn btn-ghost ml-auto gap-1 px-2 py-1">
                             <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
                             Up
                         </button>
@@ -655,8 +655,8 @@ new class extends Component
                 @if ($showFolderForm)
                     <form wire:submit="createFolder" class="mt-4 flex flex-wrap gap-2 rounded-2xl border border-dashed border-brand-200 bg-brand-50/40 p-3">
                         <input type="text" wire:model="newFolderName" placeholder="{{ $this->currentFolder ? 'New subfolder in '.$this->currentFolder->name : 'New top-level folder' }}" required class="flex-1 rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
-                        <button type="submit" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-2 text-xs font-bold text-white transition hover:bg-brand-900">Create folder</button>
-                        <button type="button" wire:click="cancelFolder" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-2 text-xs font-semibold text-ink-700">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-3 py-2 text-xs">Create folder</button>
+                        <button type="button" wire:click="cancelFolder" class="btn btn-ghost px-3 py-2 text-xs">Cancel</button>
                         @error('newFolderName') <p class="basis-full text-xs text-red-600">{{ $message }}</p> @enderror
                     </form>
                 @endif
@@ -691,11 +691,11 @@ new class extends Component
                         @error('documentUploads') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                         @error('documentUploads.*') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                         <div class="flex flex-wrap gap-2">
-                            <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center rounded-lg bg-gold-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-900 disabled:opacity-60">
+                            <button type="submit" wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-60 px-4 py-2 text-xs">
                                 <span wire:loading.remove>Upload</span>
                                 <span wire:loading>Uploading…</span>
                             </button>
-                            <button type="button" wire:click="cancelUpload" class="inline-flex items-center rounded-lg border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700">Cancel</button>
+                            <button type="button" wire:click="cancelUpload" class="btn btn-ghost px-4 py-2 text-xs">Cancel</button>
                             <p class="text-xs text-ink-500">Up to 20 MB per file.</p>
                         </div>
                     </form>
@@ -721,8 +721,8 @@ new class extends Component
                                     @if ($renameFolderId === $folder->id)
                                         <form wire:submit="saveRename({{ $folder->id }})" class="flex items-center gap-2 px-3 py-2.5">
                                             <input type="text" wire:model="renameFolderName" autofocus class="flex-1 rounded-lg border border-cream-300 bg-surface px-3 py-1.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
-                                            <button type="submit" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white">Save</button>
-                                            <button type="button" wire:click="cancelRename" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700">Cancel</button>
+                                            <button type="submit" class="btn btn-primary px-3 py-1.5 text-xs">Save</button>
+                                            <button type="button" wire:click="cancelRename" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </form>
                                     @else
                                         <div class="flex items-center justify-between gap-2 px-3 py-2.5">
@@ -736,7 +736,7 @@ new class extends Component
                                             @if ($confirmDeleteFolderId === $folder->id)
                                                 <div class="flex items-center gap-1">
                                                     <button type="button" wire:click="deleteFolder({{ $folder->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-2 py-1 text-[10px] font-bold text-white">Delete</button>
-                                                    <button type="button" wire:click="cancelDeleteFolder" class="inline-flex items-center rounded-lg border border-cream-300 px-2 py-1 text-[10px] font-semibold text-ink-700">Cancel</button>
+                                                    <button type="button" wire:click="cancelDeleteFolder" class="btn btn-ghost px-2 py-1 text-[10px]">Cancel</button>
                                                 </div>
                                             @else
                                                 <x-admin.actions-menu>
@@ -802,7 +802,7 @@ new class extends Component
                                         @endif
                                         @if ($confirmDeleteDocumentId === $doc->id)
                                             <button type="button" wire:click="deleteDocument({{ $doc->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-2 py-1 text-[10px] font-bold text-white">Delete</button>
-                                            <button type="button" wire:click="cancelDeleteDocument" class="inline-flex items-center rounded-lg border border-cream-300 px-2 py-1 text-[10px] font-semibold text-ink-700">Cancel</button>
+                                            <button type="button" wire:click="cancelDeleteDocument" class="btn btn-ghost px-2 py-1 text-[10px]">Cancel</button>
                                         @else
                                             <x-admin.actions-menu>
                                                 <button type="button" wire:click="askDeleteDocument({{ $doc->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
@@ -823,7 +823,7 @@ new class extends Component
             <section class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                 <div class="flex items-center justify-between">
                     <h3 class="font-serif text-lg font-bold text-ink-900">Case timeline</h3>
-                    <button type="button" wire:click="startTimelineEntry" class="inline-flex items-center gap-1 rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-gold-500 hover:text-gold-500">+ Add entry</button>
+                    <button type="button" wire:click="startTimelineEntry" class="btn btn-ghost gap-1 px-3 py-1.5 text-xs">+ Add entry</button>
                 </div>
 
                 @if ($showTimelineForm)
@@ -835,8 +835,8 @@ new class extends Component
                         </select>
                         <textarea wire:model="timelineDescription" rows="3" placeholder="What happened? (optional)" class="block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                         <div class="flex gap-2">
-                            <button type="submit" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white">Add entry</button>
-                            <button type="button" wire:click="cancelTimelineEntry" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700">Cancel</button>
+                            <button type="submit" class="btn btn-primary px-3 py-1.5 text-xs">Add entry</button>
+                            <button type="button" wire:click="cancelTimelineEntry" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                         </div>
                     </form>
                 @endif

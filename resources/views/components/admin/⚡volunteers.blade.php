@@ -494,12 +494,12 @@ new class extends Component
                                         @if ($editingVolunteerId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="saveRole({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-900">Save role</button>
-                                                <button type="button" wire:click="cancelEditRole" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                                                <button type="button" wire:click="cancelEditRole" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                             </div>
                                         @elseif ($confirmRemoveId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="remove({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm remove</button>
-                                                <button type="button" wire:click="cancelRemove" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                                                <button type="button" wire:click="cancelRemove" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                             </div>
                                         @else
                                             <x-admin.actions-menu>

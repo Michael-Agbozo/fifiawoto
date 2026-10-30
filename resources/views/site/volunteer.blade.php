@@ -9,11 +9,11 @@
     </x-site.page-hero>
 
     {{-- WHY VOLUNTEER + stats --}}
-    <section class="py-20 lg:py-24" aria-labelledby="why-volunteer-heading">
+    <section class="section" aria-labelledby="why-volunteer-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-16 lg:px-8">
             <div class="reveal-left">
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Why volunteer with us</p>
-                <h2 id="why-volunteer-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl lg:text-[44px]">A small commitment, a real-world impact.</h2>
+                <p class="eyebrow">Why volunteer with us</p>
+                <h2 id="why-volunteer-heading" class="section-title text-heading mt-3">A small commitment, a real-world impact.</h2>
                 <p class="mt-5 text-sm leading-relaxed text-ink-500 sm:text-base">
                     The foundation runs lean by design. Most of our work is delivered by volunteers — community members, students, professionals, and diaspora supporters — coordinated by a small core team. That means every hour you give is felt directly in the lives of the families we walk alongside.
                 </p>
@@ -61,11 +61,11 @@
     </section>
 
     {{-- OPPORTUNITIES --}}
-    <section id="opportunities" class="bg-cream-50 py-20 lg:py-24" aria-labelledby="opportunities-heading">
+    <section id="opportunities" class="section bg-cream-50" aria-labelledby="opportunities-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Where you fit in</p>
-                <h2 id="opportunities-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Volunteer opportunities</h2>
+                <p class="eyebrow reveal-down">Where you fit in</p>
+                <h2 id="opportunities-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Volunteer opportunities</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Five tracks, each tied to a specific area of foundation work. You can express interest in more than one — we'll match you to what's needed when you apply.
                 </p>
@@ -124,11 +124,11 @@
     </section>
 
     {{-- HOW IT WORKS — 4-step process --}}
-    <section class="py-20 lg:py-24" aria-labelledby="how-volunteer-heading">
+    <section class="section" aria-labelledby="how-volunteer-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">How it works</p>
-                <h2 id="how-volunteer-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">From application to first shift</h2>
+                <p class="eyebrow reveal-down">How it works</p>
+                <h2 id="how-volunteer-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">From application to first shift</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500 sm:text-base" style="transition-delay: 240ms">
                     Four short steps — typically takes a week from when we receive your application.
                 </p>
@@ -157,16 +157,16 @@
     </div>
 
     {{-- FOR ORGANISATIONS --}}
-    <section class="bg-brand-900 py-16 text-white">
+    <section class="section bg-brand-900 text-white">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 text-center sm:px-6 lg:flex-row lg:text-left lg:px-8">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-300">Group volunteering?</p>
+                <p class="eyebrow eyebrow-light">Group volunteering?</p>
                 <h2 class="mt-2 font-serif text-2xl sm:text-3xl">Bring your team, school, or church.</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
                     We host group volunteer days for companies, student societies, and faith communities. Tell us your group size and what you'd like to do; we'll design something meaningful.
                 </p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading" wire:navigate>
+            <a href="{{ route('contact') }}" class="btn btn-primary btn-on-dark shrink-0" wire:navigate>
                 Plan a group day
                 <span aria-hidden="true">→</span>
             </a>

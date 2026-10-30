@@ -9,11 +9,11 @@
     </x-site.page-hero>
 
     {{-- IMPACT TIERS — concrete examples of what a gift funds --}}
-    <section class="py-20 lg:py-24" aria-labelledby="impact-tiers-heading">
+    <section class="section" aria-labelledby="impact-tiers-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Where your gift goes</p>
-                <h2 id="impact-tiers-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Pick the impact that feels right</h2>
+                <p class="eyebrow reveal-down">Where your gift goes</p>
+                <h2 id="impact-tiers-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Pick the impact that feels right</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500" style="transition-delay: 240ms">
                     Every amount makes a real difference. These are the concrete programmes a gift of each size can fund.
                 </p>
@@ -31,7 +31,7 @@
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $tier['icon'] }}"/></svg>
                         </div>
                         <p class="mt-5 font-serif text-3xl font-bold text-heading">{{ $tier['amount'] }}</p>
-                        <p class="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-gold-500">{{ $tier['label'] }}</p>
+                        <p class="eyebrow mt-1">{{ $tier['label'] }}</p>
                         <p class="mt-3 flex-1 text-sm leading-relaxed text-ink-500">{{ $tier['copy'] }}</p>
                     </article>
                 @endforeach
@@ -51,29 +51,29 @@
             $goal = (int) $featuredEvent->goal_cents;
             $percent = $featuredEvent->progressPercent();
         @endphp
-        <section class="bg-brand-900 py-20 text-white lg:py-24" aria-labelledby="active-event-heading">
+        <section class="section bg-brand-900 text-white" aria-labelledby="active-event-heading">
             <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-16 lg:px-8">
                 <div>
                     <p class="reveal-down text-xs font-semibold uppercase tracking-[0.32em] text-gold-400">Active campaign</p>
-                    <h2 id="active-event-heading" class="reveal mt-4 font-serif text-3xl font-bold leading-tight sm:text-4xl lg:text-[44px]" style="transition-delay: 120ms">
+                    <h2 id="active-event-heading" class="section-title reveal mt-4" style="transition-delay: 120ms">
                         {{ $featuredEvent->title }}
                     </h2>
                     <p class="reveal mt-5 text-sm leading-relaxed text-white/85 sm:text-base" style="transition-delay: 240ms">
                         {{ \Illuminate\Support\Str::limit(strip_tags($featuredEvent->description), 220) }}
                     </p>
                     <div class="reveal mt-6 flex flex-wrap gap-3" style="transition-delay: 360ms">
-                        <a href="{{ route('events.show', $featuredEvent) }}" class="inline-flex items-center gap-1.5 rounded-full bg-gold-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-surface hover:text-heading" wire:navigate>
+                        <a href="{{ route('events.show', $featuredEvent) }}" class="btn btn-primary btn-on-dark" wire:navigate>
                             See the event
                             <span aria-hidden="true">→</span>
                         </a>
-                        <a href="#how-to-give" class="inline-flex items-center gap-1.5 rounded-full border-2 border-white/40 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white hover:bg-surface hover:text-heading">
+                        <a href="#how-to-give" class="btn btn-outline-light">
                             Donate to this campaign
                         </a>
                     </div>
                 </div>
 
                 <div class="reveal-right rounded-3xl border border-white/15 bg-white/5 p-7 backdrop-blur sm:p-8" style="transition-delay: 240ms">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-300">Progress</p>
+                    <p class="eyebrow eyebrow-light">Progress</p>
                     <div class="mt-4 flex items-baseline justify-between gap-4">
                         <p class="font-serif text-4xl font-bold sm:text-5xl">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
                         <p class="text-sm font-semibold text-white/70">of {{ \App\Support\Money::fromCents((int) $goal) }} goal</p>
@@ -88,11 +88,11 @@
     @endif
 
     {{-- HOW TO GIVE — payment methods --}}
-    <section id="how-to-give" class="bg-cream-50 py-20 lg:py-24" aria-labelledby="how-to-give-heading">
+    <section id="how-to-give" class="section bg-cream-50" aria-labelledby="how-to-give-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Ways to give</p>
-                <h2 id="how-to-give-heading" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Choose the channel that suits you</h2>
+                <p class="eyebrow reveal-down">Ways to give</p>
+                <h2 id="how-to-give-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Choose the channel that suits you</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500" style="transition-delay: 240ms">
                     Online card payments are coming soon. In the meantime the foundation accepts mobile money, bank transfers, and in-person gifts. Every channel is logged and acknowledged.
                 </p>
@@ -106,7 +106,7 @@
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="2.5" width="14" height="19" rx="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M11 18h2"/></svg>
                         </span>
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gold-500">Fastest</p>
+                            <p class="eyebrow">Fastest</p>
                             <h3 class="font-serif text-xl font-bold text-heading">Mobile Money</h3>
                         </div>
                     </div>
@@ -134,7 +134,7 @@
                             <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m3 9 9-5 9 5M5 9v10h14V9M9 19v-7m3 7v-7m3 7v-7M3 9h18"/></svg>
                         </span>
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gold-500">International</p>
+                            <p class="eyebrow">International</p>
                             <h3 class="font-serif text-xl font-bold text-heading">Bank transfer</h3>
                         </div>
                     </div>
@@ -182,11 +182,11 @@
     </section>
 
     {{-- TRUST + RECURRING --}}
-    <section class="py-20 lg:py-24">
+    <section class="section">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
             <div class="reveal-left">
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Stewardship</p>
-                <h2 class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Where your money actually goes</h2>
+                <p class="eyebrow">Stewardship</p>
+                <h2 class="section-title text-heading mt-3">Where your money actually goes</h2>
                 <p class="mt-5 text-sm leading-relaxed text-ink-500 sm:text-base">
                     The foundation is run by a small team of staff and volunteers. The board oversees how each gift is spent and a summary is shared with donors at the end of every programme. We don't pass funds through intermediaries.
                 </p>
@@ -213,7 +213,7 @@
             </div>
 
             <div class="reveal-right rounded-3xl bg-cream-100 p-8 ring-1 ring-brand-100 sm:p-10" style="transition-delay: 160ms">
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Monthly giving</p>
+                <p class="eyebrow">Monthly giving</p>
                 <h3 class="mt-3 font-serif text-2xl text-heading sm:text-3xl">Become a monthly partner</h3>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
                     Recurring gifts are the most powerful way to support the foundation's programmes — they let the team plan ahead and commit to longer-term care for families.
@@ -230,16 +230,16 @@
     </section>
 
     {{-- CONTACT REASSURANCE --}}
-    <section class="bg-brand-900 py-16 text-white">
+    <section class="section bg-brand-900 text-white">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 text-center sm:px-6 lg:flex-row lg:text-left lg:px-8">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-300">Questions?</p>
+                <p class="eyebrow eyebrow-light">Questions?</p>
                 <h2 class="mt-2 font-serif text-2xl sm:text-3xl">We're happy to walk you through any of this.</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
                     Email <a href="mailto:{{ config('notifications.admin_email') }}" class="font-semibold text-gold-300 hover:text-white">{{ config('notifications.admin_email') }}</a> or use the contact form. We typically reply within one working day.
                 </p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading" wire:navigate>
+            <a href="{{ route('contact') }}" class="btn btn-primary btn-on-dark shrink-0" wire:navigate>
                 Contact the foundation
                 <span aria-hidden="true">→</span>
             </a>

@@ -159,7 +159,7 @@ new class extends Component
     >
         <x-slot:actions>
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name or email" class="w-72 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
-            <button type="button" wire:click="exportCsv" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <button type="button" wire:click="exportCsv" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                 Export CSV
             </button>
@@ -207,7 +207,7 @@ new class extends Component
                                     @if ($confirmDeleteId === $sub->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $sub->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>

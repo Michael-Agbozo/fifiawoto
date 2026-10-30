@@ -47,7 +47,7 @@
     </x-site.page-hero>
 
     {{-- GALLERY --}}
-    <section class="py-16" aria-labelledby="gallery-heading">
+    <section class="section" aria-labelledby="gallery-heading">
         <div
             x-data="{
                 category: 'all',
@@ -189,16 +189,16 @@
     </section>
 
     {{-- CTA STRIP --}}
-    <section class="bg-brand-900 py-16 text-white">
+    <section class="section bg-brand-900 text-white">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 sm:px-6 lg:flex-row lg:px-8">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-gold-300">More to come</p>
-                <h2 class="mt-2 font-serif text-3xl sm:text-4xl">See the journey unfold live.</h2>
+                <p class="eyebrow eyebrow-light">More to come</p>
+                <h2 class="section-title mt-2">See the journey unfold live.</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
                     Follow @the_fifiawotofoundation on Instagram for fresh photos and reels as our outreach programmes happen.
                 </p>
             </div>
-            <a href="{{ config('social.instagram') }}" target="_blank" rel="noopener" class="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gold-500 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading">
+            <a href="{{ config('social.instagram') }}" target="_blank" rel="noopener" class="btn btn-primary btn-on-dark btn-lg shrink-0">
                 Follow on Instagram →
             </a>
         </div>

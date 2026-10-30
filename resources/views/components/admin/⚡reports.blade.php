@@ -249,7 +249,7 @@ new class extends Component
             <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             @php $canExport = auth()->user()?->canDo('reports', 'export'); @endphp
             @if ($canExport)
-            <button type="button" wire:click="downloadPdf" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <button type="button" wire:click="downloadPdf" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>
                 Download PDF
             </button>

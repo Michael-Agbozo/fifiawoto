@@ -90,7 +90,7 @@
 
         <div class="pt-2">
             <button type="submit"
-                class="inline-flex items-center justify-center rounded-full bg-gold-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-900 disabled:opacity-60"
+                class="btn btn-primary disabled:opacity-60"
                 wire:loading.attr="disabled">
                 <span wire:loading.remove>Apply to Volunteer</span>
                 <span wire:loading>Submitting…</span>

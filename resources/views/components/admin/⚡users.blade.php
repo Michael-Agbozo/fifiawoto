@@ -556,7 +556,7 @@ new class extends Component
     >
         <x-slot:actions>
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name or email" class="w-72 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
-            <button type="button" wire:click="startInvite" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <button type="button" wire:click="startInvite" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Invite teammate
             </button>
@@ -583,7 +583,7 @@ new class extends Component
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-label">Temporary password</p>
             <p class="mt-3 font-mono text-lg text-ink-900">{{ $generatedPassword }}</p>
             <p class="mt-2 text-xs text-ink-500">Share this securely with the user. We will not show it again.</p>
-            <button type="button" wire:click="dismissPassword" class="mt-3 inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Got it</button>
+            <button type="button" wire:click="dismissPassword" class="btn btn-ghost mt-3 px-3 py-1.5 text-xs">Got it</button>
         </div>
     @endif
 
@@ -621,10 +621,10 @@ new class extends Component
             <p class="text-xs text-ink-500">We'll generate a one-time password for you to share securely. The user can change it after their first login.</p>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm">
                     Create account
                 </button>
-                <button type="button" wire:click="cancelInvite" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
+                <button type="button" wire:click="cancelInvite" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
@@ -671,10 +671,10 @@ new class extends Component
             </label>
 
             <div class="flex flex-wrap gap-3 pt-1">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm">
                     Set password
                 </button>
-                <button type="button" wire:click="cancelResetPassword" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
+                <button type="button" wire:click="cancelResetPassword" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
@@ -685,10 +685,10 @@ new class extends Component
         @if ($confirmDisable2faId)
             <p class="text-sm text-ink-700">Are you sure you want to disable 2FA for <strong>{{ $this->disablingTwoFactorUser?->name }}</strong>? They will be able to log in with just their password until they re-enrol.</p>
             <div class="mt-6 flex flex-wrap gap-3">
-                <button type="button" wire:click="disableTwoFactor({{ $confirmDisable2faId }})" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="button" wire:click="disableTwoFactor({{ $confirmDisable2faId }})" class="btn btn-primary px-6 py-3 text-sm">
                     Yes, disable 2FA
                 </button>
-                <button type="button" wire:click="cancelDisable2fa" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
+                <button type="button" wire:click="cancelDisable2fa" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
@@ -771,12 +771,12 @@ new class extends Component
                                     @if ($editRoleId === $user->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="saveRole({{ $user->id }})" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-900">Save role</button>
-                                            <button type="button" wire:click="cancelEditRole" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                                            <button type="button" wire:click="cancelEditRole" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @elseif ($confirmDeleteId === $user->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $user->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                             @error('delete_'.$user->id) <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                                         </div>
                                     @else
@@ -905,7 +905,7 @@ new class extends Component
 
             <div class="mt-5 flex flex-wrap gap-3">
                 <button type="button" wire:click="savePermissions({{ $pUser->id }})" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">Save permissions</button>
-                <button type="button" wire:click="cancelEditPermissions" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                <button type="button" wire:click="cancelEditPermissions" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
             </div>
         @endif
     </x-admin.modal>

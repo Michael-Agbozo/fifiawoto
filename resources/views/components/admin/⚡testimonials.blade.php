@@ -235,7 +235,7 @@ new class extends Component
                 <option value="inactive">Not featured</option>
             </select>
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, role, quote" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
-            <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Add testimonial
             </button>
@@ -330,11 +330,11 @@ new class extends Component
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 disabled:opacity-60">
+                <button type="submit" wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-60 px-6 py-3 text-sm">
                     <span wire:loading.remove>{{ $editingId ? 'Save changes' : 'Add testimonial' }}</span>
                     <span wire:loading>Saving…</span>
                 </button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
+                <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
@@ -371,7 +371,7 @@ new class extends Component
                     @if ($confirmDeleteId === $t->id)
                         <div class="flex flex-wrap items-center gap-2">
                             <button type="button" wire:click="delete({{ $t->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Cancel</button>
+                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                         </div>
                     @else
                         <x-admin.actions-menu>

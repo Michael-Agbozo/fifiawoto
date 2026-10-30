@@ -132,8 +132,8 @@ new class extends Component
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Send a Message</p>
-                <h2 id="contact-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $sponsorshipName ? 'Enquire about supporting '.$sponsorshipName : 'Contact the Foundation' }}</h2>
+                <p class="eyebrow">Send a Message</p>
+                <h2 id="contact-form-heading" class="section-title text-heading mt-3">{{ $sponsorshipName ? 'Enquire about supporting '.$sponsorshipName : 'Contact the Foundation' }}</h2>
                 <p class="mt-3 text-sm text-ink-500">
                     @if ($sponsorshipName)
                         Your enquiry is about {{ $sponsorshipName }}. Our team will help you explore sponsorship and explain the next steps.
@@ -207,7 +207,7 @@ new class extends Component
 
                     <div class="pt-2">
                         <button type="submit"
-                            class="inline-flex items-center justify-center rounded-full bg-gold-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-900 disabled:opacity-60"
+                            class="btn btn-primary disabled:opacity-60"
                             wire:loading.attr="disabled">
                             <span wire:loading.remove>{{ $sponsorshipProfile ? 'Send sponsorship enquiry' : 'Send Message' }}</span>
                             <span wire:loading>Sending…</span>

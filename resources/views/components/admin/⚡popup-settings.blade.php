@@ -245,7 +245,7 @@ new class extends Component
 
         @if ($canUpdate)
             <div class="flex justify-end">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900" wire:loading.attr="disabled">
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm" wire:loading.attr="disabled">
                     <span wire:loading.remove wire:target="save">Save popup</span>
                     <span wire:loading wire:target="save">Saving…</span>
                 </button>

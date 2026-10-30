@@ -9,9 +9,9 @@
 @endphp
 
 <x-layouts::site :title="$heading" :noindex="true">
-    <section class="py-20 lg:py-24" aria-labelledby="newsletter-heading">
+    <section class="section" aria-labelledby="newsletter-heading">
         <div class="mx-auto max-w-xl px-4 text-center sm:px-6 lg:px-8">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
+            <p class="eyebrow">Newsletter</p>
             <h1 id="newsletter-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $heading }}</h1>
 
             @if ($done)
@@ -32,7 +32,7 @@
                 </p>
                 <form method="POST" action="{{ $formUrl }}" class="mt-8">
                     @csrf
-                    <button type="submit" class="rounded-full bg-gold-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-900">
+                    <button type="submit" class="btn btn-primary">
                         {{ $isUnsubscribe ? 'Unsubscribe' : 'Yes, subscribe me again' }}
                     </button>
                 </form>

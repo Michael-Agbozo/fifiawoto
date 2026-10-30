@@ -26,14 +26,14 @@
             <div class="reveal mt-8 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-10 sm:w-auto sm:gap-4" style="transition-delay: 400ms">
                 <a
                     href="{{ route('donate') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-surface px-6 py-3.5 text-sm font-bold text-gold-600 shadow-lg transition hover:bg-gold-500 hover:text-white sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
+                    class="btn btn-light btn-lg w-full sm:w-auto"
                     wire:navigate
                 >
                     Donate
                 </a>
                 <a
                     href="{{ route('contact') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-gold-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-surface hover:text-gold-600 sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
+                    class="btn btn-primary btn-on-dark btn-lg w-full sm:w-auto"
                     wire:navigate
                 >
                     Get In Touch
@@ -43,14 +43,14 @@
     </section>
 
     {{-- LEGACY / FOUNDATION STORY, 2-column with photo collage --}}
-    <section class="relative overflow-hidden bg-surface py-20 lg:py-28" aria-labelledby="legacy-heading">
+    <section class="section relative overflow-hidden bg-surface" aria-labelledby="legacy-heading">
         {{-- Soft cream organic shape behind the collage --}}
         <div class="pointer-events-none absolute -right-24 top-12 -z-10 hidden h-[70%] w-[55%] rounded-l-[200px] bg-cream-100 lg:block"></div>
 
         <div class="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-[5fr_7fr] lg:items-center lg:gap-16 lg:px-8">
             {{-- LEFT: copy + CTAs --}}
             <div>
-                <h2 id="legacy-heading" class="reveal-left font-serif text-4xl font-bold leading-[1.1] text-gold-500 sm:text-5xl lg:text-[52px]">
+                <h2 id="legacy-heading" class="section-title text-heading reveal-left">
                     A Legacy of<br>Compassion,<br>A Future of Hope.
                 </h2>
                 <p class="mt-8 text-sm leading-relaxed text-ink-500">
@@ -63,10 +63,10 @@
                     Today, the foundation operates across multiple countries, working to deliver sustainable programs that empower individuals and strengthen communities.
                 </p>
                 <div class="mt-10 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('donate') }}" class="inline-flex min-w-[140px] items-center justify-center rounded-2xl bg-gold-500 px-7 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900" wire:navigate>
+                    <a href="{{ route('donate') }}" class="btn btn-primary" wire:navigate>
                         Donate
                     </a>
-                    <a href="{{ route('volunteer') }}" class="inline-flex min-w-[160px] items-center justify-center rounded-2xl border-2 border-night px-7 py-3 text-sm font-bold text-ink-900 transition hover:bg-night hover:text-white" wire:navigate>
+                    <a href="{{ route('volunteer') }}" class="btn btn-secondary" wire:navigate>
                         Volunteer with Us
                     </a>
                 </div>
@@ -107,12 +107,12 @@
     </section>
 
     {{-- IMPACT, stage-light blue band with 3 big stats --}}
-    <section class="bg-stage-light py-20 text-white lg:py-24" aria-labelledby="impact-heading">
+    <section class="section bg-stage-light text-white" aria-labelledby="impact-heading">
         <div class="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
             <div class="grid gap-10 lg:grid-cols-[6fr_5fr] lg:items-end lg:gap-16">
                 <div class="reveal-left">
                     <p class="text-xs font-semibold uppercase tracking-[0.32em] text-white/75">Our Impact in Numbers</p>
-                    <h2 id="impact-heading" class="mt-4 font-serif text-4xl font-bold leading-[1.1] text-white sm:text-5xl lg:text-[52px]">
+                    <h2 id="impact-heading" class="section-title text-white mt-4">
                         Real impact, measured<br class="hidden lg:block">
                         in lives changed.
                     </h2>
@@ -143,11 +143,11 @@
     </section>
 
     {{-- WELCOME, trusted non-profit intro with two ways to help --}}
-    <section class="relative overflow-hidden bg-surface py-20 lg:py-28" aria-labelledby="welcome-heading">
+    <section class="section relative overflow-hidden bg-surface" aria-labelledby="welcome-heading">
         <div class="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
             <div>
-                <p class="reveal-down font-serif text-lg italic text-gold-500">Welcome, let's make a difference!</p>
-                <h2 id="welcome-heading" class="reveal mt-3 font-serif text-4xl font-bold leading-[1.1] text-heading sm:text-5xl" style="transition-delay: 100ms">
+                <p class="eyebrow reveal-down">Welcome, let's make a difference!</p>
+                <h2 id="welcome-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 100ms">
                     A Trusted Non-Profit<br class="hidden sm:block"> Serving Four Countries
                 </h2>
                 <p class="reveal mt-6 max-w-xl text-base leading-relaxed text-ink-500" style="transition-delay: 160ms">
@@ -182,7 +182,7 @@
                     @endforeach
                 </ul>
 
-                <a href="{{ route('donate') }}" class="reveal mt-10 inline-flex items-center justify-center rounded-2xl bg-gold-500 px-8 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-heading hover:text-surface" style="transition-delay: 320ms" wire:navigate>
+                <a href="{{ route('donate') }}" class="btn btn-primary btn-lg reveal mt-10" style="transition-delay: 320ms" wire:navigate>
                     Support Now
                 </a>
             </div>
@@ -202,11 +202,11 @@
 
     {{-- POPULAR CAUSES, fundraising events with live progress --}}
     @if ($popularCauses->isNotEmpty())
-        <section class="bg-surface py-20 lg:py-24" aria-labelledby="causes-heading">
+        <section class="section bg-surface" aria-labelledby="causes-heading">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
-                    <p class="reveal-down font-serif text-lg italic text-gold-500">Our causes</p>
-                    <h2 id="causes-heading" class="reveal mt-2 font-serif text-4xl font-bold text-heading sm:text-5xl" style="transition-delay: 100ms">Find Popular Causes</h2>
+                    <p class="eyebrow reveal-down">Our causes</p>
+                    <h2 id="causes-heading" class="section-title text-heading reveal mt-2" style="transition-delay: 100ms">Find Popular Causes</h2>
                 </div>
 
                 <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -241,7 +241,7 @@
                                         <span>Raised: <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($raised) }}</b></span>
                                         <span>{{ $percent }}% of <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($goal) }}</b></span>
                                     </div>
-                                    <a href="{{ route('events.show', $cause) }}" class="mt-5 flex w-full items-center justify-center rounded-xl bg-gold-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-heading hover:text-surface" wire:navigate>View Cause</a>
+                                    <a href="{{ route('events.show', $cause) }}" class="btn btn-primary mt-5 w-full" wire:navigate>View Cause</a>
                                 </div>
                             </div>
                         </article>
@@ -252,12 +252,12 @@
     @endif
 
     {{-- PROGRAMS --}}
-    <section class="bg-cream-50 py-24" aria-labelledby="programs-heading">
+    <section class="section bg-cream-50" aria-labelledby="programs-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mb-12 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
                 <div>
-                    <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What we do</p>
-                    <h2 id="programs-heading" class="reveal mt-3 font-serif text-3xl text-ink-900 sm:text-4xl" style="transition-delay: 120ms">Our Programs and Initiatives</h2>
+                    <p class="eyebrow reveal-down">What we do</p>
+                    <h2 id="programs-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Our Programs and Initiatives</h2>
                 </div>
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
                     <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
@@ -308,9 +308,9 @@
             <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12 dark:bg-brand-900">
                 <div class="text-center sm:text-left">
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">Get involved</p>
-                    <h2 class="mt-2 font-serif text-3xl sm:text-4xl">Join us, and be part of the impact.</h2>
+                    <h2 class="section-title mt-2">Join us, and be part of the impact.</h2>
                 </div>
-                <a href="{{ route('volunteer') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-surface px-7 py-3.5 text-sm font-bold text-gold-600 shadow-sm transition hover:bg-brand-900 hover:text-white" wire:navigate>
+                <a href="{{ route('volunteer') }}" class="btn btn-light btn-lg shrink-0" wire:navigate>
                     Volunteer with us
                 </a>
             </div>
@@ -345,12 +345,12 @@
         }
         $slideCount = count($slides);
     @endphp
-    <section class="bg-cream-100 py-20" aria-labelledby="instagram-heading">
+    <section class="section bg-cream-100" aria-labelledby="instagram-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Instagram</p>
-                    <h2 id="instagram-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Follow Our Journey</h2>
+                    <p class="eyebrow">Instagram</p>
+                    <h2 id="instagram-heading" class="section-title text-heading mt-3">Follow Our Journey</h2>
                     <p class="mt-2 text-sm text-ink-500">@<a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="font-semibold text-label hover:text-gold-500">the_fifiawotofoundation</a> · highlights from the feed</p>
                 </div>
                 <a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-brand-900 px-5 py-2.5 text-sm font-semibold text-paper transition hover:bg-gold-500">
@@ -469,7 +469,7 @@
     </section>
 
     {{-- TESTIMONIALS --}}
-    <section class="py-20" aria-labelledby="testimonials-heading">
+    <section class="section" aria-labelledby="testimonials-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             @php
                 $fallbackTestimonials = collect([
@@ -501,11 +501,11 @@
             $goal = (int) ($featuredEvent->goal_cents ?? 0);
             $percent = $featuredEvent->progressPercent();
         @endphp
-        <section class="bg-brand-900 py-20 text-paper" aria-labelledby="featured-event-heading">
+        <section class="section bg-brand-900 text-paper" aria-labelledby="featured-event-heading">
             <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:px-8">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Upcoming Outreach</p>
-                    <h2 id="featured-event-heading" class="mt-3 font-serif text-3xl sm:text-4xl">{{ $featuredEvent->title }}</h2>
+                    <h2 id="featured-event-heading" class="section-title mt-3">{{ $featuredEvent->title }}</h2>
                     <p class="mt-4 max-w-xl text-sm leading-relaxed text-paper-dim/80">
                         {{ \Illuminate\Support\Str::limit(strip_tags($featuredEvent->description), 220) }}
                     </p>
@@ -546,5 +546,5 @@
 
     {{-- NEWSLETTER --}}
     <livewire:site.newsletter-signup source="home" />
-<section class="mx-6 mb-12 rounded-3xl bg-brand-900 px-7 py-12 text-white sm:px-12"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-8"><div><p class="text-xs font-semibold uppercase tracking-widest text-gold-300">Help hope grow</p><h2 class="mt-3 text-3xl sm:text-4xl">A connection. A brighter tomorrow.</h2><p class="mt-4 max-w-xl text-white/80">Explore child sponsorship and talk with our team about making a lasting difference.</p></div><a href="{{ route('sponsor-a-child') }}" class="rounded-full bg-gold-500 px-7 py-3 font-bold text-white">Sponsor a Child →</a></div></section>
+<section class="mx-6 mb-12 rounded-3xl bg-brand-900 px-7 py-12 text-white sm:px-12"><div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-8"><div><p class="text-xs font-semibold uppercase tracking-widest text-gold-300">Help hope grow</p><h2 class="section-title mt-3">A connection. A brighter tomorrow.</h2><p class="mt-4 max-w-xl text-white/80">Explore child sponsorship and talk with our team about making a lasting difference.</p></div><a href="{{ route('sponsor-a-child') }}" class="btn btn-primary">Sponsor a Child →</a></div></section>
 </x-layouts::site>

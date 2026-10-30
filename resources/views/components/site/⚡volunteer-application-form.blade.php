@@ -132,8 +132,8 @@ new class extends Component
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
                 <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
                     <div class="text-center">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Application</p>
-                        <h2 id="volunteer-form-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Apply to Volunteer</h2>
+                        <p class="eyebrow">Application</p>
+                        <h2 id="volunteer-form-heading" class="section-title text-heading mt-3">Apply to Volunteer</h2>
                         <p class="mt-3 text-sm text-ink-500">
                             Tell us a little about yourself and how you'd like to contribute. Our volunteer coordinator will be in touch.
                         </p>

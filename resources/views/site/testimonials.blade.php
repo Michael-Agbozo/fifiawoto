@@ -9,12 +9,12 @@
     </x-site.page-hero>
 
     {{-- WALL OF QUOTES --}}
-    <section class="py-20" aria-labelledby="all-stories">
+    <section class="section" aria-labelledby="all-stories">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
-                    <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Wall of stories</p>
-                    <h2 id="all-stories" class="reveal mt-3 font-serif text-3xl text-heading sm:text-4xl" style="transition-delay: 120ms">Every voice matters</h2>
+                    <p class="eyebrow reveal-down">Wall of stories</p>
+                    <h2 id="all-stories" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Every voice matters</h2>
                 </div>
                 <p class="text-sm text-ink-500">
                     {{ $total }} {{ \Illuminate\Support\Str::plural('story', $total) }} so far
@@ -125,16 +125,16 @@
     </section>
 
     {{-- SHARE YOUR STORY CTA --}}
-    <section class="bg-brand-900 py-16 text-white">
+    <section class="section bg-brand-900 text-white">
         <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 px-4 sm:px-6 lg:flex-row lg:px-8">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-gold-300">Share your story</p>
-                <h2 class="mt-2 font-serif text-3xl sm:text-4xl">Have a story you'd like to share?</h2>
+                <p class="eyebrow eyebrow-light">Share your story</p>
+                <h2 class="section-title mt-2">Have a story you'd like to share?</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-relaxed text-white/80">
                     Reach out to the Foundation and let us know how our work has touched your life. We may feature your story here with your permission.
                 </p>
             </div>
-            <a href="{{ route('contact') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-gold-500 px-7 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-surface hover:text-heading" wire:navigate>
+            <a href="{{ route('contact') }}" class="btn btn-primary btn-on-dark btn-lg shrink-0" wire:navigate>
                 Get in touch →
             </a>
         </div>

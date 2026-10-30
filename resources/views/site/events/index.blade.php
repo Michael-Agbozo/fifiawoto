@@ -52,11 +52,11 @@
     </section>
 
     {{-- UPCOMING --}}
-    <section class="py-16" aria-labelledby="upcoming-events-heading">
+    <section class="section" aria-labelledby="upcoming-events-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between">
                 <h2 id="upcoming-events-heading" class="reveal font-serif text-2xl text-heading sm:text-3xl">Upcoming events</h2>
-                <p class="reveal text-xs uppercase tracking-[0.24em] text-gold-500" style="transition-delay: 120ms">{{ $upcoming->count() }} upcoming</p>
+                <p class="eyebrow reveal" style="transition-delay: 120ms">{{ $upcoming->count() }} upcoming</p>
             </div>
 
             @if ($upcoming->isEmpty())
@@ -132,7 +132,7 @@
                                 @endif
 
                                 <div class="mt-6 flex flex-wrap items-center gap-2 pt-auto">
-                                    <a href="{{ route('events.show', $event) }}" class="rounded-full border-2 border-heading px-4 py-1.5 text-xs font-semibold text-heading transition hover:bg-brand-900 hover:text-white" wire:navigate>Read More</a>
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>Read More</a>
                                     <x-site.event-actions :event="$event" variant="light" size="sm" />
                                 </div>
                             </div>
@@ -145,14 +145,14 @@
 
     {{-- PAST --}}
     @if ($past->isNotEmpty())
-        <section class="bg-brand-50 py-16" aria-labelledby="past-events-heading">
+        <section class="section bg-brand-50" aria-labelledby="past-events-heading">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-end justify-between">
                     <div class="reveal-left">
                         <h2 id="past-events-heading" class="font-serif text-2xl text-heading sm:text-3xl">Past events</h2>
                         <p class="mt-2 text-sm text-ink-500">Programmes the foundation has already delivered.</p>
                     </div>
-                    <p class="reveal-right text-xs uppercase tracking-[0.24em] text-gold-500">{{ $past->count() }} completed</p>
+                    <p class="eyebrow reveal-right">{{ $past->count() }} completed</p>
                 </div>
 
                 <div class="mt-10 grid gap-6 lg:grid-cols-2">
@@ -208,7 +208,7 @@
                                 @endif
 
                                 <div class="mt-6 pt-auto">
-                                    <a href="{{ route('events.show', $event) }}" class="inline-flex items-center gap-1.5 rounded-full border-2 border-heading px-4 py-1.5 text-xs font-semibold text-heading transition hover:bg-brand-900 hover:text-white" wire:navigate>
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>
                                         See impact
                                         <span aria-hidden="true">→</span>
                                     </a>

@@ -56,14 +56,14 @@
             <a
                 href="{{ route('volunteer') }}"
                 :class="scrolled ? '!border-white/40 !text-white hover:!bg-surface hover:!text-heading' : ''"
-                class="rounded-full border-2 border-heading px-5 py-2.5 text-sm font-semibold text-heading transition-colors hover:bg-brand-900 hover:text-white"
+                class="btn btn-secondary"
                 wire:navigate
             >
                 Get Involved
             </a>
             <a
                 href="{{ route('donate') }}"
-                class="rounded-full bg-gold-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900"
+                class="btn btn-primary"
                 wire:navigate
             >
                 Donate
@@ -105,8 +105,8 @@
             @endforeach
             <div class="mt-4 flex items-center gap-3 pt-3">
                 <x-site.theme-toggle size="md" />
-                <a href="{{ route('volunteer') }}" class="flex-1 rounded-full border-2 border-heading px-4 py-2 text-center text-sm font-semibold text-heading" wire:navigate>Get Involved</a>
-                <a href="{{ route('donate') }}" class="flex-1 rounded-full bg-gold-500 px-4 py-2 text-center text-sm font-bold text-white" wire:navigate>Donate</a>
+                <a href="{{ route('volunteer') }}" class="btn btn-secondary btn-sm flex-1" wire:navigate>Get Involved</a>
+                <a href="{{ route('donate') }}" class="btn btn-primary btn-sm flex-1" wire:navigate>Donate</a>
             </div>
         </nav>
     </div>

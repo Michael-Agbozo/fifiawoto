@@ -28,7 +28,7 @@
         </div>
     </section>
 
-    <section class="py-16">
+    <section class="section">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.6fr_1fr] lg:px-8">
             {{-- LEFT: content --}}
             <div class="space-y-12">
@@ -100,7 +100,7 @@
             {{-- RIGHT: donation sidebar --}}
             <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start">
                 <div class="rounded-2xl border border-brand-100 bg-surface p-6 shadow-sm">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Fundraising</p>
+                    <p class="eyebrow">Fundraising</p>
                     @if ($goal > 0)
                         <p class="mt-3 font-serif text-3xl text-heading">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
                         <p class="mt-1 text-xs text-ink-500">raised of {{ \App\Support\Money::fromCents((int) $goal) }} goal</p>
@@ -120,7 +120,7 @@
                 </div>
 
                 <div class="rounded-2xl border border-brand-100 bg-cream-100 p-6">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-gold-500">Event Details</p>
+                    <p class="eyebrow">Event Details</p>
                     <dl class="mt-4 space-y-3 text-sm">
                         <div class="flex justify-between gap-4">
                             <dt class="text-ink-500">Date</dt>

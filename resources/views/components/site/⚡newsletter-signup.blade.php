@@ -85,8 +85,8 @@ new class extends Component
 <section @class(['bg-cream-100 py-20' => ! $compact])>
     <div @class(['mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8' => ! $compact])>
         @unless ($compact)
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Newsletter</p>
-            <h2 class="mt-3 font-serif text-3xl text-heading sm:text-4xl">Stay Connected</h2>
+            <p class="eyebrow">Newsletter</p>
+            <h2 class="section-title text-heading mt-3">Stay Connected</h2>
             <p class="mt-4 text-sm leading-relaxed text-ink-500">
                 Subscribe to receive updates about our programs, events, and community initiatives.
             </p>
@@ -131,7 +131,7 @@ new class extends Component
 
                 <button
                     type="submit"
-                    class="rounded-md bg-gold-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-900 disabled:opacity-60"
+                    class="btn btn-primary disabled:opacity-60"
                     wire:loading.attr="disabled"
                 >
                     <span wire:loading.remove>Subscribe</span>

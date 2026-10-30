@@ -2,7 +2,7 @@
     @if ($step === 'complete')
         <section class="mx-auto max-w-3xl px-6 py-20 text-center sm:py-28" aria-live="polite">
             <span class="mx-auto flex size-16 items-center justify-center rounded-full bg-brand-50 text-3xl text-label" aria-hidden="true">✓</span>
-            <p class="mt-7 text-xs font-semibold uppercase tracking-[0.25em] text-gold-500">Thank you for caring</p>
+            <p class="eyebrow mt-7">Thank you for caring</p>
             <h1 class="mt-4 text-4xl text-heading sm:text-5xl">Sponsorship request received</h1>
             <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-ink-500">Our team will follow up with you about your request and the next steps. No payment has been taken and no recurring charge has been set up.</p>
             <a href="{{ route('sponsor-a-child.show', $child->public_sponsorship_slug) }}" class="mt-9 inline-flex rounded-full bg-gold-500 px-7 py-4 text-sm font-bold text-white hover:bg-heading hover:text-surface">Back to {{ $child->public_display_name }}</a>
@@ -48,7 +48,7 @@
                             </dl>
                             <p class="mt-4 text-xs leading-6 text-ink-500">No payment is taken. Our team will confirm your request.</p>
                         </section>
-                        <button type="submit" wire:loading.attr="disabled" wire:target="review" class="mt-9 flex w-full items-center justify-center gap-3 rounded-full bg-gold-500 px-7 py-4 text-sm font-bold text-white transition hover:bg-heading hover:text-surface focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-500 disabled:opacity-50"><span wire:loading.remove wire:target="review">Continue to review</span><span wire:loading wire:target="review">Checking your details…</span><span aria-hidden="true">→</span></button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="review" class="btn btn-primary btn-lg mt-9 w-full disabled:opacity-50"><span wire:loading.remove wire:target="review">Continue to review</span><span wire:loading wire:target="review">Checking your details…</span><span aria-hidden="true">→</span></button>
                         <p class="mt-4 text-center text-xs leading-6 text-ink-500">You can review everything before submitting. No payment is taken.</p>
                     </form>
                 @else
@@ -62,14 +62,14 @@
                         </dl>
                         <label class="mt-7 flex cursor-pointer items-start gap-3 text-sm leading-7 text-heading-soft"><input type="checkbox" wire:model="consent" class="mt-1.5 size-5 shrink-0 rounded border-brand-200 accent-heading"> <span>I agree that the foundation may contact me about this sponsorship request. I understand that my pledge is subject to confirmation and no payment will be taken today.</span></label>
                         @error('consent')<p role="alert" class="mt-2 text-sm text-gold-600">{{ $message }}</p>@enderror
-                        <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="mt-8 w-full rounded-full bg-gold-500 px-7 py-4 text-sm font-bold text-white hover:bg-heading hover:text-surface focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold-500 disabled:opacity-50"><span wire:loading.remove wire:target="submit">Submit sponsorship request</span><span wire:loading wire:target="submit">Submitting your request…</span></button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn btn-primary btn-lg mt-8 w-full disabled:opacity-50"><span wire:loading.remove wire:target="submit">Submit sponsorship request</span><span wire:loading wire:target="submit">Submitting your request…</span></button>
                     </form>
                 @endif
             </section>
             <aside id="donation-summary" class="order-first scroll-mt-32 min-w-0 lg:order-last bg-cream-100 px-6 py-10 sm:px-10 lg:px-12 lg:py-14 xl:px-16" aria-labelledby="donation-heading">
                 <div class="lg:sticky lg:top-32">
                     <p class="text-xs font-semibold uppercase tracking-[0.25em] text-ink-500">A brighter next chapter</p>
-                    <h2 id="donation-heading" class="mt-4 text-4xl text-heading sm:text-5xl">Your donation</h2>
+                    <h2 id="donation-heading" class="section-title text-heading mt-4">Your donation</h2>
                     <div class="mt-8 overflow-hidden rounded-xl border border-cream-300 bg-surface shadow-sm">
                         <p class="bg-brand-50 px-5 py-3 text-xs font-semibold text-label">Your sponsorship request</p>
                         <div class="p-5 sm:p-6">

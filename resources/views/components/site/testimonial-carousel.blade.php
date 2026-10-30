@@ -49,8 +49,8 @@
         class="relative"
     >
         <div class="mx-auto max-w-2xl text-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">{{ $kicker }}</p>
-            <h2 id="testimonials-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $heading }}</h2>
+            <p class="eyebrow">{{ $kicker }}</p>
+            <h2 id="testimonials-heading" class="section-title text-heading mt-3">{{ $heading }}</h2>
             @if ($subtitle)
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ $subtitle }}</p>
             @endif

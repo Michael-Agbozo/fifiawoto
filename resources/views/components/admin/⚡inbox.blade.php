@@ -427,7 +427,7 @@ new class extends Component
                     <div class="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm">
                         <span class="text-red-700">Permanently delete this message and all its replies?</span>
                         <button type="button" wire:click="delete({{ $msg->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Yes, delete</button>
-                        <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700">Cancel</button>
+                        <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                     </div>
                 @endif
 
@@ -438,7 +438,7 @@ new class extends Component
 
                     @if (! $showReplyForm)
                         <div class="mt-6 border-t border-cream-200 pt-4">
-                            <button type="button" wire:click="startReply" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+                            <button type="button" wire:click="startReply" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17l-5-5 5-5M4 12h11a5 5 0 0 1 5 5v3"/></svg>
                                 Reply to {{ $msg->full_name }}
                             </button>
@@ -456,11 +456,11 @@ new class extends Component
                                 @error('replyBody') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <button type="submit" wire:loading.attr="disabled" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-brand-900 disabled:opacity-60">
+                                <button type="submit" wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-60 gap-2 px-4 py-2 text-xs">
                                     <span wire:loading.remove>Send reply</span>
                                     <span wire:loading>Sending…</span>
                                 </button>
-                                <button type="button" wire:click="cancelReply" class="inline-flex items-center rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700">Cancel</button>
+                                <button type="button" wire:click="cancelReply" class="btn btn-ghost px-4 py-2 text-xs">Cancel</button>
                                 <p class="text-xs text-ink-500">Marked resolved automatically once sent.</p>
                             </div>
                         </form>
