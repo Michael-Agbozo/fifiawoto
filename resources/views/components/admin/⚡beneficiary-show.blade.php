@@ -242,6 +242,13 @@ new class extends Component
         if ($oldPhoto && $oldPhoto !== $photo && preg_match('~^sponsorship/[A-Za-z0-9_-]+\.[a-zA-Z]+$~', $oldPhoto)) {
             Storage::disk('public')->delete($oldPhoto);
         }
+        if (! $this->guardianConsent) {
+            $this->beneficiary->sponsorshipPhotos->each(function (SponsorshipPhoto $galleryPhoto): void {
+                Storage::disk('public')->delete($galleryPhoto->path);
+                $galleryPhoto->delete();
+            });
+            $this->beneficiary->unsetRelation('sponsorshipPhotos');
+        }
         $this->reset('sponsorshipPhoto');
         $this->flashMessage = 'Public sponsorship settings saved.';
     }

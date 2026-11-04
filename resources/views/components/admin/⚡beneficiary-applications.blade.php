@@ -154,7 +154,6 @@ new class extends Component
                     'size_bytes' => $applicationDocument->size_bytes,
                     'description' => 'Submitted with the public application',
                     'uploaded_by' => null,
-                    'scan_status' => 'pending',
                 ]);
             }
 

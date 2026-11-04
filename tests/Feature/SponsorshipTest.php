@@ -222,3 +222,43 @@ it('shows a breadcrumb back through Sponsor a Child on each profile', function (
         ->assertSeeInOrder([route('home'), route('sponsor-a-child'), 'aria-current="page">Ama</span>'], escape: false)
         ->assertDontSee('All children</a>', escape: false);
 });
+
+it('deletes gallery photos from public storage when guardian consent is withdrawn', function () {
+    Storage::fake('public');
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $child = Beneficiary::factory()->create([
+        'public_display_name' => 'Ama',
+        'public_country' => 'Ghana',
+        'guardian_consent_at' => now(),
+        'guardian_consent_reference' => 'Signed form',
+    ]);
+    Storage::disk('public')->put('sponsorship/gallery/ama.jpg', 'photo');
+    $photo = $child->sponsorshipPhotos()->create(['path' => 'sponsorship/gallery/ama.jpg', 'sort' => 1]);
+
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $child])
+        ->set('guardianConsent', false)
+        ->call('saveSponsorship')
+        ->assertHasNoErrors();
+
+    Storage::disk('public')->assertMissing('sponsorship/gallery/ama.jpg');
+    expect($photo->fresh())->toBeNull();
+});
+
+it('keeps gallery photos when sponsorship settings are saved with consent in place', function () {
+    Storage::fake('public');
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $child = Beneficiary::factory()->create([
+        'public_display_name' => 'Ama',
+        'public_country' => 'Ghana',
+        'guardian_consent_at' => now(),
+        'guardian_consent_reference' => 'Signed form',
+    ]);
+    Storage::disk('public')->put('sponsorship/gallery/ama.jpg', 'photo');
+    $child->sponsorshipPhotos()->create(['path' => 'sponsorship/gallery/ama.jpg', 'sort' => 1]);
+
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $child])
+        ->call('saveSponsorship')
+        ->assertHasNoErrors();
+
+    Storage::disk('public')->assertExists('sponsorship/gallery/ama.jpg');
+});
