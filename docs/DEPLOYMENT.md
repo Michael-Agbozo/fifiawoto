@@ -93,14 +93,31 @@ php artisan vendor:publish --tag=livewire:assets --force
 php artisan config:cache
 php artisan route:cache
 php artisan migrate --force
+queue:work and schedule:work (background, restart if they exit)
 nginx (foreground)
 ```
+
+If Coolify already has its own queue worker or scheduled task for this app, remove them so work is not picked up twice.
+
+Mount a persistent volume on `/app/storage/app`. Without one, uploaded photos and documents disappear on every deploy.
 
 No downtime steps are needed for typical deploys. Migrations run automatically.
 
 ### Preview deployments (dev branch)
 
 Preview deployments use the same `start.sh` but the `Preview Deployments Environment Variables` in Coolify. Set `APP_ENV=staging`, `APP_DEBUG=true`. Do **not** set `LIVEWIRE_ASSET_URL`.
+
+### Demo data for reviewers (staging only)
+
+To fill a preview site with sample events, children, sponsors, newsletters and analytics, run this once in Coolify's terminal:
+
+```bash
+DEMO_PASSWORD='<strong password>' php artisan db:seed --force
+```
+
+It logs in as `superadmin@fifiawoto.test`, `admin@`, `staff@`, `volunteer-coord@` and `media@` with that password, and it is safe to rerun. Staging pages are hidden from search engines. Share the password only with reviewers, because these logins have full access.
+
+The seeder refuses to run when `APP_ENV=production`, because the children, sponsors and gifts are fictional. Demo email addresses all use `example.com` and demo sponsors have reminders switched off.
 
 ---
 

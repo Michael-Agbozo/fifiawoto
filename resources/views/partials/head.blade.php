@@ -16,7 +16,7 @@
 
 <meta name="description" content="{{ $metaDescription }}">
 <link rel="canonical" href="{{ $canonicalUrl }}">
-@if ($noindex ?? false)
+@if (($noindex ?? false) || app()->environment('staging'))
     <meta name="robots" content="noindex, nofollow">
 @endif
 

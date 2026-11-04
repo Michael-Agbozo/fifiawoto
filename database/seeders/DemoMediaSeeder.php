@@ -10,7 +10,7 @@ use Illuminate\Database\Seeder;
 use RuntimeException;
 
 /**
- * Local demo albums for the media gallery: the demo events from EventSeeder
+ * Demo albums for local and staging sites: the demo events from EventSeeder
  * get foundation photographs, plus two programme collections. Uses images
  * already bundled in public/images/foundation (never the stock community-*.jpg
  * placeholders), and is safe to rerun.
@@ -19,8 +19,8 @@ class DemoMediaSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            throw new RuntimeException('Demo media may only be seeded locally or in tests.');
+        if (app()->isProduction()) {
+            throw new RuntimeException('Demo media must not be seeded in production.');
         }
 
         $albums = [

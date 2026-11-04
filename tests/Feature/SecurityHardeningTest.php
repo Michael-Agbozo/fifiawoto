@@ -10,6 +10,7 @@ use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Livewire\Mechanisms\HandleRequests\HandleRequests;
 
@@ -67,6 +68,8 @@ it('refuses to run the demo DatabaseSeeder in production', function () {
 });
 
 it('seeds demo users with a forced password change and never resets existing passwords', function () {
+    Storage::fake('public');
+
     $existing = User::factory()->owner()->create([
         'email' => 'superadmin@fifiawoto.test',
         'password' => Hash::make('my-real-password'),

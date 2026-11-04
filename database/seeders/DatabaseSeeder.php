@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
 /**
- * Local / demo data only. Creates well-known demo accounts and sample content,
- * so it refuses to run in production — use AdminUserSeeder there instead.
+ * Local / staging demo data only. Creates demo accounts and sample content, so it
+ * refuses to run in production — use AdminUserSeeder there instead. Anywhere except a
+ * developer's machine it needs DEMO_PASSWORD, so `password` never reaches a public URL.
+ * Must not use factories: deployed builds install without Faker (`composer --no-dev`).
  */
 class DatabaseSeeder extends Seeder
 {
@@ -20,6 +22,12 @@ class DatabaseSeeder extends Seeder
             throw new RuntimeException(
                 'DatabaseSeeder seeds demo accounts and must not run in production. '
                 .'Use `php artisan db:seed --class=AdminUserSeeder --force` instead.'
+            );
+        }
+
+        if (! env('DEMO_PASSWORD') && ! app()->environment(['local', 'testing'])) {
+            throw new RuntimeException(
+                'Set DEMO_PASSWORD to seed demo accounts here: `DEMO_PASSWORD=... php artisan db:seed --force`.'
             );
         }
 
@@ -35,11 +43,15 @@ class DatabaseSeeder extends Seeder
             BeneficiarySeeder::class,
             InstagramHighlightSeeder::class,
             LeaderSeeder::class,
+            DemoMediaSeeder::class,
+            DemoSponsorshipSeeder::class,
+            DemoActivitySeeder::class,
         ]);
     }
 
     /**
-     * Create a demo account with the password `password` and a forced password change.
+     * Create a demo account. Locally it uses `password` with a forced password change;
+     * with DEMO_PASSWORD set the login is shared by reviewers, so no change is forced.
      * Existing accounts are left untouched so re-seeding never resets a real password.
      */
     private function seedUser(string $email, string $name, UserRole $role): User
@@ -52,10 +64,10 @@ class DatabaseSeeder extends Seeder
 
         $user->forceFill([
             'name' => $name,
-            'password' => Hash::make('password'),
+            'password' => Hash::make(env('DEMO_PASSWORD') ?: 'password'),
             'role' => $role->value,
             'email_verified_at' => now(),
-            'force_password_change' => true,
+            'force_password_change' => ! env('DEMO_PASSWORD'),
         ])->save();
 
         return $user;

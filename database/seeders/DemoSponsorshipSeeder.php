@@ -14,8 +14,8 @@ class DemoSponsorshipSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            throw new RuntimeException('Demo sponsorship profiles may only be created locally or in tests.');
+        if (app()->isProduction()) {
+            throw new RuntimeException('Demo sponsorship profiles must not be created in production.');
         }
 
         $profiles = [
@@ -39,7 +39,7 @@ class DemoSponsorshipSeeder extends Seeder
                 'country' => $country,
                 'category' => SupportCategory::ChildEducation,
                 'status' => SupportStatus::Active,
-                'description' => 'Fictional local demonstration record. Replace with an approved real profile before launch.',
+                'description' => 'Fictional demonstration record. Replace with an approved real profile before launch.',
                 'public_display_name' => $name.' (Demo)',
                 'public_story' => $this->story($name, $interests),
                 'public_community_story' => 'Community is part of a child’s everyday story: friendships, learning together and the encouragement of people who care.'

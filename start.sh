@@ -12,4 +12,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan migrate --force || echo "[warn] migrate failed, continuing"
 
+# Newsletters, confirmations and reminders only go out while these are running.
+(while true; do php artisan queue:work --sleep=3 --tries=3 --max-time=3600; sleep 5; done) &
+(while true; do php artisan schedule:work; sleep 5; done) &
+
 nginx -c /app/nginx.conf
