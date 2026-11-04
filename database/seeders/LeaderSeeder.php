@@ -18,7 +18,7 @@ class LeaderSeeder extends Seeder
         $roster = [
             ['Victoria Nyamadi',       'Founder · Board Chair',  'images/foundation/leadership/victoria-nyamadi.jpg'],
             ['Bless Amago',            'Board of Directors',     'images/foundation/leadership/bless-amago.jpg'],
-            ['Sarah Nyamai',           'Board of Directors',     'images/foundation/leadership/sarah-nyamai.jpg'],
+            ['Sarah Nyamadi',          'Board of Directors',     'images/foundation/leadership/sarah-nyamai.jpg'],
             ['Gladys Kplorla Nyamadi', 'Board of Directors',     'images/foundation/leadership/gladys-nyamadi.jpg'],
             ['R.E. Amedzekor',         'Board of Directors',     'images/foundation/leadership/re-amedzekor.jpg'],
             ['Daniel Gbetodeme',       'Board of Directors',     'images/foundation/leadership/daniel-gbetodeme.jpg'],

@@ -37,7 +37,7 @@ If you forget your password, click **Forgot password?** on the login screen.
 - **Media gallery** — assets shown on the public `/media` page. Each item is tagged with a category and optionally linked to an event, so on the public site a tile can drill through to the related event.
 - **Instagram sync** — manage which Instagram posts surface in the home page's "Follow Our Journey" strip. Admins can paste real `instagram.com/p/...` permalinks; until the Graph API is connected, seeded highlights all link to the foundation's profile.
 - **Testimonials** — quotes, photos, and optional video URLs shown on the home carousel and the `/testimonials` page. Featuring a testimonial promotes it to the home page.
-- **Leadership team** — board members and advisors shown on the about page. Add a photo, role, optional bio, sort order, and toggle publish on/off.
+- **Leadership team** — board members and advisors shown on the about page. Add a photo, role, short bio, sort order, and toggle publish on/off. Visitors click a person to read their bio in a pop-up, which also shows their social links, or the foundation's if none are added.
 - **Newsletter subscribers** — every signup from the public footer. Export CSV if you need the list elsewhere.
 - **Send newsletter** — write an update, send yourself a test, then send it to every active subscriber.
 - **Site settings** — contact details, social links, home page photos and the starting figures behind the impact numbers.

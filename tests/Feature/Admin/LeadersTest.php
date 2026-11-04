@@ -128,3 +128,23 @@ it('ignores a tampered photo_path, including leaders/../ traversal', function ()
     Storage::disk('public')->assertExists('beneficiaries/secret.jpg');
     expect($leader->refresh()->photo_path)->toBeNull();
 });
+
+it('saves social links for a leader and only accepts https addresses', function () {
+    $this->actingAs(User::factory()->owner()->create());
+    $leader = Leader::factory()->create();
+
+    Livewire::test('admin.leaders')
+        ->call('startEdit', $leader->id)
+        ->set('linkedin_url', 'javascript:alert(1)')
+        ->call('save')
+        ->assertHasErrors('linkedin_url')
+        ->set('linkedin_url', 'https://www.linkedin.com/in/someone')
+        ->set('x_url', 'https://x.com/someone')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($leader->refresh()->socialLinks())->toBe([
+        'LinkedIn' => 'https://www.linkedin.com/in/someone',
+        'X' => 'https://x.com/someone',
+    ]);
+});

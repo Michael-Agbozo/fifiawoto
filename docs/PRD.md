@@ -73,7 +73,7 @@ Primary nav: Home · About · Events · Volunteer · Contact
 - Mission · Vision · Core Values
 - Global Presence Map (interactive — US, Ghana, Togo, Benin)
 - Leadership
-  - **Board of Directors:** Victoria Nyamadi, Bless Amago, Sarah Nyamai, Gladys Kplorla Nyamadi, R.E. Amedzekor, Daniel Gbetodeme, Togbui Gbe, Ama Baffoe, Sabrina Nyamadi
+  - **Board of Directors:** Victoria Nyamadi, Bless Amago, Sarah Nyamadi, Gladys Kplorla Nyamadi, R.E. Amedzekor, Daniel Gbetodeme, Togbui Gbe, Ama Baffoe, Sabrina Nyamadi
   - **Board of Advisors:** Prof Lebene, Dr. Kaledzi
 
 ### 3.3 Events (dynamic blog)

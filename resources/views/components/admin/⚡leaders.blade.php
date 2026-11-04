@@ -27,6 +27,18 @@ new class extends Component
     #[Validate('nullable|string|max:2000')]
     public string $bio = '';
 
+    #[Validate('nullable|string|max:255|url:https')]
+    public string $linkedin_url = '';
+
+    #[Validate('nullable|string|max:255|url:https')]
+    public string $facebook_url = '';
+
+    #[Validate('nullable|string|max:255|url:https')]
+    public string $instagram_url = '';
+
+    #[Validate('nullable|string|max:255|url:https')]
+    public string $x_url = '';
+
     #[Locked]
     public string $photo_path = '';
 
@@ -70,6 +82,10 @@ new class extends Component
         $this->name = $leader->name;
         $this->role = $leader->role;
         $this->bio = (string) $leader->bio;
+        $this->linkedin_url = (string) $leader->linkedin_url;
+        $this->facebook_url = (string) $leader->facebook_url;
+        $this->instagram_url = (string) $leader->instagram_url;
+        $this->x_url = (string) $leader->x_url;
         $this->photo_path = (string) $leader->photo_path;
         $this->photo_upload = null;
         $this->remove_photo = false;
@@ -108,6 +124,10 @@ new class extends Component
             'name' => $data['name'],
             'role' => $data['role'],
             'bio' => $data['bio'] ?: null,
+            'linkedin_url' => $data['linkedin_url'] ?: null,
+            'facebook_url' => $data['facebook_url'] ?: null,
+            'instagram_url' => $data['instagram_url'] ?: null,
+            'x_url' => $data['x_url'] ?: null,
             'photo_path' => $photoPath,
             'is_published' => $data['is_published'],
             'sort' => $data['sort'],
@@ -182,7 +202,7 @@ new class extends Component
     protected function resetForm(): void
     {
         $this->editingId = null;
-        $this->reset(['name', 'role', 'bio', 'photo_path', 'photo_upload', 'remove_photo', 'is_published', 'sort', 'showForm']);
+        $this->reset(['name', 'role', 'bio', 'linkedin_url', 'facebook_url', 'instagram_url', 'x_url', 'photo_path', 'photo_upload', 'remove_photo', 'is_published', 'sort', 'showForm']);
         $this->is_published = true;
         $this->resetErrorBag();
     }
@@ -281,6 +301,29 @@ new class extends Component
                 <label for="leader_bio" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Short bio <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
                 <textarea id="leader_bio" wire:model="bio" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 @error('bio') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="leader_linkedin_url" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">LinkedIn <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input id="leader_linkedin_url" type="url" wire:model="linkedin_url" placeholder="https://" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-700">
+                    @error('linkedin_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="leader_facebook_url" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Facebook <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input id="leader_facebook_url" type="url" wire:model="facebook_url" placeholder="https://" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-700">
+                    @error('facebook_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="leader_instagram_url" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Instagram <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input id="leader_instagram_url" type="url" wire:model="instagram_url" placeholder="https://" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-700">
+                    @error('instagram_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="leader_x_url" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">X <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input id="leader_x_url" type="url" wire:model="x_url" placeholder="https://" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-700">
+                    @error('x_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
             </div>
 
             <div>

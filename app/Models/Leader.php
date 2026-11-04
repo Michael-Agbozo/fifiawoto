@@ -13,7 +13,7 @@ class Leader extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'role', 'photo_path', 'bio', 'is_published', 'sort',
+        'name', 'role', 'photo_path', 'bio', 'linkedin_url', 'facebook_url', 'instagram_url', 'x_url', 'is_published', 'sort',
     ];
 
     /** @return array<string, string> */
@@ -23,6 +23,21 @@ class Leader extends Model
             'is_published' => 'boolean',
             'sort' => 'integer',
         ];
+    }
+
+    /**
+     * The person's own social profiles, keyed by network, leaving out any not filled in.
+     *
+     * @return array<string, string>
+     */
+    public function socialLinks(): array
+    {
+        return array_filter([
+            'LinkedIn' => $this->linkedin_url,
+            'Facebook' => $this->facebook_url,
+            'Instagram' => $this->instagram_url,
+            'X' => $this->x_url,
+        ]);
     }
 
     /** @param Builder<Leader> $query */
