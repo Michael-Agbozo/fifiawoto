@@ -14,7 +14,7 @@ class DemoSponsorshipSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->isProduction()) {
+        if (app()->isProduction() && ! config('demo.live_content')) {
             throw new RuntimeException('Demo sponsorship profiles must not be created in production.');
         }
 

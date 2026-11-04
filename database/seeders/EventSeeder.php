@@ -18,9 +18,15 @@ use RuntimeException;
  */
 class EventSeeder extends Seeder
 {
+    /** @return list<string> */
+    public static function slugs(): array
+    {
+        return array_column((new self)->events(), 'slug');
+    }
+
     public function run(): void
     {
-        if (app()->isProduction()) {
+        if (app()->isProduction() && ! config('demo.live_content')) {
             throw new RuntimeException('Demo events must not be seeded in production.');
         }
 

@@ -19,7 +19,7 @@ class DemoMediaSeeder extends Seeder
 {
     public function run(): void
     {
-        if (app()->isProduction()) {
+        if (app()->isProduction() && ! config('demo.live_content')) {
             throw new RuntimeException('Demo media must not be seeded in production.');
         }
 

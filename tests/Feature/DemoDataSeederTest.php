@@ -2,7 +2,10 @@
 
 use App\Enums\SponsorshipStatus;
 use App\Models\Beneficiary;
+use App\Models\Donation;
+use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\MediaItem;
 use App\Models\NewsletterCampaign;
 use App\Models\NewsletterSubscriber;
 use App\Models\PageVisit;
@@ -13,6 +16,8 @@ use App\Models\VolunteerHourLog;
 use Database\Seeders\BeneficiarySeeder;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoActivitySeeder;
+use Database\Seeders\EventSeeder;
+use Database\Seeders\LiveDemoSeeder;
 use Database\Seeders\VolunteerSeeder;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
@@ -138,4 +143,50 @@ it('renders the public and staff pages reviewers will open once seeded', functio
     ] as [$name, $expected]) {
         $this->actingAs($owner)->get(route($name))->assertOk()->assertSee($expected);
     }
+});
+
+it('previews programmes and sponsors on the live site only when switched on, with no logins', function () {
+    app()->instance('env', 'production');
+
+    expect(fn () => (new EventSeeder)->run())->toThrow(RuntimeException::class);
+    expect(Event::query()->count())->toBe(0);
+
+    config(['demo.live_content' => true]);
+    $this->artisan('db:seed', ['--class' => LiveDemoSeeder::class, '--force' => true])->assertSuccessful();
+    $this->artisan('db:seed', ['--class' => LiveDemoSeeder::class, '--force' => true])->assertSuccessful();
+
+    expect(Event::query()->count())->toBe(8)
+        ->and(Beneficiary::query()->publicSponsorship()->count())->toBe(6)
+        ->and(Sponsorship::query()->count())->toBe(5)
+        ->and(MediaItem::query()->count())->toBe(24)
+        ->and(User::query()->count())->toBe(0);
+
+    $this->get(route('sponsor-a-child'))->assertOk()
+        ->assertSee('Abena (Demo)')
+        ->assertSee('include sample content');
+    $this->get(route('events.index'))->assertOk()->assertSee('include sample content');
+});
+
+it('keeps the sample notice off the site when demo content is off', function () {
+    $this->get(route('home'))->assertOk()->assertDontSee('include sample content');
+});
+
+it('removes the sample content and leaves real records alone', function () {
+    config(['demo.live_content' => true]);
+    $this->seed(LiveDemoSeeder::class);
+
+    $realEvent = Event::factory()->create();
+    $realChild = Beneficiary::factory()->create();
+    $realGift = Donation::factory()->create(['external_reference' => 'BANK-123', 'event_id' => $realEvent->id]);
+    $realPhoto = MediaItem::factory()->create(['event_id' => null, 'path' => 'media/real.jpg']);
+
+    $this->artisan('demo:remove', ['--force' => true])->assertSuccessful();
+
+    expect(Event::query()->pluck('id')->all())->toBe([$realEvent->id])
+        ->and(Beneficiary::withTrashed()->pluck('id')->all())->toBe([$realChild->id])
+        ->and(Sponsorship::query()->count())->toBe(0)
+        ->and(Donation::query()->pluck('id')->all())->toBe([$realGift->id])
+        ->and(MediaItem::query()->pluck('id')->all())->toBe([$realPhoto->id]);
+
+    Storage::disk('public')->assertMissing('sponsorship/demo-ama.webp');
 });

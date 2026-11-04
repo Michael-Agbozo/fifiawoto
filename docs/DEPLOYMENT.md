@@ -119,6 +119,16 @@ It logs in as `superadmin@fifiawoto.test`, `admin@`, `staff@`, `volunteer-coord@
 
 The seeder refuses to run when `APP_ENV=production`, because the children, sponsors and gifts are fictional. Demo email addresses all use `example.com` and demo sponsors have reminders switched off.
 
+### Sample programmes and sponsors on the live site
+
+Set `DEMO_CONTENT=true` in Coolify and redeploy. Each deploy then adds the sample events, event photos, children, sponsors and gifts, and public pages show a notice saying they are samples. It creates no logins, so sign in with your real admin account.
+
+Before the real launch, remove `DEMO_CONTENT` and run this in Coolify's terminal. It deletes the sample records and everything attached to them, including any sign-ups or requests real visitors made on them:
+
+```bash
+php artisan demo:remove --force
+```
+
 ---
 
 ## VPS / Laravel Forge — traditional setup

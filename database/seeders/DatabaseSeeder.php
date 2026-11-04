@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
             LeaderSeeder::class,
             DemoMediaSeeder::class,
             DemoSponsorshipSeeder::class,
+            DemoSponsorSeeder::class,
             DemoActivitySeeder::class,
         ]);
     }

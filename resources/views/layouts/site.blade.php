@@ -9,6 +9,10 @@
              and the main content + footer below. The space-y class gives a
              small cream gap between them so each reads as its own surface. --}}
         <div class="space-y-3 p-3 sm:space-y-4 sm:p-4 lg:space-y-6 lg:p-6">
+            @if (config('demo.live_content'))
+                <p class="bg-ink-900 px-4 py-2 text-center text-xs text-white">{{ __('Preview: the programmes, children and sponsors shown here include sample content.') }}</p>
+            @endif
+
             @include('site.partials.header')
 
             <div class="overflow-clip rounded-3xl bg-surface shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)]">
