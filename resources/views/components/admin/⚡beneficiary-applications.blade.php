@@ -8,9 +8,12 @@ use App\Enums\TimelineEntryType;
 use App\Mail\BeneficiaryApplicationConverted;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
+use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -29,6 +32,11 @@ new class extends Component
     public ?int $viewingId = null;
 
     public ?string $flashMessage = null;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiary_applications', 'view'), 403);
+    }
 
     public function viewApplication(int $id): void
     {
@@ -49,6 +57,14 @@ new class extends Component
         }
 
         $app = BeneficiaryApplication::query()->findOrFail($id);
+
+        // A converted application is a closed record; its status is final.
+        if ($app->converted_beneficiary_id) {
+            $this->flashMessage = "Application from {$app->full_name} has already been converted and can't change status.";
+
+            return;
+        }
+
         $app->update([
             'status' => $status,
             'reviewer_id' => auth()->id(),
@@ -66,72 +82,116 @@ new class extends Component
             403,
         );
 
-        $app = BeneficiaryApplication::query()->findOrFail($id);
+        // Locked so a double-click can't convert the same application twice.
+        $beneficiary = DB::transaction(function () use ($id, &$app): ?Beneficiary {
+            $app = BeneficiaryApplication::query()->with('documents')->lockForUpdate()->findOrFail($id);
 
-        if ($app->converted_beneficiary_id) {
+            if ($app->converted_beneficiary_id) {
+                return null;
+            }
+
+            $category = match ($app->assistance_type) {
+                AssistanceType::Widow => SupportCategory::WidowSupport,
+                AssistanceType::Education => SupportCategory::ChildEducation,
+                AssistanceType::Medical => SupportCategory::Medical,
+                AssistanceType::Disability => SupportCategory::Disability,
+                AssistanceType::Community => SupportCategory::Community,
+                default => SupportCategory::Other,
+            };
+
+            $beneficiary = Beneficiary::query()->create([
+                'full_name' => $app->full_name,
+                'phone' => $app->phone,
+                'email' => $app->email,
+                'country' => $app->country,
+                'region' => $app->region,
+                'category' => $category->value,
+                'description' => $app->situation,
+                'status' => SupportStatus::Approved->value,
+                'assigned_to_user_id' => auth()->id(),
+                'source_application_id' => $app->id,
+            ]);
+
+            // Default folders
+            $folders = [];
+            foreach (['Medical Records', 'School Documents', 'Photos', 'Support Reports', 'Identification Documents'] as $name) {
+                $folders[$name] = BeneficiaryFolder::query()->create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'name' => $name,
+                    'slug' => Str::slug($name),
+                    'created_by' => auth()->id(),
+                ]);
+            }
+
+            // Carry the applicant's uploads over into the new profile (copied, so the application keeps its own record).
+            foreach ($app->documents as $applicationDocument) {
+                $source = Storage::disk($applicationDocument->disk ?: 'beneficiaries');
+
+                if (! $source->exists($applicationDocument->path)) {
+                    continue;
+                }
+
+                $path = "{$beneficiary->id}/documents/".basename($applicationDocument->path);
+                $stream = $source->readStream($applicationDocument->path);
+
+                // The disk doesn't throw — skip rather than record a document whose file never landed.
+                if (! $stream || ! Storage::disk('beneficiaries')->writeStream($path, $stream)) {
+                    report(new RuntimeException("Could not copy application document #{$applicationDocument->id} to beneficiary #{$beneficiary->id}."));
+
+                    continue;
+                }
+
+                BeneficiaryDocument::query()->create([
+                    'beneficiary_id' => $beneficiary->id,
+                    'folder_id' => $folders['Identification Documents']->id,
+                    'disk' => 'beneficiaries',
+                    'path' => $path,
+                    'encrypted_at' => $applicationDocument->encrypted_at,
+                    'scan_status' => $applicationDocument->scan_status,
+                    'scan_checked_at' => $applicationDocument->scan_checked_at,
+                    'original_name' => $applicationDocument->original_name,
+                    'mime_type' => $applicationDocument->mime_type,
+                    'size_bytes' => $applicationDocument->size_bytes,
+                    'description' => 'Submitted with the public application',
+                    'uploaded_by' => null,
+                ]);
+            }
+
+            // Timeline entries
+            BeneficiaryTimelineEntry::query()->create([
+                'beneficiary_id' => $beneficiary->id,
+                'type' => TimelineEntryType::ApplicationReceived->value,
+                'description' => 'Public application received '.($app->created_at?->format('M j, Y') ?? 'recently'),
+                'occurred_at' => $app->created_at ?? now(),
+                'recorded_by' => auth()->id(),
+            ]);
+
+            BeneficiaryTimelineEntry::query()->create([
+                'beneficiary_id' => $beneficiary->id,
+                'type' => TimelineEntryType::SupportApproved->value,
+                'description' => 'Converted from application by '.auth()->user()?->name,
+                'occurred_at' => now(),
+                'recorded_by' => auth()->id(),
+            ]);
+
+            $app->update([
+                'status' => BeneficiaryApplicationStatus::Approved->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+                'converted_beneficiary_id' => $beneficiary->id,
+            ]);
+
+            return $beneficiary;
+        });
+
+        if (! $beneficiary) {
             $this->flashMessage = 'Application already converted.';
 
             return;
         }
 
-        $category = match ($app->assistance_type) {
-            AssistanceType::Widow => SupportCategory::WidowSupport,
-            AssistanceType::Education => SupportCategory::ChildEducation,
-            AssistanceType::Medical => SupportCategory::Medical,
-            AssistanceType::Disability => SupportCategory::Disability,
-            AssistanceType::Community => SupportCategory::Community,
-            default => SupportCategory::Other,
-        };
-
-        $beneficiary = Beneficiary::query()->create([
-            'full_name' => $app->full_name,
-            'phone' => $app->phone,
-            'email' => $app->email,
-            'country' => $app->country,
-            'region' => $app->region,
-            'category' => $category->value,
-            'description' => $app->situation,
-            'status' => SupportStatus::Approved->value,
-            'assigned_to_user_id' => auth()->id(),
-            'source_application_id' => $app->id,
-        ]);
-
-        // Default folders
-        foreach (['Medical Records', 'School Documents', 'Photos', 'Support Reports', 'Identification Documents'] as $name) {
-            BeneficiaryFolder::query()->create([
-                'beneficiary_id' => $beneficiary->id,
-                'name' => $name,
-                'slug' => Str::slug($name),
-                'created_by' => auth()->id(),
-            ]);
-        }
-
-        // Timeline entries
-        BeneficiaryTimelineEntry::query()->create([
-            'beneficiary_id' => $beneficiary->id,
-            'type' => TimelineEntryType::ApplicationReceived->value,
-            'description' => 'Public application received '.($app->created_at?->format('M j, Y') ?? 'recently'),
-            'occurred_at' => $app->created_at ?? now(),
-            'recorded_by' => auth()->id(),
-        ]);
-
-        BeneficiaryTimelineEntry::query()->create([
-            'beneficiary_id' => $beneficiary->id,
-            'type' => TimelineEntryType::SupportApproved->value,
-            'description' => 'Converted from application by '.auth()->user()?->name,
-            'occurred_at' => now(),
-            'recorded_by' => auth()->id(),
-        ]);
-
-        $app->update([
-            'status' => BeneficiaryApplicationStatus::Approved->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-            'converted_beneficiary_id' => $beneficiary->id,
-        ]);
-
         if (filled($app->email)) {
-            Mail::send(new BeneficiaryApplicationConverted($app));
+            Mail::queue(new BeneficiaryApplicationConverted($app));
         }
 
         $this->flashMessage = "Created beneficiary record for {$app->full_name}.";
@@ -153,7 +213,13 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('beneficiary_applications', 'delete'), 403);
 
-        BeneficiaryApplication::query()->whereKey($id)->delete();
+        $app = BeneficiaryApplication::query()->with('documents')->findOrFail($id);
+
+        foreach ($app->documents as $document) {
+            Storage::disk($document->disk ?: 'beneficiaries')->delete($document->path);
+        }
+
+        $app->delete();
         $this->confirmDeleteId = null;
         $this->flashMessage = 'Application removed.';
     }
@@ -194,7 +260,7 @@ new class extends Component
     public function viewingApplication(): ?BeneficiaryApplication
     {
         return $this->viewingId
-            ? BeneficiaryApplication::query()->with('convertedBeneficiary', 'reviewer')->find($this->viewingId)
+            ? BeneficiaryApplication::query()->with('convertedBeneficiary', 'reviewer', 'documents')->find($this->viewingId)
             : null;
     }
 
@@ -237,16 +303,16 @@ new class extends Component
         :subtitle="$this->applications->total().' application(s) in view'"
     >
         <x-slot:actions>
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, phone, country" class="w-72 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search name, email, phone, country" class="w-72 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
             <x-admin.actions-menu>
                 @if (filled($statusFilter))
-                    <button type="button" wire:click="$set('statusFilter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$set('statusFilter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
                         Show all statuses
                     </button>
                 @endif
                 @if (filled($search))
-                    <button type="button" wire:click="$set('search', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$set('search', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear search
                     </button>
@@ -265,7 +331,7 @@ new class extends Component
         </div>
     @endif
 
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->applications->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No beneficiary applications match these filters.</div>
         @else
@@ -293,7 +359,7 @@ new class extends Component
                             <td class="px-6 py-4">
                                 <x-admin.status-pill :palette="$app->status->palette()" :label="$app->status->label()" />
                                 @if ($app->convertedBeneficiary)
-                                    <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" class="mt-2 inline-flex text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-500 hover:text-brand-900" wire:navigate>Open beneficiary →</a>
+                                    <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" class="mt-2 inline-flex text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-500 hover:text-heading" wire:navigate>Open beneficiary →</a>
                                 @endif
                             </td>
                             <td class="px-6 py-4">
@@ -301,28 +367,28 @@ new class extends Component
                                     @if ($confirmDeleteId === $app->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $app->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
-                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 View details
                                             </button>
                                             @if (! $app->converted_beneficiary_id)
-                                                <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Convert to beneficiary
                                                 </button>
-                                            @endif
-                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                                 Mark in review
                                             </button>
-                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                                                 Reject
                                             </button>
+                                            @endif
                                             <button type="button" wire:click="askDelete({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete
@@ -344,7 +410,7 @@ new class extends Component
         @if ($app = $this->viewingApplication)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Phone</dt>
@@ -366,7 +432,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Workflow</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Workflow</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Type of assistance</dt>
@@ -389,15 +455,37 @@ new class extends Component
             </div>
 
             <section class="mt-6">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Situation described</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Situation described</h3>
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->situation }}</p>
             </section>
 
             <section class="mt-5">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Converted record</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Supporting documents</h3>
+                @if ($app->documents->isEmpty())
+                    <p class="mt-2 text-sm text-ink-500">No documents attached.</p>
+                @else
+                    <ul class="mt-2 divide-y divide-cream-200 rounded-2xl border border-cream-300">
+                        @foreach ($app->documents as $document)
+                            <li class="flex items-center justify-between gap-3 px-4 py-2.5" wire:key="app-doc-{{ $document->id }}">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium text-ink-900">{{ $document->original_name }}</p>
+                                    <p class="text-xs text-ink-500">{{ number_format($document->size_bytes / 1024, 1) }} KB</p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-3 text-xs font-semibold">
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document) }}" target="_blank" rel="noopener" class="text-label hover:text-gold-500">Open</a>
+                                    <a href="{{ DocumentDownloadController::applicationDocumentUrl($document, download: true) }}" class="text-label hover:text-gold-500">Download</a>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+
+            <section class="mt-5">
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Converted record</h3>
                 <p class="mt-2 text-sm text-ink-900">
                     @if ($app->convertedBeneficiary)
-                        <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" wire:navigate class="font-semibold text-gold-500 hover:text-brand-900">Open beneficiary profile →</a>
+                        <a href="{{ route('admin.beneficiaries.show', $app->convertedBeneficiary) }}" wire:navigate class="font-semibold text-gold-500 hover:text-heading">Open beneficiary profile →</a>
                     @else
                         Not converted yet
                     @endif
@@ -406,10 +494,10 @@ new class extends Component
 
             @if (! $app->converted_beneficiary_id)
                 <section class="mt-6 rounded-2xl border border-cream-300 bg-cream-50 p-4">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Quick actions</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Quick actions</h3>
                     <div class="mt-3 flex flex-wrap gap-2">
                         <button type="button" wire:click="convertToBeneficiary({{ $app->id }})" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-900">Convert to beneficiary</button>
-                        <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Mark in review</button>
+                        <button type="button" wire:click="setStatus({{ $app->id }}, 'under_review')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">Mark in review</button>
                         <button type="button" wire:click="setStatus({{ $app->id }}, 'rejected')" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-red-500 hover:text-red-600">Reject</button>
                     </div>
                 </section>

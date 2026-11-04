@@ -35,13 +35,32 @@
     <div class="relative mx-auto flex min-h-[280px] max-w-7xl flex-col justify-between gap-12 px-5 py-10 text-white sm:min-h-[340px] sm:px-6 sm:py-14 lg:min-h-[420px] lg:px-8 lg:py-16">
         {{-- Breadcrumb (top) --}}
         @if ($breadcrumb)
-            <nav class="reveal-down flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/85 sm:text-sm" aria-label="Breadcrumb">
-                <a href="{{ route('home') }}" class="text-gold-500 transition hover:text-white" wire:navigate>Home</a>
-                <svg class="size-3 text-gold-500" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true">
-                    <path d="M2,6.9L4.8,4L2,1.1L2.6,0l4,4l-4,4L2,6.9z"/>
-                </svg>
-                <span class="text-gold-500" aria-current="page">{{ $breadcrumb }}</span>
+            <nav class="reveal-down self-start" aria-label="{{ __('Breadcrumb') }}">
+                <ol class="inline-flex items-center gap-1 rounded-full bg-white/10 py-1.5 pl-1.5 pr-4 text-sm ring-1 ring-white/20 backdrop-blur-md">
+                    <li>
+                        <a href="{{ route('home') }}" class="group inline-flex items-center gap-2 rounded-full py-1 pl-1.5 pr-2 text-white/75 transition hover:bg-white/10 hover:text-white" wire:navigate>
+                            <span class="grid size-6 place-items-center rounded-full bg-white/15 transition group-hover:bg-gold-500" aria-hidden="true">
+                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+                            </span>
+                            {{ __('Home') }}
+                        </a>
+                    </li>
+                    <li aria-hidden="true" class="text-white/40">
+                        <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                    </li>
+                    <li>
+                        <span class="font-semibold text-white" aria-current="page">{{ __($breadcrumb) }}</span>
+                    </li>
+                </ol>
             </nav>
+            <script type="application/ld+json">{!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => route('home')],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => $breadcrumb, 'item' => url()->current()],
+                ],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
         @else
             <div></div>
         @endif
@@ -49,7 +68,7 @@
         {{-- Title (anchored to bottom of hero) --}}
         <div class="flex flex-col gap-3 {{ $alignClasses }}">
             <h1 class="reveal font-serif text-4xl font-bold leading-[1.05] text-white sm:text-5xl lg:text-6xl xl:text-[80px] xl:leading-none" style="transition-delay: 120ms">
-                {{ $title }}
+                {{ __($title) }}
             </h1>
             @if ($slot->isNotEmpty())
                 <p class="reveal max-w-2xl text-sm leading-relaxed text-white/90 sm:text-base lg:text-lg" style="transition-delay: 240ms">

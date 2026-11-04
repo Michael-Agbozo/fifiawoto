@@ -1,79 +1,110 @@
 <x-layouts::site :title="null">
-    {{-- HERO, inset as a rounded card inside the framed shell --}}
-    <section class="relative isolate mx-3 mt-3 overflow-hidden rounded-3xl sm:mx-4 sm:mt-4 lg:mx-6 lg:mt-6">
-        {{-- Real foundation photograph (school donation outreach in Ghana) --}}
-        <img
-            src="{{ asset('images/foundation/school-donation.jpg') }}"
-            alt="Schoolchildren in Ghana holding exercise books donated by the Fifiawoto Foundation"
-            class="absolute inset-0 -z-20 h-full w-full object-cover"
-            fetchpriority="high"
-        >
+    {{-- HERO: blurred fluted-blue photo panel, headline left, layered 3D photo stack right --}}
+    <section class="bg-fluted relative mx-3 mt-3 rounded-3xl text-white sm:mx-4 sm:mt-4 lg:mx-6 lg:mt-6" aria-labelledby="hero-heading">
+        <div class="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-16 pt-14 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:px-8 lg:pb-24 lg:pt-20">
+            {{-- Copy --}}
+            <div class="relative z-10">
 
-        {{-- Brand gradient overlay (matches the WordPress reference: transparent → deep navy, ~80% bottom opacity) --}}
-        <div
-            class="absolute inset-0 -z-10"
-            style="background-image: linear-gradient(178deg, rgba(0, 4, 78, 0) 0%, rgba(0, 4, 78, 0.8) 98%);"
-        ></div>
+                <h1 id="hero-heading" class="animate-fade-in font-serif text-[48px] leading-[0.95] tracking-[-0.03em] text-white [text-shadow:0_2px_30px_rgba(2,8,48,0.45)] sm:text-[64px] lg:text-[72px] xl:text-[84px]" style="animation-delay: 120ms">
+                    <span class="block font-semibold">{{ __('Empowering') }}</span>
+                    <span class="mt-1 block bg-gradient-to-r sm:whitespace-nowrap from-[#ffc9c9] via-[#ffe4e1] to-white bg-clip-text pb-2 pr-2 font-medium italic tracking-[-0.02em] text-transparent [text-shadow:none]">{{ __('New Beginnings') }}</span>
+                </h1>
 
-        {{-- Inner content: standard centered container (max-width) --}}
-        <div class="mx-auto flex min-h-[480px] max-w-3xl flex-col items-center justify-center px-5 py-20 text-center text-white sm:min-h-[640px] sm:px-6 sm:py-32 lg:min-h-[720px] lg:py-40">
-            <h1 class="reveal-down font-serif text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-[80px] lg:leading-none">
-                Empowering<br>New Beginnings
-            </h1>
-            <p class="reveal mt-6 max-w-xl text-sm font-medium leading-relaxed text-white/95 sm:mt-8 sm:text-base lg:text-lg" style="transition-delay: 200ms">
-                Transforming lives, one step at a time through compassion, service, and community empowerment.
-            </p>
-            <div class="reveal mt-8 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-10 sm:w-auto sm:gap-4" style="transition-delay: 400ms">
-                <a
-                    href="{{ route('donate') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-gold-600 shadow-lg transition hover:bg-gold-500 hover:text-white sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
-                    wire:navigate
-                >
-                    Donate
-                </a>
-                <a
-                    href="{{ route('contact') }}"
-                    class="inline-flex w-full items-center justify-center rounded-2xl bg-gold-500 px-6 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-white hover:text-gold-600 sm:w-auto sm:min-w-[160px] sm:px-8 sm:text-base"
-                    wire:navigate
-                >
-                    Get In Touch
-                </a>
+                <p class="animate-fade-in mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg" style="animation-delay: 220ms">
+                    {{ __(\App\Support\SiteSettings::get('hero_text')) }}
+                </p>
+
+                <div class="animate-fade-in mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap" style="animation-delay: 320ms">
+                    <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark btn-lg" wire:navigate>
+                        {{ __('Donate') }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                    <a href="{{ route('sponsor-a-child') }}" class="btn btn-outline-light btn-lg" wire:navigate>{{ __('Sponsor a Child') }}</a>
+                    <a href="{{ route('contact') }}" class="btn btn-lg text-white/80 sm:px-3 underline-offset-4 hover:text-white hover:underline" wire:navigate>{{ __('Get In Touch') }}</a>
+                </div>
+
+                <dl class="animate-fade-in mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7" style="animation-delay: 420ms">
+                    @foreach ([[$impact['children'], '+', 'Children supported'], [$impact['communities'], '+', 'Communities'], [$impact['countries'], '', 'Countries']] as [$value, $suffix, $label])
+                        <div class="flex flex-col justify-between">
+                            <dt class="text-xs font-medium text-white/60">{{ __($label) }}</dt>
+                            <dd class="mt-1 font-serif text-3xl font-bold text-white sm:text-4xl" data-counter="{{ $value }}" data-suffix="{{ $suffix }}" data-duration="2200">{{ __($value) }}{{ __($suffix) }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+
+            {{-- Layered photo stack --}}
+            <div class="relative mx-auto hidden w-full max-w-[560px] [perspective:1400px] sm:block" aria-hidden="true">
+                <div data-float class="relative aspect-[1/1.02]">
+                    <img
+                        src="{{ \App\Support\MediaUrl::for(\App\Support\SiteSettings::get('hero_image_main')) }}"
+                        alt=""
+                        class="absolute inset-x-[8%] top-[4%] h-[78%] w-[84%] rounded-[32px] object-cover shadow-[0_40px_80px_-30px_rgba(0,0,0,0.75)] ring-1 ring-white/20"
+                        fetchpriority="high"
+                    >
+                    <img
+                        src="{{ \App\Support\MediaUrl::for(\App\Support\SiteSettings::get('hero_image_left')) }}"
+                        alt=""
+                        class="absolute bottom-0 left-0 h-[42%] w-[38%] -rotate-6 rounded-3xl object-cover shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)] ring-4 ring-[#06104f]"
+                    >
+                    <img
+                        src="{{ \App\Support\MediaUrl::for(\App\Support\SiteSettings::get('hero_image_right')) }}"
+                        alt=""
+                        class="absolute -right-2 bottom-[8%] h-[36%] w-[32%] rotate-6 rounded-3xl object-cover shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)] ring-4 ring-[#0b2a8a]"
+                    >
+
+                    {{-- Floating glass chips --}}
+                    <div class="absolute -left-3 top-[10%] animate-[float-chip_6s_ease-in-out_infinite] rounded-2xl bg-white/10 px-4 py-3 text-left ring-1 ring-white/25 backdrop-blur-md sm:-left-8">
+                        <p class="flex items-center gap-2 text-sm font-semibold text-white">
+                            <span class="size-2 rounded-full bg-gold-300" aria-hidden="true"></span>
+                            {{ __('Volta Region, Ghana') }}
+                        </p>
+                        <p class="mt-0.5 text-xs text-white/70">{{ __('School bags handed out this term') }}</p>
+                    </div>
+                    @if ($featuredEvent)
+                        <div class="absolute -right-2 top-[44%] max-w-[230px] animate-[float-chip_6s_ease-in-out_-3s_infinite] rounded-2xl bg-white/95 px-4 py-3 text-left shadow-xl sm:-right-6">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-500">{{ __('Next outreach') }}</p>
+                            <p class="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-[#00044e]">{{ $featuredEvent->title }}</p>
+                            <p class="mt-1 text-xs text-[#5a5a5a]">{{ $featuredEvent->starts_at?->translatedFormat('j M Y') }}</p>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </section>
 
     {{-- LEGACY / FOUNDATION STORY, 2-column with photo collage --}}
-    <section class="relative overflow-hidden bg-white py-20 lg:py-28" aria-labelledby="legacy-heading">
+    <section class="section relative overflow-hidden bg-surface" aria-labelledby="legacy-heading">
         {{-- Soft cream organic shape behind the collage --}}
         <div class="pointer-events-none absolute -right-24 top-12 -z-10 hidden h-[70%] w-[55%] rounded-l-[200px] bg-cream-100 lg:block"></div>
 
         <div class="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-[5fr_7fr] lg:items-center lg:gap-16 lg:px-8">
             {{-- LEFT: copy + CTAs --}}
             <div>
-                <h2 id="legacy-heading" class="reveal-left font-serif text-4xl font-bold leading-[1.1] text-gold-500 sm:text-5xl lg:text-[52px]">
-                    A Legacy of<br>Compassion,<br>A Future of Hope.
+                <h2 id="legacy-heading" class="section-title text-heading reveal-left">
+                    {{ __('A Legacy of') }}<br>{{ __('Compassion,') }}<br>{{ __('A Future of Hope.') }}
                 </h2>
                 <p class="mt-8 text-sm leading-relaxed text-ink-500">
-                    The Dadaa Fifiawoto Nyamadi Foundation was established to preserve and extend the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla, a woman whose life was dedicated to compassion, faith, and service to others.
+                    {{ __('The Dadaa Fifiawoto Nyamadi Foundation was established to preserve and extend the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla, a woman whose life was dedicated to compassion, faith, and service to others.') }}
                 </p>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
-                    Her generosity and humanitarian spirit inspired the creation of a foundation committed to uplifting women, supporting children, and providing hope for vulnerable communities.
+                    {{ __('Her generosity and humanitarian spirit inspired the creation of a foundation committed to uplifting women, supporting children, and providing hope for vulnerable communities.') }}
                 </p>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
-                    Today, the foundation operates across multiple countries, working to deliver sustainable programs that empower individuals and strengthen communities.
+                    {{ __('Today, the foundation operates across multiple countries, working to deliver sustainable programs that empower individuals and strengthen communities.') }}
                 </p>
                 <div class="mt-10 flex flex-wrap items-center gap-3">
-                    <a href="{{ route('donate') }}" class="inline-flex min-w-[140px] items-center justify-center rounded-2xl bg-gold-500 px-7 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900" wire:navigate>
-                        Donate
+                    <a href="{{ route('donate') }}" class="btn btn-primary" wire:navigate>
+                        {{ __('Donate') }}
                     </a>
-                    <a href="{{ route('volunteer') }}" class="inline-flex min-w-[160px] items-center justify-center rounded-2xl border-2 border-ink-900 px-7 py-3 text-sm font-bold text-ink-900 transition hover:bg-ink-900 hover:text-white" wire:navigate>
-                        Volunteer with Us
+                    <a href="{{ route('volunteer') }}" class="btn btn-secondary" wire:navigate>
+                        {{ __('Volunteer with Us') }}
                     </a>
                 </div>
             </div>
 
             {{-- RIGHT: scattered photo collage --}}
-            <div class="relative grid grid-cols-2 gap-4 lg:gap-6" aria-hidden="true">
+            <div class="relative grid grid-cols-2 gap-4 lg:gap-6" data-float aria-hidden="true">
                 <div class="space-y-4 lg:space-y-6 lg:pt-2">
                     <img
                         src="{{ asset('images/foundation/school-donation.jpg') }}"
@@ -84,7 +115,7 @@
                     <img
                         src="{{ asset('images/foundation/outreach-3.webp') }}"
                         alt=""
-                        class="aspect-[3/4] w-full rounded-[28px] object-cover shadow-md"
+                        class="hidden aspect-[3/4] w-full rounded-[28px] object-cover shadow-md sm:block"
                         loading="lazy"
                     >
                 </div>
@@ -98,7 +129,7 @@
                     <img
                         src="{{ asset('images/foundation/outreach-1.jpg') }}"
                         alt=""
-                        class="aspect-[5/4] w-full rounded-[28px] object-cover shadow-md"
+                        class="hidden aspect-[5/4] w-full rounded-[28px] object-cover shadow-md sm:block"
                         loading="lazy"
                     >
                 </div>
@@ -106,277 +137,266 @@
         </div>
     </section>
 
-    {{-- IMPACT, red full-width band with 3 big stats --}}
-    <section class="bg-gold-500 py-20 text-white lg:py-24" aria-labelledby="impact-heading">
+    {{-- IMPACT, stage-light blue band with 3 big stats --}}
+    <section class="section bg-stage-light text-white" aria-labelledby="impact-heading">
         <div class="mx-auto max-w-[1320px] px-4 sm:px-6 lg:px-8">
             <div class="grid gap-10 lg:grid-cols-[6fr_5fr] lg:items-end lg:gap-16">
                 <div class="reveal-left">
-                    <p class="text-xs font-semibold uppercase tracking-[0.32em] text-white/75">Our Impact in Numbers</p>
-                    <h2 id="impact-heading" class="mt-4 font-serif text-4xl font-bold leading-[1.1] text-white sm:text-5xl lg:text-[52px]">
-                        Real impact, measured<br class="hidden lg:block">
-                        in lives changed.
+                    <p class="text-xs font-semibold uppercase tracking-[0.32em] text-white/75">{{ __('Our Impact in Numbers') }}</p>
+                    <h2 id="impact-heading" class="section-title text-white mt-4">
+                        {{ __('Real impact, measured') }}<br class="hidden lg:block">
+                        {{ __('in lives changed.') }}
                     </h2>
                 </div>
                 <p class="reveal-right text-sm leading-relaxed text-white/90 sm:text-base" style="transition-delay: 120ms">
-                    The foundation measures its progress not just by numbers, but by the real impact seen in the lives it touches and the communities it supports through its programs. Each initiative is a step toward creating meaningful change, improving well-being, and building stronger, more connected communities over time.
+                    {{ __('The foundation measures its progress not just by numbers, but by the real impact seen in the lives it touches and the communities it supports through its programs. Each initiative is a step toward creating meaningful change, improving well-being, and building stronger, more connected communities over time.') }}
                 </p>
             </div>
 
-            <div class="mt-16 grid grid-cols-1 gap-10 pt-12 sm:grid-cols-3">
-                @foreach ([
-                    [520, '+', 'Children Supported'],
-                    [18,  '+', 'Communities Reached'],
-                    [4,   '+', 'Countries Impacted'],
-                ] as $index => [$value, $suffix, $label])
+            @php
+                $impactStats = array_filter([
+                    [$impact['children'], '+', 'Children Supported'],
+                    [$impact['communities'], '+', 'Communities Reached'],
+                    [$impact['countries'], '', 'Countries Impacted'],
+                    $impact['volunteer_hours'] > 0 ? [$impact['volunteer_hours'], '+', 'Volunteer Hours'] : null,
+                ]);
+            @endphp
+            <div @class(['mt-12 grid gap-4 pt-4 sm:mt-16 sm:gap-10 sm:pt-12', 'grid-cols-3' => count($impactStats) === 3, 'grid-cols-2 sm:grid-cols-4' => count($impactStats) === 4])>
+                @foreach (array_values($impactStats) as $index => [$value, $suffix, $label])
                     <div class="reveal" style="transition-delay: {{ $index * 160 }}ms">
                         <p
-                            class="font-serif text-6xl font-bold text-brand-900 sm:text-7xl"
+                            class="font-serif text-4xl font-bold text-white sm:text-6xl lg:text-7xl"
                             data-counter="{{ $value }}"
                             data-suffix="{{ $suffix }}"
                             data-duration="3200"
                         >0{{ $suffix }}</p>
-                        <p class="mt-3 text-sm font-medium uppercase tracking-[0.18em] text-white/85">{{ $label }}</p>
+                        <p class="mt-3 text-[11px] font-medium uppercase tracking-[0.12em] text-white/85 sm:text-sm sm:tracking-[0.18em]">{{ __($label) }}</p>
                     </div>
                 @endforeach
             </div>
         </div>
     </section>
 
-    {{-- PROGRAMS --}}
-    <section class="bg-cream-50 py-24" aria-labelledby="programs-heading">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="mb-12 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
-                <div>
-                    <p class="reveal-down text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">What we do</p>
-                    <h2 id="programs-heading" class="reveal mt-3 font-serif text-3xl text-ink-900 sm:text-4xl" style="transition-delay: 120ms">Our Programs and Initiatives</h2>
+    {{-- WELCOME, trusted non-profit intro with two ways to help --}}
+    <section class="section relative overflow-hidden bg-surface" aria-labelledby="welcome-heading">
+        <div class="mx-auto grid max-w-[1320px] gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
+            <div>
+                <p class="eyebrow reveal-down">{{ __('Welcome, let\'s make a difference!') }}</p>
+                <h2 id="welcome-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 100ms">
+                    {{ __('A Trusted Non-Profit') }}<br class="hidden sm:block"> {{ __('Serving Four Countries') }}
+                </h2>
+                <p class="reveal mt-6 max-w-xl text-base leading-relaxed text-ink-500" style="transition-delay: 160ms">
+                    {{ __('We work with churches, schools and community leaders in the United States, Ghana, Togo and Benin to support women, children and vulnerable people, so every family has the chance of a new beginning.') }}
+                </p>
+
+                <div class="reveal mt-8 grid gap-6 border-b border-cream-300 pb-8 sm:grid-cols-2" style="transition-delay: 220ms">
+                    <a href="{{ route('donate') }}" class="group flex items-center gap-4" wire:navigate>
+                        <span class="grid size-16 shrink-0 rotate-6 place-items-center rounded-[40%] bg-gold-500 text-white shadow-md transition group-hover:rotate-0">
+                            <svg class="size-7 -rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"/><path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.8-2.8l-4.2 3.9"/><path d="m2 15 6 6"/><path d="M19.5 8.5c.7-.7 1.5-1.6 1.5-2.7A2.7 2.7 0 0 0 16 4a2.7 2.7 0 0 0-5 1.8c0 1.2.8 2 1.5 2.8L16 12Z"/></svg>
+                        </span>
+                        <span class="font-serif text-xl font-bold leading-snug text-heading group-hover:text-gold-500">{{ __('Be a Hero,') }}<br>{{ __('Give Today') }}</span>
+                    </a>
+                    <a href="{{ route('sponsor-a-child') }}" class="group flex items-center gap-4" wire:navigate>
+                        <span class="grid size-16 shrink-0 -rotate-6 place-items-center rounded-[40%] bg-brand-900 text-white shadow-md transition group-hover:rotate-0">
+                            <svg class="size-7 rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="3"/><path d="M12 9v6"/><path d="M8 13l4-2 4 2"/><path d="M10 21l2-6 2 6"/></svg>
+                        </span>
+                        <span class="font-serif text-xl font-bold leading-snug text-heading group-hover:text-gold-500">{{ __('Help a Child,') }}<br>{{ __('Become a Sponsor') }}</span>
+                    </a>
                 </div>
-                <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
-                    Read more about our mission
-                    <span aria-hidden="true">→</span>
+
+                <ul class="reveal mt-8 space-y-3 text-base text-ink-700" style="transition-delay: 280ms">
+                    @foreach ([
+                        'School supplies, uniforms and fees for children in need.',
+                        'Skills and small-business support for women and mothers.',
+                        'Care for widows, orphanages and people living with disabilities.',
+                    ] as $point)
+                        <li class="flex items-start gap-3">
+                            <svg class="mt-1 size-4 shrink-0 text-gold-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-8-5.1-8-11.1A4.6 4.6 0 0 1 12 6.6a4.6 4.6 0 0 1 8 3.3C20 15.9 12 21 12 21z"/></svg>
+                            <span>{{ __($point) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+
+                <a href="{{ route('donate') }}" class="btn btn-primary btn-lg reveal mt-10" style="transition-delay: 320ms" wire:navigate>
+                    {{ __('Support Now') }}
                 </a>
             </div>
 
-            <x-site.feature-carousel
-                noun="program"
-                :per-page="4"
-                :cta="['Learn more', route('about')]"
-                :items="[
-                    ['icon' => 'women',     'title' => 'Women Empowerment',                  'copy' => 'Training, mentorship, and financial empowerment for women.'],
-                    ['icon' => 'education', 'title' => 'Child Education Support',            'copy' => 'Educational materials, scholarships, and mentorship for children.'],
-                    ['icon' => 'support',   'title' => 'Support for Vulnerable Populations', 'copy' => 'Helping widows, orphanages, and individuals facing hardship.'],
-                    ['icon' => 'community', 'title' => 'Community Development',              'copy' => 'Outreach programs and infrastructure for stronger communities.'],
-                    ['icon' => 'global',    'title' => 'Global Outreach',                    'copy' => 'Humanitarian support across the United States, Ghana, Togo, and Benin.'],
-                ]"
-            />
+            <div class="reveal-right relative">
+                <div class="absolute -right-6 -top-10 bottom-16 left-24 rounded-tl-[64px] rounded-tr-[32px] bg-cream-100 sm:-right-10" aria-hidden="true"></div>
+                <img
+                    data-float
+                    src="{{ asset('images/foundation/about/empowering-hope.jpg') }}"
+                    alt="{{ __('Children at a foundation outreach day') }}"
+                    class="relative aspect-[5/6] w-full rounded-[28px] object-cover shadow-xl"
+                    loading="lazy"
+                >
+            </div>
+        </div>
+    </section>
+
+    {{-- POPULAR CAUSES, fundraising events with live progress --}}
+    @if ($popularCauses->isNotEmpty())
+        <section class="section bg-surface" aria-labelledby="causes-heading">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div
+                    x-data="{
+                        count: {{ $popularCauses->count() }},
+                        index: 0,
+                        per: 3,
+                        animate: true,
+                        timer: null,
+                        get looping() { return this.count > this.per },
+                        get active() { return this.index % this.count },
+                        measure() { this.per = window.innerWidth >= 1024 ? 3 : (window.innerWidth >= 768 ? 2 : 1) },
+                        next() { if (! this.looping) return; this.animate = true; this.index++ },
+                        prev() {
+                            if (! this.looping) return;
+                            if (this.index === 0) {
+                                this.animate = false;
+                                this.index = this.count;
+                                requestAnimationFrame(() => requestAnimationFrame(() => { this.animate = true; this.index-- }));
+                            } else { this.animate = true; this.index-- }
+                        },
+                        go(i) { this.animate = true; this.index = i },
+                        settle() { if (this.index >= this.count) { this.animate = false; this.index -= this.count } },
+                        start() {
+                            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                            this.stop();
+                            this.timer = setInterval(() => this.next(), 5000);
+                        },
+                        stop() { clearInterval(this.timer); this.timer = null },
+                    }"
+                    x-init="measure(); start()"
+                    @resize.window.debounce.150ms="measure(); if (index >= count) { animate = false; index = 0 }"
+                    @mouseenter="stop()"
+                    @mouseleave="start()"
+                    @focusin="stop()"
+                    @focusout="start()"
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="{{ __('Popular causes') }}"
+                >
+                    <div class="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+                        <div>
+                            <p class="eyebrow reveal-down">{{ __('Our causes') }}</p>
+                            <h2 id="causes-heading" class="section-title text-heading reveal mt-2" style="transition-delay: 100ms">{{ __('Find Popular Causes') }}</h2>
+                        </div>
+                        <div class="flex items-center gap-3" x-show="looping" x-cloak>
+                            <button type="button" class="btn btn-ghost size-12 p-0" @click="prev()" aria-label="{{ __('Previous cause') }}">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button type="button" class="btn btn-primary size-12 p-0" @click="next()" aria-label="{{ __('Next cause') }}">
+                                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Track: the list is drawn twice so sliding past the last cause flows straight into the first. --}}
+                    <div class="reveal -mx-2 mt-12 overflow-hidden px-2 py-4" style="transition-delay: 160ms">
+                        <div
+                            class="flex gap-6"
+                            :class="animate ? 'transition-transform duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]' : ''"
+                            :style="`transform: translateX(calc(-${index} * (100% + 1.5rem) / ${per}))`"
+                            @transitionend.self="settle()"
+                        >
+                            @foreach ([false, true] as $isCopy)
+                                @foreach ($popularCauses as $cause)
+                                    <div
+                                        class="shrink-0 basis-full md:basis-[calc((100%-1.5rem)/2)] lg:basis-[calc((100%-3rem)/3)]"
+                                        @if ($isCopy) x-show="looping" aria-hidden="true" inert @else role="group" aria-roledescription="slide" aria-label="{{ $loop->iteration }} of {{ $loop->count }}" @endif
+                                    >
+                                        @include('site.partials.cause-card', ['cause' => $cause, 'index' => $loop->index])
+                                    </div>
+                                @endforeach
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-center gap-2" x-show="looping" x-cloak>
+                        @foreach ($popularCauses as $cause)
+                            <button
+                                type="button"
+                                class="h-2 rounded-full transition-all duration-300"
+                                :class="active === {{ $loop->index }} ? 'w-8 bg-gold-500' : 'w-2 bg-cream-300 hover:bg-ink-500'"
+                                @click="go({{ $loop->index }})"
+                                aria-label="Show cause {{ $loop->iteration }}"
+                            ></button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- PROGRAMS --}}
+    <section class="section bg-cream-50" aria-labelledby="programs-heading">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="mb-12 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
+                <div>
+                    <p class="eyebrow reveal-down">{{ __('What we do') }}</p>
+                    <h2 id="programs-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">{{ __('Our Programs and Initiatives') }}</h2>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <a href="{{ route('about') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
+                        {{ __('Read more about our mission') }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                    <a href="{{ route('apply-for-support') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-gold-500 hover:text-heading" wire:navigate>
+                        {{ __('Need support? Apply') }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </div>
+
+            {{-- Photo bento: the lead programme spans two rows, four tiles beside it --}}
+            <div class="grid gap-4 sm:grid-cols-2 sm:gap-5 lg:auto-rows-[minmax(300px,auto)] lg:grid-cols-4">
+                @foreach ([
+                    ['Child Education Support',            'Books, uniforms, school fees and mentorship, so children can stay in class and keep learning.', 'images/foundation/outreach-1.jpg',               'lg:col-span-2 lg:row-span-2'],
+                    ['Women Empowerment',                  'Training, mentorship and small-business support that help mothers provide for their families.', 'images/foundation/community-2.jpg',              ''],
+                    ['Support for Vulnerable Populations', 'Care for widows, orphanages and people facing hardship, met with dignity.',                     'images/foundation/about/serving-with-heart.jpg', ''],
+                    ['Community Development',              'Outreach and infrastructure chosen with communities, built to last.',                           'images/foundation/community-1.jpg',              ''],
+                    ['Global Outreach',                    'Humanitarian support across the United States, Ghana, Togo and Benin.',                         'images/foundation/about/team-group.jpg',         ''],
+                ] as $index => [$title, $copy, $image, $span])
+                    <a
+                        href="{{ route('about') }}"
+                        class="reveal-3d tilt group relative isolate flex min-h-[220px] flex-col justify-end overflow-hidden rounded-3xl p-6 sm:min-h-[300px] text-white shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)] sm:p-7 {{ $span }} {{ $index === 0 ? 'sm:col-span-2 sm:min-h-[420px]' : '' }}"
+                        style="transition-delay: {{ $index * 90 }}ms"
+                        wire:navigate
+                    >
+                        <img src="{{ asset($image) }}" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover transition duration-700 group-hover:scale-110" loading="lazy">
+                        <span class="absolute inset-0 -z-10 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/45 to-transparent transition-opacity duration-500 group-hover:from-[#00044e]" aria-hidden="true"></span>
+
+                        <span class="font-mono text-xs font-semibold tracking-[0.2em] text-white/70">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }} / 05</span>
+                        <h3 class="mt-2 font-serif font-bold leading-tight text-white {{ $index === 0 ? 'text-3xl sm:text-4xl lg:text-5xl' : 'text-xl xl:text-2xl' }}">{{ __($title) }}</h3>
+                        <p class="mt-3 max-w-md text-sm leading-relaxed text-white/80 {{ $index === 0 ? 'sm:text-base' : 'line-clamp-2' }}">{{ __($copy) }}</p>
+                        <span class="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                            {{ __('Learn more') }}
+                            <span class="grid size-8 place-items-center rounded-full bg-white/15 ring-1 ring-white/30 backdrop-blur transition group-hover:translate-x-1 group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">→</span>
+                        </span>
+                    </a>
+                @endforeach
+            </div>
         </div>
     </section>
 
     {{-- JOIN US CTA --}}
-    <section class="bg-white py-12" aria-label="Get involved">
+    <section class="bg-surface py-12" aria-label="{{ __('Get involved') }}">
         <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12">
+            <div class="flex flex-col items-center justify-between gap-6 rounded-3xl bg-gold-500 px-8 py-10 text-white sm:flex-row sm:px-12 dark:bg-brand-900">
                 <div class="text-center sm:text-left">
-                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">Get involved</p>
-                    <h2 class="mt-2 font-serif text-3xl sm:text-4xl">Join us, and be part of the impact.</h2>
+                    <p class="text-xs font-semibold uppercase tracking-[0.28em] text-white/80">{{ __('Get involved') }}</p>
+                    <h2 class="section-title mt-2">{{ __('Join us, and be part of the impact.') }}</h2>
                 </div>
-                <a href="{{ route('volunteer') }}" class="inline-flex shrink-0 items-center justify-center rounded-2xl bg-white px-7 py-3.5 text-sm font-bold text-gold-600 shadow-sm transition hover:bg-brand-900 hover:text-white" wire:navigate>
-                    Volunteer with us
+                <a href="{{ route('volunteer') }}" class="btn btn-light btn-lg shrink-0" wire:navigate>
+                    {{ __('Volunteer with us') }}
                 </a>
-            </div>
-        </div>
-    </section>
-
-    {{-- MEDIA GALLERY PREVIEW --}}
-    <section class="py-20" aria-labelledby="gallery-heading">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Media Gallery</p>
-                    <h2 id="gallery-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Our Work in Action</h2>
-                    <p class="mt-3 max-w-2xl text-sm text-ink-500">
-                        Moments from outreach programs, volunteer initiatives, and community activities organized by the foundation.
-                    </p>
-                </div>
-                <a href="{{ route('media') }}" class="text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>View all →</a>
-            </div>
-
-            <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                @foreach ([
-                    ['Community Outreach',  'images/foundation/school-donation.jpg'],
-                    ['Education Support',   'images/foundation/outreach-1.jpg'],
-                    ['Volunteer Activities','images/foundation/outreach-4.webp'],
-                    ['Events',              'images/foundation/outreach-3.webp'],
-                ] as $index => [$category, $image])
-                    <figure class="reveal group relative aspect-[4/5] overflow-hidden rounded-3xl shadow-sm" style="transition-delay: {{ $index * 100 }}ms">
-                        <img
-                            src="{{ asset($image) }}"
-                            alt="{{ $category }}, Fifiawoto Foundation outreach moment"
-                            class="img-fade absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                            loading="lazy"
-                        >
-                        <div class="absolute inset-0 bg-gradient-to-t from-brand-900/85 via-brand-900/20 to-transparent"></div>
-                        <figcaption class="absolute inset-x-0 bottom-0 p-5">
-                            <span class="inline-flex rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-brand-900 shadow">{{ $category }}</span>
-                        </figcaption>
-                    </figure>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    {{-- INSTAGRAM SLIDER --}}
-    @php
-        $instagramUrl = config('social.instagram');
-        $highlights = $instagramHighlights ?? collect();
-
-        // Always end up with at least 6 tiles. Use DB posts when present, otherwise
-        // foundation imagery linking to the live profile so the slider never looks empty.
-        if ($highlights->isNotEmpty()) {
-            $slides = $highlights->map(fn ($post) => [
-                'permalink' => $post->permalink,
-                'thumb' => $post->thumbnail_url ?: null,
-                'caption' => $post->caption ?: 'View on Instagram',
-                'is_video' => ($post->media_type ?? null) === 'VIDEO',
-            ])->values()->all();
-        } else {
-            $slides = [
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-1.jpg'),     'caption' => 'Community gathering in the Volta region',  'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/school-donation.jpg'), 'caption' => 'Back-to-school distribution day',          'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-1.jpg'),      'caption' => 'Outreach kickoff with local partners',     'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-2.webp'),     'caption' => 'Mobile health clinic in action',           'is_video' => true],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-3.webp'),     'caption' => 'Widows empowerment workshop',              'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-2.jpg'),     'caption' => 'Greater Accra town-hall',                  'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/outreach-4.webp'),     'caption' => 'Volunteers prepping care packs',           'is_video' => false],
-                ['permalink' => $instagramUrl, 'thumb' => asset('images/foundation/community-3.jpg'),     'caption' => 'Annual gathering with partners',           'is_video' => false],
-            ];
-        }
-        $slideCount = count($slides);
-    @endphp
-    <section class="bg-cream-100 py-20" aria-labelledby="instagram-heading">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">Instagram</p>
-                    <h2 id="instagram-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">Follow Our Journey</h2>
-                    <p class="mt-2 text-sm text-ink-500">@<a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="font-semibold text-brand-700 hover:text-gold-500">the_fifiawotofoundation</a> · highlights from the feed</p>
-                </div>
-                <a href="{{ $instagramUrl }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-brand-900 px-5 py-2.5 text-sm font-semibold text-cream-50 transition hover:bg-gold-500">
-                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.5.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.5-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.5-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.5.5-1 .9-1.4.4-.4.9-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 1.8c-3.1 0-3.5 0-4.7.1-1.1.1-1.7.2-2.1.4-.5.2-.9.5-1.3.9-.4.4-.7.8-.9 1.3-.2.4-.3 1-.4 2.1-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.7.4 2.1.2.5.5.9.9 1.3.4.4.8.7 1.3.9.4.2 1 .3 2.1.4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.7-.2 2.1-.4.5-.2.9-.5 1.3-.9.4-.4.7-.8.9-1.3.2-.4.3-1 .4-2.1.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.7-.4-2.1-.2-.5-.5-.9-.9-1.3-.4-.4-.8-.7-1.3-.9-.4-.2-1-.3-2.1-.4-1.2-.1-1.6-.1-4.7-.1Zm0 3.1a5 5 0 1 1 0 9.9 5 5 0 0 1 0-9.9Zm0 1.8a3.2 3.2 0 1 0 0 6.3 3.2 3.2 0 0 0 0-6.3Zm5.1-2a1.2 1.2 0 1 1 0 2.3 1.2 1.2 0 0 1 0-2.3Z"/>
-                    </svg>
-                    Follow Us on Instagram
-                </a>
-            </div>
-
-            {{-- Sliding strip --}}
-            <div
-                x-data="{
-                    active: 0,
-                    count: {{ $slideCount }},
-                    perPage: 4,
-                    perPageFor() {
-                        if (window.matchMedia('(min-width: 1024px)').matches) return 4;
-                        if (window.matchMedia('(min-width: 640px)').matches) return 3;
-                        return 2;
-                    },
-                    stops() { return Math.max(1, this.count - this.perPage + 1); },
-                    next() { this.active = (this.active + 1) % this.stops(); },
-                    go(i) { this.active = i; },
-                    autoplay: null,
-                    start() {
-                        this.perPage = this.perPageFor();
-                        if (this.count > this.perPage) {
-                            this.autoplay = setInterval(() => this.next(), 4000);
-                        }
-                    },
-                    stop() { clearInterval(this.autoplay); this.autoplay = null; },
-                    handleResize() {
-                        const next = this.perPageFor();
-                        if (next !== this.perPage) {
-                            this.perPage = next;
-                            this.active = Math.min(this.active, this.stops() - 1);
-                            this.stop();
-                            this.start();
-                        }
-                    }
-                }"
-                x-init="start(); $watch('active', () => {}); window.addEventListener('resize', () => handleResize())"
-                @mouseenter="stop()"
-                @mouseleave="start()"
-                class="relative mt-10"
-                aria-roledescription="carousel"
-                aria-label="Instagram highlights"
-            >
-                <div class="overflow-x-clip py-2">
-                    <div
-                        class="-mx-2 flex transition-transform duration-700 ease-out"
-                        :style="`transform: translateX(calc(-${active} * (100% / ${perPage})))`"
-                    >
-                        @foreach ($slides as $i => $slide)
-                            <div class="w-1/2 shrink-0 px-2 sm:w-1/3 lg:w-1/4">
-                                <a
-                                    href="{{ $slide['permalink'] }}"
-                                    target="_blank"
-                                    rel="noopener"
-                                    aria-label="{{ \Illuminate\Support\Str::limit($slide['caption'], 80) }}"
-                                    class="group relative block aspect-square overflow-hidden rounded-2xl bg-cream-200 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                                >
-                                    @if ($slide['thumb'])
-                                        <img
-                                            src="{{ $slide['thumb'] }}"
-                                            alt="{{ $slide['caption'] }}"
-                                            loading="lazy"
-                                            class="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.05]"
-                                        >
-                                    @endif
-                                    <span class="absolute inset-0 bg-gradient-to-t from-brand-900/55 via-transparent to-transparent opacity-0 transition group-hover:opacity-100"></span>
-                                    @if ($slide['is_video'])
-                                        <span class="absolute inset-0 grid place-items-center">
-                                            <span class="grid size-12 place-items-center rounded-full bg-white/90 text-brand-900 shadow-lg backdrop-blur transition group-hover:bg-gold-500 group-hover:text-white">
-                                                <svg class="size-5 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                                            </span>
-                                        </span>
-                                    @endif
-                                    <span class="absolute right-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 text-brand-900 shadow backdrop-blur transition group-hover:bg-gold-500 group-hover:text-white">
-                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                            <path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.5.2 1 .5 1.4.9.4.4.7.9.9 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.5-.5 1-.9 1.4-.4.4-.9.7-1.4.9-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.5-.2-1-.5-1.4-.9-.4-.4-.7-.9-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.5.5-1 .9-1.4.4-.4.9-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 5.1a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Z"/>
-                                        </svg>
-                                    </span>
-                                    {{-- Hover overlay with caption + clear "open on IG" affordance --}}
-                                    <span class="pointer-events-none absolute inset-x-2 bottom-2 flex flex-col gap-1.5 opacity-0 transition group-hover:opacity-100">
-                                        @if ($slide['caption'])
-                                            <span class="line-clamp-2 rounded-md bg-black/65 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">{{ $slide['caption'] }}</span>
-                                        @endif
-                                        <span class="inline-flex items-center gap-1.5 self-start rounded-md bg-gold-500 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
-                                            View on Instagram
-                                            <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7M21 3 10 14M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg>
-                                        </span>
-                                    </span>
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                @if ($slideCount > 4)
-                    <div class="mt-6 flex justify-center gap-2" role="tablist">
-                        @for ($i = 0; $i < $slideCount - 3; $i++)
-                            <button
-                                type="button"
-                                @click="go({{ $i }})"
-                                :class="active === {{ $i }} ? 'w-10 bg-brand-900' : 'w-3 bg-brand-100 hover:bg-brand-300'"
-                                class="h-3 rounded-full transition-all"
-                                aria-label="Go to slide {{ $i + 1 }}"
-                            ></button>
-                        @endfor
-                    </div>
-                @endif
             </div>
         </div>
     </section>
 
     {{-- TESTIMONIALS --}}
-    <section class="py-20" aria-labelledby="testimonials-heading">
+    <section class="section" aria-labelledby="testimonials-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             @php
                 $fallbackTestimonials = collect([
@@ -390,11 +410,11 @@
                     : $fallbackTestimonials;
             @endphp
 
-            <x-site.testimonial-carousel :testimonials="$testimonials" :per-view="2" />
+            <x-site.testimonial-carousel :testimonials="$testimonials" :per-view="3" />
 
             <div class="mt-10 flex justify-center">
-                <a href="{{ route('testimonials') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:text-gold-500" wire:navigate>
-                    Read more stories
+                <a href="{{ route('testimonials') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-label hover:text-gold-500" wire:navigate>
+                    {{ __('Read more stories') }}
                     <span aria-hidden="true">→</span>
                 </a>
             </div>
@@ -408,16 +428,16 @@
             $goal = (int) ($featuredEvent->goal_cents ?? 0);
             $percent = $featuredEvent->progressPercent();
         @endphp
-        <section class="bg-brand-900 py-20 text-cream-50" aria-labelledby="featured-event-heading">
+        <section class="section bg-brand-900 text-paper" aria-labelledby="featured-event-heading">
             <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:px-8">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">Upcoming Outreach</p>
-                    <h2 id="featured-event-heading" class="mt-3 font-serif text-3xl sm:text-4xl">{{ $featuredEvent->title }}</h2>
-                    <p class="mt-4 max-w-xl text-sm leading-relaxed text-cream-200/80">
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-400">{{ __('Upcoming Outreach') }}</p>
+                    <h2 id="featured-event-heading" class="section-title mt-3">{{ $featuredEvent->title }}</h2>
+                    <p class="mt-4 max-w-xl text-sm leading-relaxed text-paper-dim/80">
                         {{ \Illuminate\Support\Str::limit(strip_tags($featuredEvent->description), 220) }}
                     </p>
                     <div class="mt-8 flex flex-wrap items-center gap-3">
-                        <a href="{{ route('events.show', $featuredEvent) }}" class="rounded-full border border-cream-200/40 px-5 py-2 text-sm font-medium text-cream-50 transition hover:bg-cream-50 hover:text-brand-900" wire:navigate>Learn More</a>
+                        <a href="{{ route('events.show', $featuredEvent) }}" class="rounded-full border border-cream-200/40 px-5 py-2 text-sm font-medium text-paper transition hover:bg-cream-50 hover:text-heading" wire:navigate>{{ __('Learn More') }}</a>
                         <x-site.event-actions :event="$featuredEvent" variant="dark" />
                     </div>
                 </div>
@@ -425,25 +445,25 @@
                 <div class="rounded-2xl border border-brand-700/40 bg-brand-800/40 p-6 backdrop-blur">
                     @if ($goal > 0)
                         <div class="flex items-end justify-between text-sm">
-                            <span class="text-cream-200/80">Raised</span>
-                            <span class="font-semibold text-cream-50">${{ number_format($raised / 100) }}</span>
+                            <span class="text-paper-dim/80">{{ __('Raised') }}</span>
+                            <span class="font-semibold text-paper">{{ \App\Support\Money::fromCents((int) $raised) }}</span>
                         </div>
                         <div class="mt-2 h-2.5 overflow-hidden rounded-full bg-brand-700/60">
                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                         </div>
-                        <div class="mt-2 flex items-center justify-between text-xs text-cream-200/70">
-                            <span>{{ $percent }}% funded</span>
-                            <span>Goal ${{ number_format($goal / 100) }}</span>
+                        <div class="mt-2 flex items-center justify-between text-xs text-paper-dim/70">
+                            <span>{{ __(':v1% funded', ['v1' => $percent]) }}</span>
+                            <span>{{ __('Goal :v1', ['v1' => \App\Support\Money::fromCents((int) $goal)]) }}</span>
                         </div>
                     @endif
                     <dl class="mt-6 grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <dt class="text-xs uppercase tracking-[0.2em] text-cream-200/60">Date</dt>
-                            <dd class="mt-1 text-cream-50">{{ $featuredEvent->starts_at?->format('M j, Y') }}</dd>
+                            <dt class="text-xs uppercase tracking-[0.2em] text-paper-dim/60">{{ __('Date') }}</dt>
+                            <dd class="mt-1 text-paper">{{ $featuredEvent->starts_at?->translatedFormat('M j, Y') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs uppercase tracking-[0.2em] text-cream-200/60">Location</dt>
-                            <dd class="mt-1 text-cream-50">{{ $featuredEvent->location }}, {{ $featuredEvent->country }}</dd>
+                            <dt class="text-xs uppercase tracking-[0.2em] text-paper-dim/60">{{ __('Location') }}</dt>
+                            <dd class="mt-1 text-paper">{{ $featuredEvent->location }}, {{ $featuredEvent->country }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -453,4 +473,18 @@
 
     {{-- NEWSLETTER --}}
     <livewire:site.newsletter-signup source="home" />
+
+    {{-- SPONSORSHIP CTA --}}
+    <section class="bg-surface pb-12" aria-labelledby="sponsor-cta-heading">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-start justify-between gap-6 rounded-3xl bg-brand-900 px-7 py-10 text-white sm:flex-row sm:items-center sm:px-12 sm:py-12">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-gold-300">{{ __('Help hope grow') }}</p>
+                    <h2 id="sponsor-cta-heading" class="section-title mt-3">{{ __('A connection. A brighter tomorrow.') }}</h2>
+                    <p class="mt-4 max-w-xl text-white/80">{{ __('Explore child sponsorship and talk with our team about making a lasting difference.') }}</p>
+                </div>
+                <a href="{{ route('sponsor-a-child') }}" class="btn btn-primary shrink-0" wire:navigate>{{ __('Sponsor a Child') }} <span aria-hidden="true">→</span></a>
+            </div>
+        </div>
+    </section>
 </x-layouts::site>

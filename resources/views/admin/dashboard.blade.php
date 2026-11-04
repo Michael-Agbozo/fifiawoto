@@ -38,9 +38,7 @@
 
 <x-layouts::admin title="Dashboard">
     {{-- Banner --}}
-    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 px-6 py-6 text-white shadow-[0_30px_60px_-30px_rgba(0,4,78,0.7)] sm:px-10">
-        <div class="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gold-500/20 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-12 left-20 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+    <section class="bg-fluted rounded-3xl px-6 py-8 text-white shadow-[0_30px_60px_-30px_rgba(0,4,78,0.7)] sm:px-10">
 
         <div class="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="max-w-2xl">
@@ -53,10 +51,10 @@
                 </h2>
             </div>
             <div class="flex shrink-0 flex-wrap gap-3 sm:flex-col">
-                <a href="{{ route('admin.reports.index') }}" class="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-2.5 text-sm font-bold text-brand-900 shadow-sm transition hover:bg-gold-500 hover:text-white" wire:navigate>
+                <a href="{{ route('admin.reports.index') }}" class="btn btn-light px-5 py-2.5 text-sm" wire:navigate>
                     View report
                 </a>
-                <a href="{{ route('admin.beneficiary-applications.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-white/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-brand-900" wire:navigate>
+                <a href="{{ route('admin.beneficiary-applications.index') }}" class="btn btn-outline-light px-5 py-2.5 text-sm" wire:navigate>
                     Review applications
                 </a>
             </div>
@@ -67,11 +65,11 @@
     <div class="mt-8 flex flex-wrap items-center justify-between gap-3">
         <h2 class="font-serif text-xl font-bold text-ink-900 sm:text-2xl">Overview</h2>
         <div class="flex flex-wrap items-center gap-2">
-            <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+            <button type="button" class="btn btn-ghost gap-2 px-3 py-2 text-xs">
                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
                 {{ now()->subDays(29)->format('d M Y') }} — {{ now()->format('d M Y') }}
             </button>
-            <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+            <button type="button" class="btn btn-ghost gap-2 px-3 py-2 text-xs">
                 <span>Last 30 days</span>
                 <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
             </button>
@@ -85,10 +83,10 @@
     {{-- KPI cards --}}
     <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as $card)
-            <article class="rounded-3xl border border-cream-300 bg-white p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)] transition hover:-translate-y-0.5 hover:shadow-lg">
+            <article class="rounded-3xl border border-cream-300 bg-surface p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)] transition hover:-translate-y-0.5 hover:shadow-lg">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <span class="grid aspect-square size-9 place-items-center rounded-xl bg-brand-50 text-brand-700">
+                        <span class="grid aspect-square size-9 place-items-center rounded-xl bg-brand-50 text-label">
                             <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconPaths[$card['icon']] ?? $iconPaths['heart'] }}"/>
                             </svg>
@@ -117,14 +115,14 @@
     {{-- Charts row --}}
     <div class="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         {{-- Bar chart --}}
-        <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="font-sans text-sm font-medium text-ink-700">Donations this period</p>
-                    <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($totalLast30 / 100) }}</p>
+                    <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::format($totalLast30 / 100) }}</p>
                     <p class="mt-1 text-xs text-ink-500">Last 30 days · daily totals</p>
                 </div>
-                <button type="button" class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                <button type="button" class="btn btn-ghost shrink-0 gap-2 px-3 py-1.5 text-xs">
                     Last 30 days
                     <svg class="size-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
                 </button>
@@ -135,7 +133,7 @@
                 <div class="pointer-events-none absolute inset-0 grid grid-rows-4 text-[10px] text-ink-500/60">
                     @for ($i = 0; $i < 4; $i++)
                         <div class="flex items-end border-b border-cream-200/80">
-                            <span class="-mb-1 -ml-1">{{ $i === 0 ? '$'.number_format($maxDaily / 100) : '' }}</span>
+                            <span class="-mb-1 -ml-1">{{ $i === 0 ? \App\Support\Money::format($maxDaily / 100) : '' }}</span>
                         </div>
                     @endfor
                 </div>
@@ -148,7 +146,7 @@
                             <div class="w-full max-w-[14px] rounded-t bg-cream-200 transition group-hover:bg-cream-300" style="height: 100%;"></div>
                             <div class="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[14px] rounded-t bg-gradient-to-t from-brand-900 to-brand-500 transition group-hover:from-gold-500 group-hover:to-gold-400" style="height: {{ $h }}%;"></div>
                             <span class="pointer-events-none absolute -top-7 hidden whitespace-nowrap rounded-md bg-brand-900 px-2 py-0.5 text-[10px] font-semibold text-white shadow-lg group-hover:block">
-                                ${{ number_format($day['total_cents'] / 100) }}
+                                {{ \App\Support\Money::format($day['total_cents'] / 100) }}
                                 <span class="block text-[9px] text-white/70">{{ $day['label'] }}</span>
                             </span>
                         </div>
@@ -166,11 +164,11 @@
         </article>
 
         {{-- Line chart --}}
-        <article class="rounded-3xl border border-cream-300 bg-white p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <p class="font-sans text-sm font-medium text-ink-700">Cumulative revenue</p>
             <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $totalDonations }}</p>
             <p class="mt-1 text-xs text-ink-500">
-                <span class="font-semibold text-green-600">${{ number_format($totalLast30 / 100) }}</span>
+                <span class="font-semibold text-green-600">{{ \App\Support\Money::format($totalLast30 / 100) }}</span>
                 <span>in the last 30 days</span>
             </p>
 
@@ -210,7 +208,7 @@
 
     {{-- Recent activity table with tabs --}}
     <article
-        class="mt-6 rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]"
+        class="mt-6 rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]"
         x-data="{ tab: 'all' }"
     >
         <header class="flex flex-wrap items-center justify-between gap-3 border-b border-cream-200 px-6 py-5">
@@ -219,18 +217,20 @@
                 <p class="mt-0.5 text-xs text-ink-500">Submissions and gifts across every channel</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                @if (auth()->user()?->canDo('reports', 'export'))
                 <a
                     :href="'{{ route('admin.dashboard.export') }}?tab=' + tab"
-                    class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-900"
+                    class="btn btn-primary gap-2 px-3 py-1.5 text-xs"
                 >
                     <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Export CSV
                 </a>
+                @endif
                 <a
                     href="{{ route('admin.volunteers.index') }}"
                     x-show="tab === 'volunteer'"
                     wire:navigate
-                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                    class="btn btn-ghost gap-2 px-3 py-1.5 text-xs"
                 >
                     View all volunteers →
                 </a>
@@ -238,7 +238,7 @@
                     href="{{ route('admin.donations.index') }}"
                     x-show="tab === 'donation'"
                     wire:navigate
-                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                    class="btn btn-ghost gap-2 px-3 py-1.5 text-xs"
                 >
                     View all donations →
                 </a>
@@ -246,7 +246,7 @@
                     href="{{ route('admin.reports.index') }}"
                     x-show="tab === 'all'"
                     wire:navigate
-                    class="inline-flex items-center gap-2 rounded-xl border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                    class="btn btn-ghost gap-2 px-3 py-1.5 text-xs"
                 >
                     Full report →
                 </a>
@@ -264,7 +264,7 @@
                 <button
                     type="button"
                     @click="tab = @js($key)"
-                    :class="tab === @js($key) ? 'border-brand-900 text-brand-900' : 'border-transparent text-ink-500 hover:text-ink-900'"
+                    :class="tab === @js($key) ? 'border-heading text-heading' : 'border-transparent text-ink-500 hover:text-ink-900'"
                     class="font-sans -mb-px inline-flex items-center gap-2 border-b-2 px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition"
                 >
                     {{ $label }}
@@ -320,7 +320,7 @@
                                 </td>
                                 <td class="px-6 py-3 text-right">
                                     @if ($rowTarget)
-                                        <a href="{{ $rowTarget }}" wire:navigate class="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-900" aria-label="Open in module">
+                                        <a href="{{ $rowTarget }}" wire:navigate class="inline-flex items-center gap-1 text-xs font-semibold text-label hover:text-heading" aria-label="Open in module">
                                             Open →
                                         </a>
                                     @else
@@ -336,10 +336,12 @@
 
         <footer class="flex items-center justify-between border-t border-cream-200 px-6 py-4 text-xs text-ink-500">
             <span>Showing {{ count($activity) }} most recent entries</span>
-            <a href="{{ route('admin.dashboard.export') }}" class="inline-flex items-center gap-1.5 rounded-md border border-cream-300 px-2.5 py-1 font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+            @if (auth()->user()?->canDo('reports', 'export'))
+            <a href="{{ route('admin.dashboard.export') }}" class="btn btn-ghost gap-1.5 px-2.5 py-1">
                 <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                 Download all as CSV
             </a>
+            @endif
         </footer>
     </article>
 </x-layouts::admin>

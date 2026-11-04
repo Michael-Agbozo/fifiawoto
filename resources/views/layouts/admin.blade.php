@@ -1,9 +1,10 @@
 @props([
     'title' => null,
-    'breadcrumbs' => ['Pages', 'Dashboard'],
+    'breadcrumbs' => null,
 ])
 
 @php
+    $breadcrumbs ??= filled($title) && $title !== 'Dashboard' ? ['Admin', $title] : ['Admin', 'Dashboard'];
     $user = auth()->user();
     $role = $user?->role;
 
@@ -28,6 +29,7 @@
             'items' => [
                 ['label' => 'Events',                   'route' => 'admin.events.index',                    'icon' => 'calendar',  'show' => $user?->canDo('events', 'view') ?? false],
                 ['label' => 'Donations',                'route' => 'admin.donations.index',                 'icon' => 'heart',     'show' => $user?->canDo('donations', 'view') ?? false],
+                ['label' => 'Sponsorships',             'route' => 'admin.sponsorships.index',              'icon' => 'heart',     'show' => $user?->canDo('sponsorships', 'view') ?? false],
             ],
         ],
         [
@@ -37,7 +39,12 @@
                 ['label' => 'Instagram sync',           'route' => 'admin.instagram.index',                 'icon' => 'instagram', 'show' => $user?->canDo('instagram', 'view') ?? false],
                 ['label' => 'Testimonials',             'route' => 'admin.testimonials.index',              'icon' => 'quote',     'show' => $user?->canDo('testimonials', 'view') ?? false],
                 ['label' => 'Leadership team',          'route' => 'admin.leaders.index',                   'icon' => 'users',     'show' => $user?->canDo('leaders', 'view') ?? false],
+                ['label' => 'FAQs',                     'route' => 'admin.faqs.index',                      'icon' => 'question',     'show' => $user?->canDo('faqs', 'view') ?? false],
                 ['label' => 'Newsletter subscribers',   'route' => 'admin.newsletter.index',                'icon' => 'sparkles',  'show' => $user?->canDo('newsletter', 'view') ?? false],
+                ['label' => 'Send newsletter',          'route' => 'admin.newsletter.campaigns',            'icon' => 'sparkles',  'show' => $user?->canDo('newsletter', 'view') ?? false],
+                ['label' => 'Analytics',                'route' => 'admin.analytics.index',                 'icon' => 'sparkles',  'show' => $user?->canDo('analytics', 'view') ?? false],
+                ['label' => 'Site settings',            'route' => 'admin.settings.site',                   'icon' => 'sparkles',  'show' => $user?->canDo('site_settings', 'view') ?? false],
+                ['label' => 'Popup settings',           'route' => 'admin.settings.popup',                  'icon' => 'sparkles',  'show' => $user?->canDo('site_popup', 'view') ?? false],
             ],
         ],
         [
@@ -60,6 +67,7 @@
         'users'     => 'M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z',
         'inbox'     => 'M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z',
         'hand'      => 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z',
+        'question'  => 'M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z',
         'quote'     => 'M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25',
         'calendar'  => 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5',
         'heart'     => 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z',
@@ -89,14 +97,14 @@
     >
         {{-- Outer wrap: light cream canvas with padding around the app card --}}
         <div class="min-h-screen p-0 sm:p-4 lg:p-6">
-            <div class="flex min-h-[calc(100vh-3rem)] bg-white shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
+            <div class="flex min-h-[calc(100vh-3rem)] bg-surface shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] sm:rounded-3xl">
                 {{-- SIDEBAR --}}
                 <aside
                     :class="[
                         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
                         sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
                     ]"
-                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-white transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
+                    class="fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-cream-300 bg-surface transition-all duration-200 sm:rounded-l-3xl lg:static lg:translate-x-0"
                 >
                     <div
                         :class="sidebarCollapsed ? 'lg:justify-center lg:px-3' : 'lg:px-5'"
@@ -109,7 +117,8 @@
                             aria-label="Fifiawoto Foundation admin"
                             wire:navigate
                         >
-                            <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-9 w-auto">
+                            <img src="{{ asset('images/logos/dff.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-9 w-auto dark:hidden">
+                            <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="hidden h-9 w-auto dark:block">
                         </a>
 
                         <a
@@ -194,15 +203,15 @@
                                                     :class="sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''"
                                                     @class([
                                                         'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                                                        'bg-cream-100 font-semibold text-brand-900' => $isCurrent,
-                                                        'text-ink-700 hover:bg-cream-100 hover:text-brand-900' => ! $isCurrent,
+                                                        'bg-cream-100 font-semibold text-heading' => $isCurrent,
+                                                        'text-ink-700 hover:bg-cream-100 hover:text-heading' => ! $isCurrent,
                                                     ])
                                                     :title="sidebarCollapsed ? @js($item['label']) : null"
                                                 >
                                                     <span @class([
                                                         'grid aspect-square size-7 shrink-0 place-items-center rounded-lg transition-colors',
                                                         'bg-brand-900 text-white' => $isCurrent,
-                                                        'bg-cream-100 text-ink-500 group-hover:bg-white group-hover:text-brand-900' => ! $isCurrent,
+                                                        'bg-cream-100 text-ink-500 group-hover:bg-surface group-hover:text-heading' => ! $isCurrent,
                                                     ])>
                                                         <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$item['icon']] ?? $icons['cog'] }}"/>
@@ -221,9 +230,7 @@
                     @if ($user)
                         <div class="border-t border-cream-300 p-3">
                             <div :class="sidebarCollapsed ? 'lg:justify-center' : ''" class="flex items-center gap-3 rounded-2xl bg-cream-100 px-3 py-2.5">
-                                <span class="grid aspect-square size-9 shrink-0 place-items-center rounded-full bg-brand-900 text-xs font-bold text-white">
-                                    {{ $user->initials() }}
-                                </span>
+                                <x-admin.avatar :src="$user->avatar_path" :name="$user->name" size="sm" class="size-9! shrink-0" />
                                 <div x-show="!sidebarCollapsed" class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-semibold text-ink-900">{{ $user->name }}</p>
                                     <p class="truncate text-[11px] text-ink-500">{{ $role?->label() ?? 'Member' }}</p>
@@ -233,7 +240,7 @@
                                     <button
                                         type="submit"
                                         data-test="logout-button"
-                                        class="grid aspect-square size-8 place-items-center rounded-lg text-ink-500 transition hover:bg-white hover:text-gold-500"
+                                        class="grid aspect-square size-8 place-items-center rounded-lg text-ink-500 transition hover:bg-surface hover:text-gold-500"
                                         title="Log out"
                                         aria-label="Log out"
                                     >
@@ -257,7 +264,7 @@
 
                 {{-- MAIN --}}
                 <div class="flex min-w-0 flex-1 flex-col">
-                    <header class="flex items-center gap-4 border-b border-cream-300 bg-white px-5 py-4 sm:rounded-tr-3xl sm:px-6 lg:px-8">
+                    <header class="flex items-center gap-4 border-b border-cream-300 bg-surface px-5 py-4 sm:rounded-tr-3xl sm:px-6 lg:px-8">
                         <button
                             type="button"
                             @click="sidebarOpen = true"
@@ -271,23 +278,36 @@
 
                         {{-- Breadcrumbs --}}
                         <div class="hidden items-center gap-2 sm:flex">
-                            <button type="button" onclick="history.back()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Back">
+                            <button type="button" onclick="history.back()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Back">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7"/></svg>
                             </button>
-                            <button type="button" onclick="history.forward()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Forward">
+                            <button type="button" onclick="history.forward()" class="grid aspect-square size-8 place-items-center rounded-lg border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Forward">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg>
                             </button>
-                            <nav class="ml-1 flex items-center gap-1 text-sm" aria-label="Breadcrumb">
-                                @foreach ($breadcrumbs as $i => $crumb)
-                                    @if ($i > 0)
-                                        <span class="text-ink-500">/</span>
-                                    @endif
-                                    @if ($loop->last)
-                                        <span class="font-semibold text-ink-900">{{ $crumb }}</span>
-                                    @else
-                                        <span class="text-ink-500">{{ $crumb }}</span>
-                                    @endif
-                                @endforeach
+                            <nav class="ml-1" aria-label="Breadcrumb">
+                                <ol class="inline-flex items-center gap-1 rounded-full bg-cream-100 py-1 pl-1 pr-3.5 text-sm ring-1 ring-cream-300">
+                                    @foreach ($breadcrumbs as $i => $crumb)
+                                        @if ($i > 0)
+                                            <li aria-hidden="true" class="text-ink-500/60">
+                                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                                            </li>
+                                        @endif
+                                        <li>
+                                            @if ($loop->first && ! $loop->last)
+                                                <a href="{{ route('admin.dashboard') }}" class="group inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-1.5 text-ink-500 transition hover:text-heading" wire:navigate>
+                                                    <span class="grid size-6 place-items-center rounded-full bg-surface text-heading ring-1 ring-cream-300 transition group-hover:bg-gold-500 group-hover:text-white group-hover:ring-gold-500" aria-hidden="true">
+                                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>
+                                                    </span>
+                                                    {{ $crumb }}
+                                                </a>
+                                            @elseif ($loop->last)
+                                                <span class="pl-1 font-semibold text-heading" aria-current="page">{{ $crumb }}</span>
+                                            @else
+                                                <span class="text-ink-500">{{ $crumb }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ol>
                             </nav>
                         </div>
 
@@ -297,22 +317,39 @@
                                 <span class="absolute inset-y-0 left-3 grid place-items-center text-ink-500">
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg>
                                 </span>
-                                <input type="search" name="q" placeholder="Search beneficiaries, events, donors…" class="w-full rounded-full border border-cream-300 bg-cream-100 py-2 pl-9 pr-4 text-sm text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+                                <input type="search" name="q" placeholder="Search beneficiaries, events, donors…" class="w-full rounded-full border border-cream-300 bg-cream-100 py-2 pl-9 pr-4 text-sm text-ink-900 placeholder-ink-500/70 focus:border-heading focus:bg-surface focus:outline-none focus:ring-2 focus:ring-heading/15">
                             </label>
                         </form>
 
                         <div class="ml-auto flex items-center gap-2 md:ml-0">
-                            <button type="button" class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Help">
+                            <x-admin.theme-toggle class="hidden sm:inline-flex" />
+                            {{-- Compact icon-only toggle on mobile to save room next to the help/notifications buttons --}}
+                            <button
+                                type="button"
+                                @click="$store.theme.toggle()"
+                                :aria-label="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                :title="$store.theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+                                class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading sm:hidden"
+                            >
+                                <svg x-cloak x-show="$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                                </svg>
+                                <svg x-cloak x-show="!$store.theme.isDark()" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Help">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>
                             </button>
-                            <button type="button" class="relative grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-brand-900 hover:text-brand-900" aria-label="Notifications">
+                            <button type="button" class="relative grid aspect-square size-9 place-items-center rounded-full border border-cream-300 text-ink-500 transition hover:border-heading hover:text-heading" aria-label="Notifications">
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
                                 <span class="absolute right-1.5 top-1.5 size-2 rounded-full bg-gold-500"></span>
                             </button>
                         </div>
                     </header>
 
-                    <main class="flex-1 bg-white px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
+                    <main class="admin-content min-w-0 flex-1 bg-surface px-4 py-6 sm:rounded-br-3xl sm:px-6 lg:px-8 lg:py-8">
                         @if ($title)
                             <div class="mb-6">
                                 <h1 class="font-serif text-2xl font-bold text-ink-900 sm:text-3xl">{{ $title }}</h1>

@@ -4,7 +4,12 @@ use App\Enums\PaymentMethod;
 use App\Mail\DonationReceipt;
 use App\Models\Donation;
 use App\Models\Event;
+use App\Support\CsvCell;
+use App\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -42,7 +47,7 @@ new class extends Component
     #[Validate('required|numeric|min:0.01|max:1000000')]
     public string $amount = '';
 
-    #[Validate('required|string|size:3')]
+    /** Always the base currency (config "app.currency"); see rules(). */
     public string $currency = 'USD';
 
     #[Validate('required|string|max:40')]
@@ -60,8 +65,30 @@ new class extends Component
     #[Validate('nullable|string|max:2000')]
     public string $notes = '';
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('donations', 'view'), 403);
+
+        $this->currency = Money::baseCurrency();
+    }
+
+    /**
+     * The foundation reports in a single base currency, so a gift may only
+     * be recorded in that currency.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'currency' => ['required', 'string', Rule::in([Money::baseCurrency()])],
+        ];
+    }
+
     public function startCreate(): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'create'), 403);
+
         $this->resetForm();
         $this->editingId = null;
         $this->received_at = now()->toDateString();
@@ -71,6 +98,8 @@ new class extends Component
 
     public function startEdit(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'update'), 403);
+
         $d = Donation::query()->findOrFail($id);
         $this->editingId = $d->id;
         $this->donor_name = $d->donor_name;
@@ -107,18 +136,19 @@ new class extends Component
             'received_at' => $data['received_at'],
             'external_reference' => $data['external_reference'] ?: null,
             'notes' => $data['notes'] ?: null,
-            'recorded_by' => auth()->id(),
         ];
 
         if ($this->editingId) {
-            Donation::query()->whereKey($this->editingId)->update($payload);
+            // Save through the model so the received_at date cast is applied consistently.
+            Donation::query()->findOrFail($this->editingId)->update($payload);
             $this->flashMessage = "Updated gift from {$data['donor_name']}.";
         } else {
-            $donation = Donation::query()->create($payload);
+            $donation = Donation::query()->create($payload + ['recorded_by' => auth()->id()]);
             $this->flashMessage = "Recorded gift from {$data['donor_name']}.";
 
-            if (filled($donation->donor_email)) {
-                Mail::send(new DonationReceipt($donation->fresh('event')));
+            // Never email a receipt for a zero/missing amount (e.g. a malformed import).
+            if (filled($donation->donor_email) && $donation->amount_cents > 0) {
+                Mail::queue(new DonationReceipt($donation->fresh('event')));
                 $this->flashMessage .= ' Receipt emailed.';
             }
         }
@@ -128,6 +158,8 @@ new class extends Component
 
     public function askDelete(int $id): void
     {
+        abort_unless(auth()->user()?->canDo('donations', 'delete'), 403);
+
         $this->confirmDeleteId = $id;
     }
 
@@ -148,8 +180,14 @@ new class extends Component
         $this->flashMessage = "Deleted gift from {$name}.";
     }
 
+    /**
+     * Exporting donor PII is a reporting action, so it requires reports.export
+     * in addition to the donations.view needed to open the page.
+     */
     public function exportCsv(): StreamedResponse
     {
+        abort_unless(auth()->user()?->canDo('donations', 'view') && auth()->user()->canDo('reports', 'export'), 403);
+
         $query = $this->buildQuery();
         $rows = $query->orderBy('received_at')->get();
 
@@ -159,7 +197,7 @@ new class extends Component
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Received at', 'Donor name', 'Donor email', 'Amount', 'Currency', 'Payment method', 'Event', 'External reference', 'Notes']);
             foreach ($rows as $d) {
-                fputcsv($out, [
+                fputcsv($out, CsvCell::row([
                     $d->received_at?->toDateString(),
                     $d->donor_name,
                     $d->donor_email,
@@ -169,7 +207,7 @@ new class extends Component
                     $d->event?->title,
                     $d->external_reference,
                     $d->notes,
-                ]);
+                ]));
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);
@@ -202,13 +240,13 @@ new class extends Component
             'donor_name', 'donor_email', 'amount', 'payment_method', 'event_id',
             'external_reference', 'notes', 'showForm',
         ]);
-        $this->currency = 'USD';
+        $this->currency = Money::baseCurrency();
         $this->payment_method = PaymentMethod::MobileMoney->value;
         $this->resetErrorBag();
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\Donation>
+     * @return Builder<Donation>
      */
     protected function buildQuery()
     {
@@ -218,12 +256,12 @@ new class extends Component
             $query->where('event_id', $this->eventFilter);
         }
 
-        if (filled($this->fromDate)) {
-            $query->where('received_at', '>=', $this->fromDate);
+        if ($from = $this->parsedDate($this->fromDate)) {
+            $query->whereDate('received_at', '>=', $from);
         }
 
-        if (filled($this->toDate)) {
-            $query->where('received_at', '<=', $this->toDate);
+        if ($to = $this->parsedDate($this->toDate)) {
+            $query->whereDate('received_at', '<=', $to);
         }
 
         if (filled($this->search)) {
@@ -238,6 +276,22 @@ new class extends Component
         return $query;
     }
 
+    /**
+     * Normalise a filter date to Y-m-d, ignoring anything that is not a valid date.
+     */
+    protected function parsedDate(string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     #[Computed]
     public function donations()
     {
@@ -247,8 +301,8 @@ new class extends Component
     #[Computed]
     public function totals(): array
     {
-        $filtered = (int) $this->buildQuery()->sum('amount_cents');
-        $all = (int) Donation::query()->sum('amount_cents');
+        $filtered = (int) $this->buildQuery()->inBaseCurrency()->sum('amount_cents');
+        $all = (int) Donation::query()->inBaseCurrency()->sum('amount_cents');
 
         return [
             'filtered' => $filtered,
@@ -270,17 +324,17 @@ new class extends Component
 <div class="space-y-6">
     {{-- Stats --}}
     <div class="grid gap-4 sm:grid-cols-3">
-        <article class="rounded-2xl border border-cream-300 bg-white p-5">
-            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Total recorded</p>
-            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($this->totals['all'] / 100) }}</p>
+        <article class="rounded-2xl border border-cream-300 bg-surface p-5">
+            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Total recorded</p>
+            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::fromCents($this->totals['all']) }}</p>
         </article>
-        <article class="rounded-2xl border border-cream-300 bg-white p-5">
-            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">In current view</p>
-            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">${{ number_format($this->totals['filtered'] / 100) }}</p>
+        <article class="rounded-2xl border border-cream-300 bg-surface p-5">
+            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">In current view</p>
+            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ \App\Support\Money::fromCents($this->totals['filtered']) }}</p>
             <p class="mt-1 text-xs text-ink-500">{{ $this->totals['count'] }} gift(s) match the filters</p>
         </article>
-        <article class="rounded-2xl border border-cream-300 bg-white p-5">
-            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">Gifts logged</p>
+        <article class="rounded-2xl border border-cream-300 bg-surface p-5">
+            <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Gifts logged</p>
             <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $this->totals['count'] }}</p>
             <p class="mt-1 text-xs text-ink-500">Use the actions menu to export CSV</p>
         </article>
@@ -288,33 +342,33 @@ new class extends Component
 
     <x-admin.section-header
         title="Recorded gifts"
-        :subtitle="$this->totals['count'].' gift(s) in view · $'.number_format($this->totals['filtered'] / 100).' total'"
+        :subtitle="$this->totals['count'].' gift(s) in view · '.\App\Support\Money::fromCents($this->totals['filtered']).' total'"
     >
         <x-slot:actions>
-            <select wire:model.live="eventFilter" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <select wire:model.live="eventFilter" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
                 <option value="">All events</option>
                 @foreach ($this->eventOptions as $id => $title)
                     <option value="{{ $id }}">{{ $title }}</option>
                 @endforeach
             </select>
-            <input type="date" wire:model.live="fromDate" title="From date" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-700 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-700 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Name, email, reference" class="w-56 rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <input type="date" wire:model.live="fromDate" title="From date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <input type="date" wire:model.live="toDate" title="To date" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-700 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Name, email, reference" class="w-56 rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Record donation
             </button>
-            <a href="{{ route('admin.reports.index') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl border border-cream-300 bg-white px-4 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+            <a href="{{ route('admin.reports.index') }}" wire:navigate class="btn btn-ghost gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 14l4-4 4 4 5-6"/></svg>
                 Reports
             </a>
             <x-admin.actions-menu>
-                <button type="button" wire:click="exportCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                    <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
+                <button type="button" wire:click="exportCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                    <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Download CSV
                 </button>
                 @if (filled($eventFilter) || filled($fromDate) || filled($toDate) || filled($search))
-                    <button type="button" wire:click="$reset('eventFilter','fromDate','toDate','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('eventFilter','fromDate','toDate','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -336,30 +390,31 @@ new class extends Component
         <form wire:submit="save" class="space-y-5">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Donor name</label>
-                    <input type="text" wire:model="donor_name" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Donor name</label>
+                    <input type="text" wire:model="donor_name" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('donor_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Donor email <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                    <input type="email" wire:model="donor_email" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Donor email <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input type="email" wire:model="donor_email" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('donor_email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Amount</label>
-                    <input type="number" step="0.01" min="0.01" wire:model="amount" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Amount</label>
+                    <input type="number" step="0.01" min="0.01" wire:model="amount" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('amount') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Currency</label>
-                    <input type="text" maxlength="3" wire:model="currency" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm uppercase text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Currency</label>
+                    <input type="text" value="{{ $currency }}" readonly aria-readonly="true" title="All gifts are recorded in the foundation's base currency" class="mt-2 block w-full cursor-not-allowed rounded-lg border border-cream-300 bg-cream-100 px-3 py-2.5 text-sm uppercase text-ink-700">
+                    @error('currency') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Payment method</label>
-                    <select wire:model.live="payment_method" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Payment method</label>
+                    <select wire:model.live="payment_method" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @foreach (\App\Enums\PaymentMethod::options() as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -373,8 +428,8 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Event <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                    <select wire:model="event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Event <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <select wire:model="event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         <option value="">Unallocated</option>
                         @foreach ($this->eventOptions as $id => $title)
                             <option value="{{ $id }}">{{ $title }}</option>
@@ -382,27 +437,27 @@ new class extends Component
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Received on</label>
-                    <input type="date" wire:model="received_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Received on</label>
+                    <input type="date" wire:model="received_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('received_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">External reference <span class="font-normal normal-case tracking-normal text-ink-500">(processor id, cheque #)</span></label>
-                <input type="text" wire:model="external_reference" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">External reference <span class="font-normal normal-case tracking-normal text-ink-500">(processor id, cheque #)</span></label>
+                <input type="text" wire:model="external_reference" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Notes</label>
-                <textarea wire:model="notes" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Notes</label>
+                <textarea wire:model="notes" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="submit" wire:loading.attr="disabled" class="btn btn-primary disabled:opacity-60 px-6 py-3 text-sm">
                     {{ $editingId ? 'Save changes' : 'Record donation' }}
                 </button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
@@ -410,7 +465,7 @@ new class extends Component
     </x-admin.modal>
 
     {{-- Table --}}
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->donations->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No donations match the current filters.</div>
         @else
@@ -448,11 +503,11 @@ new class extends Component
                                     @if ($confirmDeleteId === $d->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $d->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
-                                            <button type="button" wire:click="startEdit({{ $d->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="startEdit({{ $d->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>

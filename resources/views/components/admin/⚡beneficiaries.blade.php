@@ -7,9 +7,12 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -20,6 +23,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -57,13 +61,11 @@ new class extends Component
     #[Validate('nullable|string|max:120')]
     public string $region = '';
 
-    #[Validate('required|string')]
     public string $category = '';
 
     #[Validate('required|string|min:20|max:4000')]
     public string $description = '';
 
-    #[Validate('required|string')]
     public string $status = 'pending_review';
 
     #[Validate('nullable|exists:users,id')]
@@ -72,12 +74,35 @@ new class extends Component
     #[Validate('nullable|string|max:4000')]
     public string $notes = '';
 
+    public string $drive_folder_url = '';
+
+    #[Locked]
     public string $photo_path = '';
 
     #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:5120')]
     public $photo_upload = null;
 
     public bool $remove_photo = false;
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('beneficiaries', 'view'), 403);
+    }
+
+    /**
+     * Enum-backed fields are validated here (attributes can't call Rule::enum()).
+     * Merged with the #[Validate] attribute rules by Livewire.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'category' => ['required', Rule::enum(SupportCategory::class)],
+            'status' => ['required', Rule::enum(SupportStatus::class)],
+            'drive_folder_url' => Beneficiary::DRIVE_FOLDER_URL_RULES,
+        ];
+    }
 
     public function startCreate(): void
     {
@@ -104,6 +129,7 @@ new class extends Component
         $this->status = $b->status->value;
         $this->assigned_to_user_id = $b->assigned_to_user_id;
         $this->notes = (string) $b->notes;
+        $this->drive_folder_url = (string) $b->drive_folder_url;
         $this->photo_path = (string) $b->photo_path;
         $this->photo_upload = null;
         $this->remove_photo = false;
@@ -122,19 +148,17 @@ new class extends Component
 
         $data = $this->validate();
 
-        $photoPath = $this->photo_path ?: null;
+        $existing = $this->editingId ? Beneficiary::query()->findOrFail($this->editingId) : null;
+
+        // Never trust the client-side photo_path; the stored file comes from the DB record.
+        $oldPhotoPath = $existing?->photo_path ?: null;
+        $photoPath = $oldPhotoPath;
 
         if ($this->remove_photo) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = null;
         }
 
         if ($this->photo_upload) {
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
-            }
             $photoPath = $this->photo_upload->store('beneficiaries', 'public');
         }
 
@@ -151,38 +175,44 @@ new class extends Component
             'status' => $data['status'],
             'assigned_to_user_id' => $data['assigned_to_user_id'] ?: null,
             'notes' => $data['notes'] ?: null,
+            'drive_folder_url' => trim($data['drive_folder_url']) ?: null,
             'photo_path' => $photoPath,
         ];
 
-        if ($this->editingId) {
-            Beneficiary::query()->whereKey($this->editingId)->update($payload);
+        if ($existing) {
+            $existing->update($payload);
             $this->flashMessage = 'Beneficiary record updated.';
         } else {
-            $b = Beneficiary::query()->create($payload);
+            DB::transaction(function () use ($payload): void {
+                $b = Beneficiary::query()->create($payload);
 
-            // Seed default folders
-            foreach ([
-                'Medical Records', 'School Documents', 'Photos',
-                'Support Reports', 'Identification Documents',
-            ] as $name) {
-                BeneficiaryFolder::query()->create([
+                foreach ([
+                    'Medical Records', 'School Documents', 'Photos',
+                    'Support Reports', 'Identification Documents',
+                ] as $name) {
+                    BeneficiaryFolder::query()->create([
+                        'beneficiary_id' => $b->id,
+                        'name' => $name,
+                        'slug' => Str::slug($name),
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+
+                BeneficiaryTimelineEntry::query()->create([
                     'beneficiary_id' => $b->id,
-                    'name' => $name,
-                    'slug' => Str::slug($name),
-                    'created_by' => auth()->id(),
+                    'type' => TimelineEntryType::ApplicationReceived->value,
+                    'description' => 'Record created by '.auth()->user()?->name,
+                    'occurred_at' => now(),
+                    'recorded_by' => auth()->id(),
                 ]);
-            }
-
-            // Timeline: record creation
-            BeneficiaryTimelineEntry::query()->create([
-                'beneficiary_id' => $b->id,
-                'type' => TimelineEntryType::ApplicationReceived->value,
-                'description' => 'Record created by '.auth()->user()?->name,
-                'occurred_at' => now(),
-                'recorded_by' => auth()->id(),
-            ]);
+            });
 
             $this->flashMessage = 'Beneficiary record created with default folders.';
+        }
+
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && Storage::disk('public')->exists($oldPhotoPath)) {
+            Storage::disk('public')->delete($oldPhotoPath);
         }
 
         $this->resetForm();
@@ -235,7 +265,7 @@ new class extends Component
         $this->reset([
             'editingId', 'showForm', 'full_name', 'date_of_birth', 'gender', 'phone',
             'email', 'country', 'region', 'description', 'assigned_to_user_id', 'notes',
-            'photo_path', 'photo_upload', 'remove_photo',
+            'drive_folder_url', 'photo_path', 'photo_upload', 'remove_photo',
         ]);
         $this->category = '';
         $this->status = 'pending_review';
@@ -316,28 +346,28 @@ new class extends Component
         :subtitle="$this->beneficiaries->total().' record(s) in view'"
     >
         <x-slot:actions>
-            <select wire:model.live="categoryFilter" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+            <select wire:model.live="categoryFilter" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
                 <option value="">All categories</option>
                 @foreach ($categoryOptions as $value => $label)
                     <option value="{{ $value }}">{{ $label }}</option>
                 @endforeach
             </select>
             @if (count($countryOptions) > 0)
-                <select wire:model.live="countryFilter" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
+                <select wire:model.live="countryFilter" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
                     <option value="">All countries</option>
                     @foreach ($countryOptions as $country)
                         <option value="{{ $country }}">{{ $country }}</option>
                     @endforeach
                 </select>
             @endif
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Name, phone, email, region" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Name, phone, email, region" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Add beneficiary
             </button>
             @if (filled($statusFilter) || filled($categoryFilter) || filled($countryFilter) || filled($search))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$reset('statusFilter','categoryFilter','countryFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('statusFilter','categoryFilter','countryFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -356,7 +386,7 @@ new class extends Component
     <x-admin.modal :show="$showForm" :title="$editingId ? 'Edit beneficiary' : 'New beneficiary record'" size="xl" onClose="cancel">
         <form wire:submit="save" class="space-y-5">
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Profile picture <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Profile picture <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
                 <div class="mt-2 flex items-center gap-4">
                     @if ($photo_upload)
                         <img src="{{ $photo_upload->temporaryUrl() }}" alt="Pending upload" class="size-20 rounded-full object-cover ring-2 ring-cream-200">
@@ -364,7 +394,7 @@ new class extends Component
                         <x-admin.avatar :src="filled($photo_path) && ! $remove_photo ? $photo_path : null" :name="$full_name ?: 'New beneficiary'" size="xl" />
                     @endif
                     <div class="flex flex-col gap-2">
-                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 20h16"/></svg>
                             {{ $photo_upload || filled($photo_path) ? 'Replace picture' : 'Upload picture' }}
                             <input type="file" wire:model="photo_upload" accept="image/png,image/jpeg,image/webp" class="hidden">
@@ -373,10 +403,10 @@ new class extends Component
                             <button type="button" wire:click="$set('remove_photo', true)" class="text-left text-xs font-semibold text-red-600 hover:text-red-700">Remove current picture</button>
                         @endif
                         @if ($remove_photo)
-                            <p class="text-xs text-red-600">Picture will be removed on save. <button type="button" wire:click="$set('remove_photo', false)" class="font-semibold text-brand-700 hover:text-brand-900">Undo</button></p>
+                            <p class="text-xs text-red-600">Picture will be removed on save. <button type="button" wire:click="$set('remove_photo', false)" class="font-semibold text-label hover:text-heading">Undo</button></p>
                         @endif
                         <p class="text-xs text-ink-500">Square photo recommended. PNG, JPEG, or WebP up to 5 MB.</p>
-                        <div wire:loading wire:target="photo_upload" class="text-xs text-brand-700">Uploading…</div>
+                        <div wire:loading wire:target="photo_upload" class="text-xs text-label">Uploading…</div>
                     </div>
                 </div>
                 @error('photo_upload') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -384,20 +414,20 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Full name</label>
-                    <input type="text" wire:model="full_name" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Full name</label>
+                    <input type="text" wire:model="full_name" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Date of birth</label>
-                    <input type="date" wire:model="date_of_birth" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Date of birth</label>
+                    <input type="date" wire:model="date_of_birth" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Gender</label>
-                    <select wire:model="gender" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Gender</label>
+                    <select wire:model="gender" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         <option value="">Prefer not to say</option>
                         <option value="female">Female</option>
                         <option value="male">Male</option>
@@ -405,30 +435,30 @@ new class extends Component
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Phone</label>
-                    <input type="tel" wire:model="phone" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Phone</label>
+                    <input type="tel" wire:model="phone" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Email</label>
-                    <input type="email" wire:model="email" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
-                </div>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Country</label>
-                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Region / city</label>
-                    <input type="text" wire:model="region" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Email</label>
+                    <input type="email" wire:model="email" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Category of support</label>
-                    <select wire:model="category" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country</label>
+                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Region / city</label>
+                    <input type="text" wire:model="region" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Category of support</label>
+                    <select wire:model="category" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         <option value="">Pick one…</option>
                         @foreach ($categoryOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
@@ -437,8 +467,8 @@ new class extends Component
                     @error('category') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Status</label>
-                    <select wire:model="status" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Status</label>
+                    <select wire:model="status" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @foreach ($statusOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -447,14 +477,14 @@ new class extends Component
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Description of situation</label>
-                <textarea wire:model="description" rows="5" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Description of situation</label>
+                <textarea wire:model="description" rows="5" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 @error('description') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Assigned staff <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                <select wire:model="assigned_to_user_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Assigned staff <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                <select wire:model="assigned_to_user_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     <option value="">Unassigned</option>
                     @foreach ($staffOptions as $id => $name)
                         <option value="{{ $id }}">{{ $name }}</option>
@@ -463,18 +493,25 @@ new class extends Component
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Internal notes</label>
-                <textarea wire:model="notes" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Internal notes</label>
+                <textarea wire:model="notes" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+            </div>
+
+            <div>
+                <label for="beneficiary-drive-folder" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Google Drive folder link</label>
+                <input id="beneficiary-drive-folder" type="url" wire:model="drive_folder_url" placeholder="https://drive.google.com/drive/folders/…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <p class="mt-1 text-xs text-ink-500">Where this person's documents and photos are kept. Paste the folder's share link.</p>
+                @error('drive_folder_url') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">{{ $editingId ? 'Save changes' : 'Create record' }}</button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm">{{ $editingId ? 'Save changes' : 'Create record' }}</button>
+                <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
             </div>
         </form>
     </x-admin.modal>
 
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->beneficiaries->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No beneficiary records yet — click <strong class="font-semibold text-ink-900">Add beneficiary</strong>.</div>
         @else
@@ -497,6 +534,11 @@ new class extends Component
                                     <x-admin.avatar :src="$b->photo_path" :name="$b->full_name" size="sm" />
                                     <div>
                                         <a href="{{ route('admin.beneficiaries.show', $b) }}" class="font-semibold text-ink-900 hover:text-gold-500" wire:navigate>{{ $b->full_name }}</a>
+                                        @if ($b->drive_folder_url)
+                                            <a href="{{ $b->drive_folder_url }}" target="_blank" rel="noopener" class="ml-1.5 inline-grid size-6 place-items-center rounded-md align-middle text-ink-500 ring-1 ring-cream-300 transition hover:bg-cream-100 hover:text-heading" title="Open Google Drive folder" aria-label="Open {{ $b->full_name }}'s Google Drive folder">
+                                                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+                                            </a>
+                                        @endif
                                         @if ($b->region)
                                             <p class="text-xs text-ink-500">{{ $b->region }}</p>
                                         @endif
@@ -514,15 +556,15 @@ new class extends Component
                                     @if ($confirmDeleteId === $b->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $b->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm archive</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
-                                            <a href="{{ route('admin.beneficiaries.show', $b) }}" @click="open = false" wire:navigate class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <a href="{{ route('admin.beneficiaries.show', $b) }}" @click="open = false" wire:navigate class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 Open profile
                                             </a>
-                                            <button type="button" wire:click="startEdit({{ $b->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="startEdit({{ $b->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>

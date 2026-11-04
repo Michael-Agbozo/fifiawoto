@@ -154,7 +154,7 @@ new class extends Component
             x-cloak
             x-transition
             @click.outside="open = false; $wire.closeModal()"
-            class="w-full max-w-md overflow-hidden rounded-3xl bg-white p-8 shadow-2xl"
+            class="w-full max-w-md overflow-hidden rounded-3xl bg-surface p-8 shadow-2xl"
         >
             <div class="space-y-6">
                 <div class="text-center">
@@ -164,7 +164,7 @@ new class extends Component
 
                 @if ($showVerificationStep)
                     <div class="space-y-5">
-                        <label for="tfa-confirm-code" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Authentication code') }}</label>
+                        <label for="tfa-confirm-code" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Authentication code') }}</label>
                         <input
                             id="tfa-confirm-code"
                             wire:model="code"
@@ -173,7 +173,7 @@ new class extends Component
                             autocomplete="one-time-code"
                             maxlength="6"
                             placeholder="123 456"
-                            class="block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 text-center text-lg tracking-[0.4em] text-ink-900 placeholder-ink-500/40 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                            class="block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 text-center text-lg tracking-[0.4em] text-ink-900 placeholder-ink-500/40 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                         >
                         @error('code') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
 
@@ -181,7 +181,7 @@ new class extends Component
                             <button
                                 type="button"
                                 wire:click="resetVerification"
-                                class="inline-flex flex-1 items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                                class="inline-flex flex-1 items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading"
                             >
                                 {{ __('Back') }}
                             </button>
@@ -208,7 +208,7 @@ new class extends Component
                                 </div>
                             @else
                                 <div class="grid h-full place-items-center p-4">
-                                    <div class="rounded bg-white p-3">{!! $qrCodeSvg !!}</div>
+                                    <div class="rounded bg-surface p-3">{!! $qrCodeSvg !!}</div>
                                 </div>
                             @endempty
                         </div>
@@ -226,7 +226,7 @@ new class extends Component
                     <div class="space-y-3">
                         <div class="relative flex items-center justify-center">
                             <div class="absolute inset-x-0 top-1/2 h-px bg-cream-300"></div>
-                            <span class="relative bg-white px-3 text-xs uppercase tracking-[0.18em] text-ink-500">{{ __('or, enter the code manually') }}</span>
+                            <span class="relative bg-surface px-3 text-xs uppercase tracking-[0.18em] text-ink-500">{{ __('or, enter the code manually') }}</span>
                         </div>
 
                         <div

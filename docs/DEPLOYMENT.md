@@ -47,6 +47,9 @@ MAIL_FROM_ADDRESS=hello@fifiawoto.org
 MAIL_FROM_NAME=Fifiawoto Foundation
 ADMIN_NOTIFICATION_EMAIL=hello@fifiawoto.org
 
+# Traefik is the only way into the container, so trust the hop in front of it.
+TRUSTED_PROXIES=*
+
 NIXPACKS_BUILD_CMD=composer install --no-dev --optimize-autoloader --ignore-platform-reqs && npm install && npm run build
 NIXPACKS_NODE_VERSION=20
 NIXPACKS_PHP_ROOT_DIR=/app/public
@@ -57,7 +60,9 @@ NIXPACKS_PHP_FALLBACK_PATH=/index.php
 
 Coolify runs Traefik in front of the container. The container's Nginx only listens on port 80. To make Laravel generate correct HTTPS URLs:
 
-1. **`bootstrap/app.php`** — `$middleware->trustProxies(at: '*')` tells Laravel to trust the `X-Forwarded-Proto: https` header from Traefik.
+1. **`config/trustedproxy.php`** — `TRUSTED_PROXIES` (read by Laravel's `TrustProxies` middleware) tells Laravel which proxies may set `X-Forwarded-*` headers. Set `TRUSTED_PROXIES=*` on Coolify (the container is only reachable through Traefik) so Laravel honours `X-Forwarded-Proto: https`.
+
+> **`TRUSTED_PROXIES`** — comma-separated proxy IPs/CIDRs (e.g. `10.0.0.0/8,172.16.0.0/12`), or `*` to trust the immediate caller. **Leave it unset** when the app is reachable directly from the internet: trusting every client lets anyone spoof their IP via `X-Forwarded-For`, which defeats rate limiting and pollutes audit logs. Laravel Cloud is detected automatically, so leave it unset there. Behind Cloudflare *without* another proxy, list [Cloudflare's IP ranges](https://www.cloudflare.com/ips/) instead of `*` (or make sure the origin only accepts traffic from Cloudflare).
 2. **`app/Providers/AppServiceProvider.php`** — `URL::forceScheme('https')` runs on `production` and `staging` environments as a belt-and-suspenders fallback.
 3. **`nginx.conf`** — passes `HTTP_X_FORWARDED_PROTO` to PHP-FPM so Laravel's middleware can read it.
 
@@ -88,14 +93,41 @@ php artisan vendor:publish --tag=livewire:assets --force
 php artisan config:cache
 php artisan route:cache
 php artisan migrate --force
+queue:work and schedule:work (background, restart if they exit)
 nginx (foreground)
 ```
+
+If Coolify already has its own queue worker or scheduled task for this app, remove them so work is not picked up twice.
+
+Mount a persistent volume on `/app/storage/app`. Without one, uploaded photos and documents disappear on every deploy.
 
 No downtime steps are needed for typical deploys. Migrations run automatically.
 
 ### Preview deployments (dev branch)
 
 Preview deployments use the same `start.sh` but the `Preview Deployments Environment Variables` in Coolify. Set `APP_ENV=staging`, `APP_DEBUG=true`. Do **not** set `LIVEWIRE_ASSET_URL`.
+
+### Demo data for reviewers (staging only)
+
+To fill a preview site with sample events, children, sponsors, newsletters and analytics, run this once in Coolify's terminal:
+
+```bash
+DEMO_PASSWORD='<strong password>' php artisan db:seed --force
+```
+
+It logs in as `superadmin@fifiawoto.test`, `admin@`, `staff@`, `volunteer-coord@` and `media@` with that password, and it is safe to rerun. Staging pages are hidden from search engines. Share the password only with reviewers, because these logins have full access.
+
+The seeder refuses to run when `APP_ENV=production`, because the children, sponsors and gifts are fictional. Demo email addresses all use `example.com` and demo sponsors have reminders switched off.
+
+### Sample programmes and sponsors on the live site
+
+Set `DEMO_CONTENT=true` in Coolify and redeploy. Each deploy then adds the sample events, event photos, children, sponsors and gifts, and public pages show a notice saying they are samples. It creates no logins, so sign in with your real admin account.
+
+Before the real launch, remove `DEMO_CONTENT` and run this in Coolify's terminal. It deletes the sample records and everything attached to them, including any sign-ups or requests real visitors made on them:
+
+```bash
+php artisan demo:remove --force
+```
 
 ---
 
@@ -133,7 +165,11 @@ php artisan key:generate
 # Edit .env (see section 3 below)
 php artisan storage:link
 php artisan migrate --force
-php artisan db:seed --class=DatabaseSeeder --force   # only on first deploy
+# Create the Owner + Admin accounts (never run DatabaseSeeder in production —
+# it seeds demo accounts with known passwords and refuses to run when APP_ENV=production)
+OWNER_EMAIL=owner@fifiawoto.org OWNER_PASSWORD='<strong password>' \
+ADMIN_EMAIL=admin@fifiawoto.org ADMIN_PASSWORD='<strong password>' \
+php artisan db:seed --class=AdminUserSeeder --force
 
 npm ci
 npm run build
@@ -303,6 +339,28 @@ php artisan up
 ```
 
 On Forge / Ploi this is one click — they generate the script above by default.
+
+---
+
+## Protecting beneficiary documents
+
+Documents are encrypted with `APP_KEY` when uploaded. **If `APP_KEY` is lost, those files can't be recovered**, so back it up. When rotating it, keep the old key in `APP_PREVIOUS_KEYS`.
+
+After deploying, encrypt documents uploaded before this was added:
+
+```bash
+php artisan beneficiaries:secure-documents --dry-run
+php artisan beneficiaries:secure-documents
+```
+
+To scan uploads for viruses, install ClamAV, make sure `clamd` is running, and set:
+
+```
+UPLOAD_SCANNER=clamav
+CLAMAV_SOCKET=unix:///var/run/clamav/clamd.ctl
+```
+
+With scanning on, uploads are refused if `clamd` can't be reached. The scheduler and queue worker must also be running: pledge reminders and newsletters depend on both.
 
 ---
 

@@ -36,6 +36,16 @@ class User extends Authenticatable
     ];
 
     /**
+     * Mirrors the column defaults so freshly created, not-yet-refreshed instances
+     * (e.g. the one put on the session at sign-up) read as active.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
+
+    /**
      * @var list<string>
      */
     protected $hidden = [
@@ -57,6 +67,7 @@ class User extends Authenticatable
             'permissions' => 'array',
             'force_password_change' => 'boolean',
             'requires_two_factor' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -72,6 +83,23 @@ class User extends Authenticatable
     public function hasRole(UserRole ...$roles): bool
     {
         return in_array($this->role, $roles, true);
+    }
+
+    /**
+     * Whether this is the only active Owner left — demoting, deactivating or deleting
+     * it would leave nobody able to manage Owner-level accounts or system logs.
+     */
+    public function isLastActiveOwner(): bool
+    {
+        if ($this->role !== UserRole::Owner || ! $this->is_active) {
+            return false;
+        }
+
+        return ! static::query()
+            ->where('role', UserRole::Owner->value)
+            ->where('is_active', true)
+            ->whereKeyNot($this->getKey())
+            ->exists();
     }
 
     public function canAccessAdmin(): bool

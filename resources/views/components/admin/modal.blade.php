@@ -27,7 +27,7 @@
         <button
             type="button"
             wire:click="{{ $onClose }}"
-            class="fixed inset-0 bg-ink-900/55 backdrop-blur-sm animate-backdrop-enter"
+            class="fixed inset-0 bg-night/55 backdrop-blur-sm animate-backdrop-enter"
             aria-label="Close"
             tabindex="-1"
         ></button>
@@ -35,7 +35,7 @@
         <div class="relative flex min-h-full items-end justify-center p-3 sm:items-center sm:p-6">
             <div
                 @keydown.escape.window="$wire.{{ $onClose }}()"
-                class="relative flex w-full {{ $maxWidth }} max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_30px_80px_-20px_rgba(0,4,78,0.45)] sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl animate-modal-enter"
+                class="relative flex w-full {{ $maxWidth }} max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden rounded-t-3xl bg-surface shadow-[0_30px_80px_-20px_rgba(0,4,78,0.45)] sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl animate-modal-enter"
             >
                 {{-- Header (fixed) --}}
                 <div class="flex shrink-0 items-start justify-between gap-4 border-b border-cream-200 bg-cream-50 px-6 py-5">

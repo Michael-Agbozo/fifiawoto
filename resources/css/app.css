@@ -57,8 +57,25 @@
     --color-gold-500: #df0000;
     --color-gold-600: #a30000;
 
+    /* Role tokens. Views use these instead of raw palette steps wherever the
+       colour must flip in dark mode. Light values equal the palette step each
+       one replaced, so light mode is unchanged:
+         surface       ← bg-white            (cards, inputs, panels)
+         heading       ← text/border-brand-900 (headings, outline buttons)
+         heading-soft  ← text-brand-800
+         label         ← text-brand-700      (labels, links)
+         paper / -dim  ← text-cream-50/200   (text on navy strips — never flips)
+         night         ← bg-ink-900          (backdrops, dark panels — never flips) */
+    --color-surface: #ffffff;
+    --color-heading: #00044e;
+    --color-heading-soft: #000342;
+    --color-label: #03075e;
+    --color-paper: #ffffff;
+    --color-paper-dim: #f1f3f5;
+    --color-night: #000000;
+
     --color-accent: var(--color-gold-500);
-    --color-accent-content: var(--color-brand-900);
+    --color-accent-content: var(--color-heading);
     --color-accent-foreground: var(--color-white);
 
     /* Modal entrance — used by <x-admin.modal> so the dialog fades + lifts in
@@ -98,6 +115,137 @@
             opacity: 0;
         }
     }
+}
+
+/* ------------------------------------------------------------------
+ | Dark mode
+ |
+ | Activated by setting `data-theme="dark"` (or class `.dark`) on the
+ | <html> element. The block below overrides the same custom-property
+ | names that the light palette defines so every utility that uses a
+ | brand/cream/ink/gold token re-skins automatically — no `dark:` prefix
+ | needed in views. A blocking script in partials/head.blade.php applies
+ | the attribute before first paint to avoid flash-of-wrong-theme.
+ |
+ | Reduced-motion: the transition below is suppressed for users who
+ | request it (see the `prefers-reduced-motion` block already present).
+ ------------------------------------------------------------------ */
+:root[data-theme="dark"],
+.dark {
+    color-scheme: dark;
+
+    /* Neutral charcoal surfaces: canvas (cream-200) darkest, cards/inputs
+       (surface, cream-50) one step up, tinted rows/hover (cream-100) slightly
+       raised. Navy strips (brand-900) stand out against the grey. */
+    --color-surface:   #181b22;
+    --color-cream-50:  #181b22;
+    --color-cream-100: #20242d;
+    --color-cream-200: #0f1115;
+    --color-cream-300: #2c313c;
+
+    /* Text */
+    --color-heading:      #f5f6f8;
+    --color-heading-soft: #e4e6eb;
+    --color-label:        #c9cdd6;
+    --color-ink-500: #9da3ae;
+    --color-ink-700: #d0d3da;
+    --color-ink-900: #ffffff;
+
+    /* Neutral tints used for chips, light borders and focus rings, with a
+       faint navy cast on the focus step. The deep steps (600–900) stay navy
+       so strips, buttons and overlays keep their look in both modes. */
+    --color-brand-50:  #1f232c;
+    --color-brand-100: #2a2f3a;
+    --color-brand-200: #3a404c;
+    --color-brand-300: #6b7282;
+    --color-brand-400: #8b92a3;
+    --color-brand-500: #a9b0cf;
+
+    /* Muted brick red so the accent reads as an accent rather than glowing
+       against charcoal: small red text and white-on-red fills both stay ~4:1. */
+    --color-gold-300: #f0aaa5;
+    --color-gold-400: #e06a62;
+    --color-gold-500: #d4453d;
+    --color-gold-600: #ef938d;
+}
+
+/* Stage-light band: vertical navy-to-blue light columns with a glow rising
+   from the bottom centre. A feature surface, so it reads the same in both
+   themes; text on it is always white. */
+.bg-stage-light {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: #020524;
+}
+
+/* The light columns sit on a blurred layer so their edges soften like
+   stage light while the section's text stays sharp. */
+.bg-stage-light::before {
+    content: "";
+    position: absolute;
+    inset: -24px -8%;
+    z-index: -1;
+    filter: blur(10px);
+    animation: stage-sway 16s ease-in-out infinite;
+    background-image:
+        radial-gradient(ellipse 34% 48% at 50% 82%, rgba(86, 156, 255, 0.75), rgba(86, 156, 255, 0) 70%),
+        linear-gradient(90deg,
+            rgba(0, 0, 0, 0.42) 0 8%, rgba(0, 0, 0, 0.18) 8% 16%, rgba(0, 0, 0, 0.3) 16% 24%,
+            rgba(0, 0, 0, 0.1) 24% 32%, rgba(255, 255, 255, 0.02) 32% 40%, rgba(255, 255, 255, 0.06) 40% 48%,
+            rgba(255, 255, 255, 0.08) 48% 52%, rgba(255, 255, 255, 0.05) 52% 60%, rgba(0, 0, 0, 0.04) 60% 68%,
+            rgba(0, 0, 0, 0.14) 68% 76%, rgba(0, 0, 0, 0.26) 76% 84%, rgba(0, 0, 0, 0.36) 84% 92%, rgba(0, 0, 0, 0.48) 92% 100%),
+        linear-gradient(180deg, #020524 0%, #04104f 34%, #123aa6 72%, #2f7bf0 100%);
+}
+
+/* Hero background: fluted blue glass photograph, softened with a light blur.
+   A dark wash on the reading side keeps the white headline legible. */
+.bg-fluted {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: #03123f;
+}
+.bg-fluted::before {
+    content: "";
+    position: absolute;
+    inset: -30px;
+    z-index: -2;
+    background: url('/images/backgrounds/hero-fluted-blue.webp') center 45% / cover no-repeat;
+    filter: blur(6px) saturate(1.05);
+}
+.bg-fluted::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(90deg, rgba(2, 8, 48, 0.72) 0%, rgba(2, 8, 48, 0.45) 45%, rgba(2, 8, 48, 0.1) 100%),
+        linear-gradient(180deg, rgba(2, 8, 48, 0.15) 0%, rgba(2, 8, 48, 0.35) 100%);
+}
+
+@keyframes stage-sway {
+    0%, 100% { transform: translateX(0) scaleY(1); opacity: 1; }
+    50% { transform: translateX(-4%) scaleY(1.05); opacity: 0.88; }
+}
+
+/* Smooth theme transition on the structural surfaces that actually
+   change colour when the theme flips. Kept narrow (not a universal `*`)
+   so scroll + hover transitions on cards/buttons aren't impacted. */
+html,
+body,
+header,
+footer,
+main,
+section,
+article,
+aside,
+nav,
+figure {
+    transition:
+        background-color 220ms ease,
+        color 220ms ease,
+        border-color 220ms ease;
 }
 
 /* ------------------------------------------------------------------
@@ -154,6 +302,9 @@
 .reveal-left  { transform: translateX(-48px); }
 .reveal-right { transform: translateX(48px); }
 .reveal-zoom  { transform: scale(0.88); }
+/* `reveal-3d` tips back and rises, like a card standing up off the table. */
+.reveal-3d    { opacity: 0; transform: perspective(1200px) rotateX(22deg) translateY(64px) scale(0.96); transform-origin: 50% 100%;
+                transition: opacity 1200ms cubic-bezier(0.16, 1, 0.3, 1), transform 1200ms cubic-bezier(0.16, 1, 0.3, 1); }
 
 .reveal.is-visible,
 .reveal-fade.is-visible,
@@ -161,10 +312,56 @@
 .reveal-down.is-visible,
 .reveal-left.is-visible,
 .reveal-right.is-visible,
-.reveal-zoom.is-visible {
+.reveal-zoom.is-visible,
+.reveal-3d.is-visible {
     opacity: 1;
     transform: none;
 }
+
+/* ------------------------------------------------------------------
+ | 3D tilt cards (.tilt)
+ |
+ | Cards lean toward the pointer with a soft light sheen. JS sets
+ | --tilt-x/--tilt-y/--sheen-x/--sheen-y and toggles .is-tilting only on
+ | devices with a fine pointer, so touch screens and reduced motion get
+ | the plain card. Declared after the reveal rules so a card that has
+ | finished revealing hands its transform over to the tilt.
+ ------------------------------------------------------------------ */
+.tilt { position: relative; }
+.tilt.is-tilting {
+    transform: perspective(1000px) rotateX(var(--tilt-y, 0deg)) rotateY(var(--tilt-x, 0deg));
+    transition: transform 120ms linear, box-shadow 300ms ease;
+}
+.tilt.is-settling {
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+    transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tilt::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(420px circle at var(--sheen-x, 50%) var(--sheen-y, 0%), rgba(255, 255, 255, 0.22), transparent 45%);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    z-index: 2;
+}
+.tilt.is-tilting::after { opacity: 1; }
+
+/* Feature photos float gently and lean toward the pointer (JS sets --float-x/--float-y). */
+[data-float] {
+    transform: perspective(1100px) rotateY(var(--float-x, 0deg)) rotateX(var(--float-y, 0deg)) translateY(var(--float-lift, 0px));
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: float-bob 7s ease-in-out infinite;
+}
+@keyframes float-chip {
+    50% { transform: translateY(-10px); }
+}
+@keyframes float-bob {
+    50% { --float-lift: -10px; }
+}
+@property --float-lift { syntax: '<length>'; inherits: false; initial-value: 0px; }
 
 /* Counter animation — used by [data-counter] elements. The CSS just sets up
    a font-variant for stable digit width so the number doesn't jiggle as it
@@ -201,7 +398,10 @@ img.img-fade[data-loaded="true"] {
     .reveal-down,
     .reveal-left,
     .reveal-right,
-    .reveal-zoom {
+    .reveal-zoom,
+    .reveal-3d,
+    .tilt,
+    [data-float] {
         opacity: 1 !important;
         transform: none !important;
     }
@@ -236,4 +436,170 @@ img.img-fade[data-loaded="true"] {
     textarea {
         font-family: inherit;
     }
+}
+
+/* ------------------------------------------------------------------
+ | Shared UI standard
+ |
+ | One definition for the pieces every page repeats, so the public site
+ | and admin stay uniform. They live in the components layer, so a view
+ | can still add spacing, width or a colour override with a utility.
+ |
+ |   .btn + .btn-primary | .btn-secondary | .btn-light | .btn-outline-light
+ |        + .btn-sm | .btn-lg            — every call-to-action
+ |   .eyebrow (+ .eyebrow-light)         — the small label above a title
+ |   .section-title / .section-intro     — section headings and lead copy
+ |   .section                            — vertical rhythm for page sections
+ |   .card                               — the standard surface for cards
+ ------------------------------------------------------------------ */
+@layer components {
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-align: center;
+        border: 2px solid transparent;
+        transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+        cursor: pointer;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:focus-visible { outline: 2px solid var(--color-gold-500); outline-offset: 3px; }
+    .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
+    .btn-lg { padding: 0.875rem 2rem; font-size: 1rem; line-height: 1.5rem; }
+
+    .btn-primary { background-color: var(--color-gold-500); color: #ffffff; box-shadow: 0 10px 24px -14px var(--color-gold-500); }
+    .btn-primary:hover { background-color: var(--color-heading); color: var(--color-surface); box-shadow: none; }
+    /* Primary on a navy band or photo: hovering turns it white instead of navy. */
+    .btn-on-dark:hover { background-color: #ffffff; color: #00044e; }
+    .btn-secondary { border-color: var(--color-heading); color: var(--color-heading); background-color: transparent; }
+    .btn-secondary:hover { background-color: var(--color-heading); color: var(--color-surface); }
+    /* Neutral action (filters, toolbars, secondary admin actions). */
+    .btn-ghost { border-width: 1px; border-color: var(--color-cream-300); background-color: var(--color-surface); color: var(--color-ink-700); font-weight: 600; }
+    .btn-ghost:hover { border-color: var(--color-heading); color: var(--color-heading); }
+    /* On photos and navy bands (never flip with the theme). */
+    .btn-light { background-color: #ffffff; color: #00044e; }
+    .btn-light:hover { background-color: var(--color-gold-500); color: #ffffff; }
+    .btn-outline-light { border-color: rgba(255, 255, 255, 0.6); color: #ffffff; background-color: transparent; }
+    .btn-outline-light:hover { background-color: #ffffff; border-color: #ffffff; color: #00044e; }
+
+    .eyebrow { font-size: 0.75rem; line-height: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3em; color: var(--color-gold-500); }
+    /* On navy and photo backgrounds: the brand red, lifted so small caps stay readable. */
+    .eyebrow-light { color: var(--color-gold-400); }
+
+    .section-title { font-family: var(--font-serif); font-weight: 700; font-size: 1.875rem; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
+    @media (min-width: 40rem) { .section-title { font-size: 2.25rem; } }
+    @media (min-width: 64rem) { .section-title { font-size: 2.75rem; } }
+    .section-intro { font-size: 1rem; line-height: 1.7; color: var(--color-ink-500); max-width: 42rem; }
+
+    .section { padding-block: 5rem; }
+    @media (min-width: 64rem) { .section { padding-block: 6rem; } }
+
+    .card { border-radius: 1.5rem; border: 1px solid var(--color-cream-300); background-color: var(--color-surface); box-shadow: 0 1px 2px rgba(0, 4, 78, 0.05); }
+}
+
+/* ------------------------------------------------------------------
+ | Glass fade (.glass-in)
+ |
+ | Cards and photos arrive out of a frosted blur: they start faded,
+ | blurred and slightly low, sharpen into place, and a soft light sheen
+ | sweeps across as they land. Stagger siblings with style="--i: n".
+ ------------------------------------------------------------------ */
+@keyframes glass-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(12px) saturate(1.3); }
+    60% { filter: blur(2px) saturate(1.1); }
+    to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes glass-sheen {
+    from { opacity: 0.9; transform: translateX(-110%) skewX(-12deg); }
+    to { opacity: 0; transform: translateX(110%) skewX(-12deg); }
+}
+.glass-in {
+    position: relative;
+}
+/* Waits off-screen; the scroll observer in app.js adds .is-visible when it arrives. */
+.glass-in:not(.is-visible) {
+    opacity: 0;
+}
+.glass-in.is-visible {
+    animation: glass-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+}
+.glass-in.is-visible > :first-child::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.4) 48%, rgba(255, 255, 255, 0.08) 60%, transparent 75%);
+    animation: glass-sheen 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms + 250ms);
+}
+@media (prefers-reduced-motion: reduce) {
+    .glass-in, .glass-in > :first-child::after { animation: none !important; opacity: 1 !important; }
+}
+
+/* ------------------------------------------------------------------
+ | Stacked admin tables on phones
+ |
+ | Inside `.admin-content`, every <table> (unless it opts out with
+ | `.no-stack`) collapses into one card per row below the md breakpoint,
+ | so nothing needs a sideways scroll. Each cell is labelled from its
+ | column header by labelStackedTables() in resources/js/app.js.
+ ------------------------------------------------------------------ */
+@media (max-width: 47.99rem) {
+    .admin-content table:not(.no-stack),
+    .admin-content table:not(.no-stack) > tbody,
+    .admin-content table:not(.no-stack) > tbody > tr,
+    .admin-content table:not(.no-stack) > tbody > tr > td {
+        display: block;
+        width: 100%;
+        max-width: none;
+    }
+    .admin-content table:not(.no-stack) > thead { display: none; }
+    .admin-content table:not(.no-stack) > tbody > tr:not([style*="display: none"]) {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.25rem;
+        padding: 0.875rem 1rem;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td:first-child,
+    .admin-content table:not(.no-stack) > tbody > tr > td[colspan] { grid-column: 1 / -1; }
+    .admin-content table:not(.no-stack) > tbody > tr > td.is-row-actions {
+        position: absolute;
+        top: 0.625rem;
+        right: 0.75rem;
+        width: auto;
+        padding: 0 !important;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td.is-row-actions::before { content: none !important; }
+    .admin-content table:not(.no-stack) > tbody > tr > td:first-child:not(.is-row-actions) { padding-right: 3rem !important; }
+    .admin-content table:not(.no-stack) > tbody > tr > td {
+        padding: 0.25rem 0 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td > .justify-end { justify-content: flex-start; }
+    .admin-content table:not(.no-stack) > tbody > tr > td[data-label]:not([data-label=""])::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 0.125rem;
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-ink-500, #6b6b85);
+    }
+    .admin-content table:not(.no-stack) > tbody > tr > td[colspan]::before { content: none; }
 }

@@ -15,12 +15,13 @@ class BeneficiaryApplicationDocument extends Model
     protected $fillable = [
         'beneficiary_application_id', 'disk', 'path', 'original_name',
         'mime_type', 'size_bytes', 'description', 'uploaded_by',
+        'scan_status', 'scan_checked_at', 'encrypted_at',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['size_bytes' => 'integer'];
+        return ['size_bytes' => 'integer', 'scan_checked_at' => 'datetime', 'encrypted_at' => 'datetime'];
     }
 
     /** @return BelongsTo<BeneficiaryApplication, $this> */

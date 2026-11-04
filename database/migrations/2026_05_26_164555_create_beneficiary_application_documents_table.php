@@ -12,9 +12,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('beneficiary_application_id');
             $table->foreign('beneficiary_application_id', 'bad_app_doc_foreign')
-                  ->references('id')
-                  ->on('beneficiary_applications')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('beneficiary_applications')
+                ->onDelete('cascade');
             $table->string('disk')->default('beneficiaries');
             $table->string('path');
             $table->string('original_name');

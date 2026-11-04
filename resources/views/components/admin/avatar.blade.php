@@ -20,7 +20,7 @@
 
     $resolvedSrc = null;
     if (filled($src)) {
-        $resolvedSrc = str_starts_with($src, 'http') ? $src : asset('storage/'.ltrim($src, '/'));
+        $resolvedSrc = \App\Support\MediaUrl::for($src);
     }
 @endphp
 
@@ -33,7 +33,7 @@
     >
 @else
     <span
-        {{ $attributes->class(['inline-flex aspect-square items-center justify-center rounded-full bg-brand-50 font-semibold text-brand-700 ring-2 ring-cream-200', $sizeClasses]) }}
+        {{ $attributes->class(['inline-flex aspect-square items-center justify-center rounded-full bg-brand-50 font-semibold text-label ring-2 ring-cream-200', $sizeClasses]) }}
         aria-hidden="true"
     >
         {{ $initials ?: '?' }}

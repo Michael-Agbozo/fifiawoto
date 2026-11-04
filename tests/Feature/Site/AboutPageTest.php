@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\EventStatus;
+use App\Models\Event;
 use Database\Seeders\LeaderSeeder;
 
 it('renders every PRD-mandated About section', function () {
@@ -55,4 +57,19 @@ it('enumerates every core value from the PRD', function () {
     foreach (['Compassion', 'Service', 'Empowerment', 'Inclusivity', 'Sustainability'] as $value) {
         $response->assertSee($value);
     }
+});
+
+it('links each country to its events with a live upcoming count', function () {
+    Event::factory()->count(2)->create([
+        'country' => 'Togo',
+        'starts_at' => now()->addWeeks(2),
+        'status' => EventStatus::Published->value,
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->get(route('about'))
+        ->assertOk()
+        ->assertSee(route('events.index', ['q' => 'Togo']), escape: false)
+        ->assertSee('2 upcoming events')
+        ->assertDontSee('An interactive map will replace this list');
 });

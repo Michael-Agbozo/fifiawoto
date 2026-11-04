@@ -2,39 +2,44 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Enums\MediaCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
-use App\Models\InstagramPost;
-use App\Models\MediaItem;
+use App\Models\Faq;
 use App\Models\Testimonial;
+use App\Services\ImpactMetricService;
+use App\Support\MediaAlbums;
 use Illuminate\Contracts\View\View;
 
 class PageController extends Controller
 {
-    public function home(): View
+    public function home(ImpactMetricService $metrics): View
     {
         $featuredEvent = Event::query()
             ->published()
             ->upcoming()
             ->first();
 
-        $featuredTestimonials = Testimonial::query()
-            ->featured()
-            ->ordered()
-            ->limit(3)
+        $popularCauses = Event::query()
+            ->published()
+            ->upcoming()
+            ->where('goal_cents', '>', 0)
+            ->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents')
+            ->limit(9)
             ->get();
 
-        $instagramHighlights = InstagramPost::query()
-            ->where('is_approved', true)
-            ->where('is_hidden', false)
-            ->orderByDesc('posted_at')
-            ->limit(6)
+        // Featured stories lead the home carousel, then the rest fill it out.
+        $featuredTestimonials = Testimonial::query()
+            ->orderByDesc('featured')
+            ->ordered()
+            ->limit(9)
             ->get();
 
         return view('site.home', [
             'featuredEvent' => $featuredEvent,
+            'popularCauses' => $popularCauses,
             'featuredTestimonials' => $featuredTestimonials,
-            'instagramHighlights' => $instagramHighlights,
+            'impact' => $metrics->publicStats(),
         ]);
     }
 
@@ -48,9 +53,16 @@ class PageController extends Controller
         return view('site.volunteer');
     }
 
+    public function applyForSupport(): View
+    {
+        return view('site.apply-for-support');
+    }
+
     public function contact(): View
     {
-        return view('site.contact');
+        return view('site.contact', [
+            'faqs' => Faq::query()->onPage('contact')->published()->ordered()->get(),
+        ]);
     }
 
     public function donate(): View
@@ -83,16 +95,37 @@ class PageController extends Controller
         ]);
     }
 
-    public function media(): View
+    public function media(MediaAlbums $albums): View
     {
-        $items = MediaItem::query()
-            ->with('event:id,slug,title,status,published_at')
-            ->orderBy('sort')
-            ->orderByDesc('id')
-            ->get();
-
         return view('site.media', [
-            'items' => $items,
+            'albums' => $albums->all(),
+        ]);
+    }
+
+    /** One event's own photo gallery. */
+    public function mediaEvent(Event $event, MediaAlbums $albums): View
+    {
+        abort_unless(Event::query()->published()->whereKey($event->getKey())->exists(), 404);
+
+        return $this->albumPage($albums->forEvent($event), $albums);
+    }
+
+    /** Photos from a programme that aren't tied to a public event. */
+    public function mediaCollection(string $category, MediaAlbums $albums): View
+    {
+        $category = MediaCategory::tryFrom($category) ?? abort(404);
+
+        return $this->albumPage($albums->forCategory($category), $albums);
+    }
+
+    /** @param  array<string, mixed>|null  $album */
+    private function albumPage(?array $album, MediaAlbums $albums): View
+    {
+        abort_if($album === null, 404);
+
+        return view('site.media-album', [
+            'album' => $album,
+            'moreAlbums' => $albums->all()->reject(fn (array $other) => $other['key'] === $album['key'])->take(3)->values(),
         ]);
     }
 }

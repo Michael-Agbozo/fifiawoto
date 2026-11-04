@@ -1,12 +1,12 @@
 <?php
 
 use App\Enums\VolunteerApplicationStatus;
-use App\Enums\VolunteerAvailability;
-use App\Enums\VolunteerInterest;
 use App\Enums\VolunteerRole;
 use App\Mail\VolunteerApplicationDecision;
 use App\Models\Volunteer;
+use App\Models\VolunteerHourLog;
 use App\Models\VolunteerApplication;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -55,8 +55,62 @@ new class extends Component
         $this->viewingVolunteerId = null;
     }
 
+    public ?int $loggingHoursForId = null;
+
+    public string $log_hours = '';
+
+    public string $log_served_on = '';
+
+    public ?int $log_event_id = null;
+
+    public string $log_notes = '';
+
+    public function startLogHours(int $volunteerId): void
+    {
+        abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
+
+        $this->loggingHoursForId = Volunteer::query()->findOrFail($volunteerId)->id;
+        $this->reset(['log_hours', 'log_event_id', 'log_notes']);
+        $this->log_served_on = today()->toDateString();
+        $this->resetErrorBag();
+    }
+
+    public function cancelLogHours(): void
+    {
+        $this->loggingHoursForId = null;
+    }
+
+    /** Logged hours feed the public volunteer-hours figure on the home page. */
+    public function saveHours(): void
+    {
+        abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
+
+        $data = $this->validate([
+            'log_hours' => ['required', 'numeric', 'min:0.25', 'max:1000'],
+            'log_served_on' => ['required', 'date', 'before_or_equal:today'],
+            'log_event_id' => ['nullable', 'integer', 'exists:events,id'],
+            'log_notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $volunteer = Volunteer::query()->findOrFail($this->loggingHoursForId);
+
+        VolunteerHourLog::query()->create([
+            'volunteer_id' => $volunteer->id,
+            'event_id' => $data['log_event_id'] ?: null,
+            'hours' => $data['log_hours'],
+            'served_on' => $data['log_served_on'],
+            'notes' => $data['log_notes'] ?: null,
+            'recorded_by' => auth()->id(),
+        ]);
+
+        $this->loggingHoursForId = null;
+        $this->flashMessage = "Logged {$data['log_hours']} hour(s) for {$volunteer->full_name}.";
+    }
+
     public function mount(): void
     {
+        abort_unless(auth()->user()?->canDo('volunteers', 'view'), 403);
+
         $this->tab = request()->query('tab') === 'roster' ? 'roster' : 'applications';
     }
 
@@ -85,14 +139,6 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
 
-        $application = VolunteerApplication::query()->findOrFail($applicationId);
-
-        if ($application->status === VolunteerApplicationStatus::Approved) {
-            $this->flashMessage = 'Application is already approved.';
-
-            return;
-        }
-
         $roleValue = $this->applicationRoleChoice[$applicationId] ?? VolunteerRole::Event->value;
 
         if (! in_array($roleValue, array_column(VolunteerRole::cases(), 'value'), true)) {
@@ -101,27 +147,44 @@ new class extends Component
             return;
         }
 
-        $application->update([
-            'status' => VolunteerApplicationStatus::Approved->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
+        // Lock the row so a concurrent approve/reject can't both act on it.
+        $application = DB::transaction(function () use ($applicationId, $roleValue): ?VolunteerApplication {
+            $application = VolunteerApplication::query()->lockForUpdate()->findOrFail($applicationId);
 
-        Volunteer::query()->updateOrCreate(
-            ['email' => $application->email],
-            [
-                'application_id' => $application->id,
-                'full_name' => $application->full_name,
-                'phone' => $application->phone,
-                'country' => $application->country,
-                'role' => $roleValue,
-                'assigned_at' => now()->toDateString(),
-            ],
-        );
+            if ($application->status !== VolunteerApplicationStatus::New) {
+                return null;
+            }
+
+            $application->update([
+                'status' => VolunteerApplicationStatus::Approved->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            Volunteer::query()->updateOrCreate(
+                ['email' => $application->email],
+                [
+                    'application_id' => $application->id,
+                    'full_name' => $application->full_name,
+                    'phone' => $application->phone,
+                    'country' => $application->country,
+                    'role' => $roleValue,
+                    'assigned_at' => now()->toDateString(),
+                ],
+            );
+
+            return $application;
+        });
+
+        if (! $application) {
+            $this->flashMessage = 'This application has already been reviewed.';
+
+            return;
+        }
 
         unset($this->applicationRoleChoice[$applicationId]);
 
-        Mail::send(new VolunteerApplicationDecision(
+        Mail::queue(new VolunteerApplicationDecision(
             $application,
             approved: true,
             roleLabel: VolunteerRole::from($roleValue)->label(),
@@ -134,15 +197,31 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
 
-        $application = VolunteerApplication::query()->findOrFail($applicationId);
+        // Only New applications can be rejected: a double-click or a stale
+        // "Reject" after approval must not email the applicant.
+        $application = DB::transaction(function () use ($applicationId): ?VolunteerApplication {
+            $application = VolunteerApplication::query()->lockForUpdate()->findOrFail($applicationId);
 
-        $application->update([
-            'status' => VolunteerApplicationStatus::Rejected->value,
-            'reviewer_id' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
+            if ($application->status !== VolunteerApplicationStatus::New) {
+                return null;
+            }
 
-        Mail::send(new VolunteerApplicationDecision($application, approved: false));
+            $application->update([
+                'status' => VolunteerApplicationStatus::Rejected->value,
+                'reviewer_id' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            return $application;
+        });
+
+        if (! $application) {
+            $this->flashMessage = 'This application has already been reviewed.';
+
+            return;
+        }
+
+        Mail::queue(new VolunteerApplicationDecision($application, approved: false));
 
         $this->flashMessage = "Application from {$application->full_name} marked as rejected. Notification email sent.";
     }
@@ -225,7 +304,7 @@ new class extends Component
     #[Computed]
     public function volunteers()
     {
-        $query = Volunteer::query()->latest('assigned_at');
+        $query = Volunteer::query()->withSum('hourLogs', 'hours')->latest('assigned_at');
 
         if (filled($this->rosterFilter)) {
             $query->where('role', $this->rosterFilter);
@@ -322,7 +401,7 @@ new class extends Component
             <label class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Filter</label>
             <select
                 wire:model.live="applicationFilter"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
                 <option value="">All applications</option>
                 @foreach ($statusOptions as $value => $label)
@@ -331,7 +410,7 @@ new class extends Component
             </select>
         </div>
 
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             @if ($this->applications->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No applications match this filter yet.</div>
             @else
@@ -364,12 +443,12 @@ new class extends Component
                                 <td class="px-6 py-4">
                                     <div class="flex items-center justify-end gap-2">
                                         <x-admin.actions-menu>
-                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 View details
                                             </button>
                                             @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
-                                                <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Review &amp; approve
                                                 </button>
@@ -403,7 +482,7 @@ new class extends Component
             <label class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">Role</label>
             <select
                 wire:model.live="rosterFilter"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
                 <option value="">All roles</option>
                 @foreach ($roleOptions as $value => $label)
@@ -416,11 +495,11 @@ new class extends Component
                 type="search"
                 wire:model.live.debounce.300ms="rosterSearch"
                 placeholder="Name, email, or country"
-                class="rounded-lg border border-cream-300 bg-white px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                class="rounded-lg border border-cream-300 bg-surface px-3 py-2 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
             >
         </div>
 
-        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             @if ($this->volunteers->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No active volunteers match this filter.</div>
             @else
@@ -431,6 +510,7 @@ new class extends Component
                             <th class="px-6 py-3">Country</th>
                             <th class="px-6 py-3">Role</th>
                             <th class="px-6 py-3">Assigned</th>
+                            <th class="px-6 py-3">Hours</th>
                             <th class="px-6 py-3 text-right">Action</th>
                         </tr>
                     </thead>
@@ -449,7 +529,7 @@ new class extends Component
                                     @if ($editingVolunteerId === $volunteer->id)
                                         <select
                                             wire:model="editingRole"
-                                            class="rounded-lg border border-cream-300 bg-white px-2 py-1.5 text-xs text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                                            class="rounded-lg border border-cream-300 bg-surface px-2 py-1.5 text-xs text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                                         >
                                             @foreach ($roleOptions as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -463,25 +543,30 @@ new class extends Component
                                 <td class="px-6 py-4 text-xs text-ink-500">
                                     {{ $volunteer->assigned_at?->format('M j, Y') }}
                                 </td>
+                                <td class="px-6 py-4 text-xs text-ink-500">{{ (float) $volunteer->hour_logs_sum_hours }}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center justify-end">
                                         @if ($editingVolunteerId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="saveRole({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-900">Save role</button>
-                                                <button type="button" wire:click="cancelEditRole" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                                <button type="button" wire:click="cancelEditRole" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                             </div>
                                         @elseif ($confirmRemoveId === $volunteer->id)
                                             <div class="flex flex-wrap items-center gap-2">
                                                 <button type="button" wire:click="remove({{ $volunteer->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm remove</button>
-                                                <button type="button" wire:click="cancelRemove" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                                <button type="button" wire:click="cancelRemove" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                             </div>
                                         @else
                                             <x-admin.actions-menu>
-                                                <button type="button" wire:click="viewVolunteer({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
-                                                    <svg class="size-4 text-brand-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                                <button type="button" wire:click="viewVolunteer({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                    <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                     View details
                                                 </button>
-                                                <button type="button" wire:click="startEditRole({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="startLogHours({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                    <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
+                                                    Log hours
+                                                </button>
+                                                <button type="button" wire:click="startEditRole({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                     Edit role
                                                 </button>
@@ -507,7 +592,7 @@ new class extends Component
         @if ($app = $this->viewingApplication)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Email</dt>
@@ -525,7 +610,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Workflow</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Workflow</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Submitted</dt>
@@ -548,7 +633,7 @@ new class extends Component
             </div>
 
             <section class="mt-6">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Availability &amp; interests</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Availability &amp; interests</h3>
                 <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
                         <dt class="text-xs text-ink-500">Availability</dt>
@@ -559,7 +644,7 @@ new class extends Component
                         <dd class="mt-1 flex flex-wrap gap-1.5">
                             @foreach (($app->interests ?? []) as $interest)
                                 @php $enum = \App\Enums\VolunteerInterest::tryFrom($interest); @endphp
-                                <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{{ $enum?->label() ?? $interest }}</span>
+                                <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-label">{{ $enum?->label() ?? $interest }}</span>
                             @endforeach
                             @if (empty($app->interests))
                                 <span class="text-sm text-ink-500">None listed</span>
@@ -571,22 +656,22 @@ new class extends Component
 
             @if (filled($app->skills))
                 <section class="mt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Skills</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Skills</h3>
                     <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->skills }}</p>
                 </section>
             @endif
 
             <section class="mt-5">
-                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Why they want to help</h3>
+                <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Why they want to help</h3>
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->motivation }}</p>
             </section>
 
             @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
                 <section class="mt-6 rounded-2xl border border-cream-300 bg-cream-50 p-4">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Approve into roster</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Approve into roster</h3>
                     <p class="mt-1 text-xs text-ink-500">Pick a starting role for {{ $app->full_name }} and approve. A welcome email will be sent.</p>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                        <select wire:model="applicationRoleChoice.{{ $app->id }}" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                        <select wire:model="applicationRoleChoice.{{ $app->id }}" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                             <option value="">Assign role…</option>
                             @foreach ($roleOptions as $value => $label)
                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -610,7 +695,7 @@ new class extends Component
         @if ($volunteer = $this->viewingVolunteer)
             <div class="grid gap-6 lg:grid-cols-2">
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Contact</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Contact</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Email</dt>
@@ -628,7 +713,7 @@ new class extends Component
                 </section>
 
                 <section>
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Assignment</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Assignment</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Role</dt>
@@ -644,14 +729,14 @@ new class extends Component
 
             @if (filled($volunteer->notes))
                 <section class="mt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Notes</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Notes</h3>
                     <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $volunteer->notes }}</p>
                 </section>
             @endif
 
             @if ($volunteer->application)
                 <section class="mt-5 border-t border-cream-200 pt-5">
-                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Original application</h3>
+                    <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Original application</h3>
                     <dl class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs text-ink-500">Availability</dt>
@@ -662,7 +747,7 @@ new class extends Component
                             <dd class="mt-1 flex flex-wrap gap-1.5">
                                 @foreach (($volunteer->application->interests ?? []) as $interest)
                                     @php $enum = \App\Enums\VolunteerInterest::tryFrom($interest); @endphp
-                                    <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{{ $enum?->label() ?? $interest }}</span>
+                                    <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-label">{{ $enum?->label() ?? $interest }}</span>
                                 @endforeach
                                 @if (empty($volunteer->application->interests))
                                     <span class="text-sm text-ink-500">None listed</span>
@@ -683,5 +768,42 @@ new class extends Component
                 </section>
             @endif
         @endif
+    </x-admin.modal>
+
+    <x-admin.modal :show="$loggingHoursForId !== null" title="Log volunteer hours" size="sm" onClose="cancelLogHours">
+        <form wire:submit="saveHours" class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="log_hours" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Hours</label>
+                    <input id="log_hours" type="number" step="0.25" min="0.25" wire:model="log_hours" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('log_hours') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="log_served_on" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Date</label>
+                    <input id="log_served_on" type="date" wire:model="log_served_on" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('log_served_on') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
+            <div>
+                <label for="log_event_id" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Event (optional)</label>
+                <select id="log_event_id" wire:model="log_event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <option value="">No event</option>
+                    @if ($loggingHoursForId)
+                        @foreach (\App\Models\Event::query()->latest('starts_at')->limit(50)->get(['id', 'title']) as $eventOption)
+                            <option value="{{ $eventOption->id }}">{{ $eventOption->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+            <div>
+                <label for="log_notes" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Notes</label>
+                <input id="log_notes" type="text" wire:model="log_notes" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                @error('log_notes') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" wire:loading.attr="disabled" class="btn btn-primary px-6 py-3 text-sm disabled:opacity-60">Save hours</button>
+                <button type="button" wire:click="cancelLogHours" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
+            </div>
+        </form>
     </x-admin.modal>
 </div>

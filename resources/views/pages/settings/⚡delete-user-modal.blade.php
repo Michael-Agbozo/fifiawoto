@@ -17,6 +17,12 @@ new class extends Component
             'password' => $this->currentPasswordRules(),
         ]);
 
+        if (Auth::user()->isLastActiveOwner()) {
+            $this->addError('password', __('You are the last active Super Admin. Promote another account to Super Admin before deleting yours.'));
+
+            return;
+        }
+
         tap(Auth::user(), $logout(...))->delete();
 
         $this->redirect('/', navigate: true);
@@ -43,7 +49,7 @@ new class extends Component
             x-cloak
             x-transition
             @click.outside="open = false"
-            class="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+            class="w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-2xl"
         >
             <form method="POST" wire:submit="deleteUser" class="space-y-5 p-8">
                 <div>
@@ -54,13 +60,13 @@ new class extends Component
                 </div>
 
                 <div>
-                    <label for="delete-account-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">{{ __('Password') }}</label>
+                    <label for="delete-account-password" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Password') }}</label>
                     <input
                         id="delete-account-password"
                         wire:model="password"
                         type="password"
                         autocomplete="current-password"
-                        class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3.5 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                        class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
                     >
                     @error('password') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
@@ -69,7 +75,7 @@ new class extends Component
                     <button
                         type="button"
                         @click="open = false"
-                        class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+                        class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-heading hover:text-heading"
                     >
                         {{ __('Cancel') }}
                     </button>

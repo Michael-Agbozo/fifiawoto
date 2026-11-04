@@ -62,6 +62,20 @@ it('404s when a draft event is requested by slug', function () {
     $this->get(route('events.show', $event))->assertNotFound();
 });
 
+it('404s when a published event is scheduled for the future', function () {
+    $event = Event::factory()->create([
+        'slug' => 'scheduled-event',
+        'status' => EventStatus::Published->value,
+        'published_at' => now()->addDay(),
+    ]);
+
+    $this->get(route('events.show', $event))->assertNotFound();
+
+    $this->travel(2)->days();
+
+    $this->get(route('events.show', $event))->assertOk();
+});
+
 it('filters events by title via the search box', function () {
     Event::factory()->create([
         'title' => 'Mobile Health Clinic Outreach',
@@ -131,4 +145,32 @@ it('partitions past events into a separate section', function () {
     $this->get(route('events.index'))
         ->assertSee('Past events')
         ->assertSee('Old Outreach');
+});
+
+it('shows only base-currency gifts in the configured currency on the event page', function () {
+    config(['app.currency' => 'GHS']);
+
+    $event = Event::factory()->create([
+        'status' => EventStatus::Published,
+        'published_at' => now()->subDay(),
+        'goal_cents' => 10_000_00,
+    ]);
+
+    Donation::factory()->for($event)->create(['amount_cents' => 1_234_00, 'currency' => 'GHS']);
+    Donation::factory()->for($event)->create(['amount_cents' => 9_000_00, 'currency' => 'USD']);
+
+    $this->get(route('events.show', $event))
+        ->assertOk()
+        ->assertSee('GH₵1,234')
+        ->assertSee('GH₵10,000')
+        ->assertDontSee('10,234')
+        ->assertDontSee('$1,234');
+});
+
+it('offers one-tap country searches and marks the active one', function () {
+    $this->get(route('events.index', ['q' => 'Togo']))
+        ->assertOk()
+        ->assertSee('Find an outreach near you')
+        ->assertSee(route('events.index', ['q' => 'Ghana']), escape: false)
+        ->assertSee('aria-current="true"', escape: false);
 });

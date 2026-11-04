@@ -46,6 +46,11 @@ Every permission key follows the format **`{resource}.{action}`**. Resources and
 
 Total: 14 resources × ~4 actions ≈ **52 distinct permission keys**.
 
+Notes:
+
+- Every admin Livewire component checks `{resource}.view` in `mount()` and the matching action permission inside each mutating method, so access is enforced server-side even if the route middleware is bypassed.
+- `inbox.reply` also covers changing a message's status (mark resolved / mark new / archive) and the automatic New → In progress flip when a message is opened. Users with only `inbox.view` can read messages without changing them.
+
 ---
 
 ## Default permissions by role

@@ -25,7 +25,7 @@
 @endphp
 
 @if ($items->isEmpty())
-    <div class="rounded-3xl border border-dashed border-brand-100 bg-white p-10 text-center text-sm text-ink-500">No testimonials yet.</div>
+    <div class="rounded-3xl border border-dashed border-brand-100 bg-surface p-10 text-center text-sm text-ink-500">{{ __('No testimonials yet.') }}</div>
 @else
     <div
         x-data="{
@@ -49,10 +49,10 @@
         class="relative"
     >
         <div class="mx-auto max-w-2xl text-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.3em] text-gold-500">{{ $kicker }}</p>
-            <h2 id="testimonials-heading" class="mt-3 font-serif text-3xl text-brand-900 sm:text-4xl">{{ $heading }}</h2>
+            <p class="eyebrow">{{ __($kicker) }}</p>
+            <h2 id="testimonials-heading" class="section-title text-heading mt-3">{{ __($heading) }}</h2>
             @if ($subtitle)
-                <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ $subtitle }}</p>
+                <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ __($subtitle) }}</p>
             @endif
         </div>
 
@@ -60,14 +60,14 @@
             <button
                 type="button"
                 @click="prev()"
-                aria-label="Previous testimonials"
-                class="grid size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-white text-brand-700 shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                aria-label="{{ __('Previous testimonials') }}"
+                class="hidden size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
             </button>
 
-            <div class="overflow-hidden">
-                <div class="relative" style="min-height: 22rem;">
+            <div class="-mx-4 -mb-10 overflow-hidden px-4 pb-10">
+                <div class="relative sm:min-h-[22rem]">
                     @foreach ($pages as $pageIndex => $pageItems)
                         <div
                             x-show="active === {{ $pageIndex }}"
@@ -87,6 +87,7 @@
                         >
                             @foreach ($pageItems as $testimonial)
                                 @php
+                                    $isExtraCard = $perView > 1 && ! $loop->first;
                                     $photo = $testimonial->photo_path ?? null;
                                     $initials = collect(preg_split('/\s+/', trim((string) $testimonial->author_name)))
                                         ->filter()
@@ -96,7 +97,9 @@
                                 @endphp
                                 <figure
                                     @class([
-                                        'flex h-full flex-col justify-between rounded-3xl border border-brand-100 bg-white shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
+                                        'h-full flex-col justify-between rounded-3xl border border-brand-100 bg-surface shadow-[0_18px_60px_-25px_rgba(0,4,78,0.25)]',
+                                        'hidden md:flex' => $isExtraCard,
+                                        'flex' => ! $isExtraCard,
                                         'items-center px-6 py-10 text-center sm:px-12 sm:py-12' => $perView === 1,
                                         'px-6 py-8 text-left sm:px-8 sm:py-10' => $perView > 1,
                                     ])
@@ -110,7 +113,7 @@
                                             <path d="M9 7H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2H5V9h4V7zm10 0h-4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-2h-4V9h4V7z"/>
                                         </svg>
                                         <blockquote @class([
-                                            'font-serif leading-relaxed text-brand-900',
+                                            'font-serif leading-relaxed text-heading',
                                             'mt-5 text-xl sm:text-2xl' => $perView === 1,
                                             'mt-4 text-lg' => $perView > 1,
                                         ])>
@@ -124,13 +127,13 @@
                                     ])>
                                         @if (filled($photo))
                                             <img
-                                                src="{{ str_starts_with($photo, 'http') ? $photo : asset('storage/'.ltrim($photo, '/')) }}"
+                                                src="{{ \App\Support\MediaUrl::for($photo) }}"
                                                 alt="{{ $testimonial->author_name }}"
                                                 class="aspect-square size-12 rounded-full object-cover"
                                                 loading="lazy"
                                             >
                                         @else
-                                            <span class="grid aspect-square size-12 place-items-center rounded-full bg-brand-50 font-bold text-brand-700">
+                                            <span class="grid aspect-square size-12 place-items-center rounded-full bg-brand-50 font-bold text-label">
                                                 {{ $initials ?: mb_substr((string) $testimonial->author_role, 0, 1) }}
                                             </span>
                                         @endif
@@ -139,7 +142,7 @@
                                             <p class="text-sm text-ink-500">{{ $testimonial->author_role }}</p>
                                         </div>
                                         @if (($testimonial->featured ?? false))
-                                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500">Featured</span>
+                                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500">{{ __('Featured') }}</span>
                                         @endif
                                     </figcaption>
                                 </figure>
@@ -152,24 +155,32 @@
             <button
                 type="button"
                 @click="next()"
-                aria-label="Next testimonials"
-                class="grid size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-white text-brand-700 shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:size-12"
+                aria-label="{{ __('Next testimonials') }}"
+                class="hidden size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
             </button>
         </div>
 
         @if ($pages->count() > 1)
-            <div class="mt-6 flex justify-center gap-2">
-                @foreach ($pages as $pageIndex => $pageItems)
-                    <button
-                        type="button"
-                        @click="go({{ $pageIndex }})"
-                        :class="active === {{ $pageIndex }} ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100 hover:bg-brand-300'"
-                        class="h-2.5 rounded-full transition-all {{ $pageIndex === 0 ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100' }}"
-                        aria-label="Show testimonials page {{ $pageIndex + 1 }}"
-                    ></button>
-                @endforeach
+            <div class="mt-6 flex items-center justify-center gap-4">
+                <button type="button" @click="prev()" aria-label="{{ __('Previous testimonials') }}" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <div class="flex gap-2">
+                    @foreach ($pages as $pageIndex => $pageItems)
+                        <button
+                            type="button"
+                            @click="go({{ $pageIndex }})"
+                            :class="active === {{ $pageIndex }} ? 'w-8 bg-brand-700' : 'w-2.5 bg-brand-100 hover:bg-brand-300'"
+                            class="h-2.5 rounded-full transition-all"
+                            aria-label="Show testimonials page {{ $pageIndex + 1 }}"
+                        ></button>
+                    @endforeach
+                </div>
+                <button type="button" @click="next()" aria-label="{{ __('Next testimonials') }}" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
+                </button>
             </div>
         @endif
     </div>

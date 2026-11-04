@@ -29,7 +29,7 @@ If you forget your password, click **Forgot password?** on the login screen.
 
 ### Programmes
 
-- **Events** — create, edit, archive, and delete programmes. Setting an event to **Published** also queues an invitation email to every active volunteer (200 at a time, queued — no UI delay). Each event has goal + raised totals and a list of donations linked to it.
+- **Events** — create, edit, archive, and delete programmes. The first time an event is set to **Published** it queues an invitation email to every active volunteer (200 at a time, queued — no UI delay); drafts never send invitations. Each event has goal + raised totals and a list of donations linked to it.
 - **Donations** — record every cash gift the foundation receives (mobile money, bank transfer, cheque, card, cash, other). Each entry can be tied to an event so the event's progress bar updates. Use **Export CSV** for finance handover.
 
 ### Media & Website
@@ -38,7 +38,10 @@ If you forget your password, click **Forgot password?** on the login screen.
 - **Instagram sync** — manage which Instagram posts surface in the home page's "Follow Our Journey" strip. Admins can paste real `instagram.com/p/...` permalinks; until the Graph API is connected, seeded highlights all link to the foundation's profile.
 - **Testimonials** — quotes, photos, and optional video URLs shown on the home carousel and the `/testimonials` page. Featuring a testimonial promotes it to the home page.
 - **Leadership team** — board members and advisors shown on the about page. Add a photo, role, optional bio, sort order, and toggle publish on/off.
-- **Newsletter subscribers** — every signup from the public footer. Export CSV for use in Mailchimp/Mailerlite/etc.
+- **Newsletter subscribers** — every signup from the public footer. Export CSV if you need the list elsewhere.
+- **Send newsletter** — write an update, send yourself a test, then send it to every active subscriber.
+- **Site settings** — contact details, social links, home page photos and the starting figures behind the impact numbers.
+- **Analytics** — page views, where visitors come from, and which campaigns lead to completed forms.
 
 ### Operations
 
@@ -93,7 +96,7 @@ A full machine-readable list is in [PERMISSIONS.md](PERMISSIONS.md).
 1. **Events → New event**
 2. Upload a 1080×1080 hero image (PNG, JPG, or WebP up to 5 MB).
 3. Fill in description, activities, expected impact, volunteer roles, optional fundraising goal.
-4. Status: **Draft** keeps it hidden; **Published** makes it live and queues an invitation email to every active volunteer.
+4. Status: **Draft** keeps it hidden; **Published** makes it live and queues an invitation email to every active volunteer. Invitations go out only the first time an event is published (on create, via **Publish**, or by editing it to Published) — un-publishing and re-publishing never re-sends them.
 5. Save.
 
 ### Reply to a contact-form message

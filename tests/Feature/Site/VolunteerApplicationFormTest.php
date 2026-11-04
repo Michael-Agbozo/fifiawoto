@@ -25,6 +25,7 @@ it('accepts a valid volunteer application', function () {
         ->set('skills', 'Five years teaching primary school children.')
         ->set('motivation', 'I have lived in the Volta Region for two decades and want to give back to my community.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors()
         ->assertSet('submitted', true)
@@ -52,6 +53,7 @@ it('requires consent', function () {
         ->set('availability', VolunteerAvailability::Flexible->value)
         ->set('motivation', 'A motivation that is at least thirty characters long, easily.')
         ->set('consent', false)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['consent' => 'accepted']);
 
@@ -68,6 +70,13 @@ it('rejects empty interests and invalid availability', function () {
         ->set('availability', 'not-a-valid-value')
         ->set('motivation', 'A motivation that is at least thirty characters long, easily.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['interests', 'availability']);
+});
+
+it('shows the volunteer form beside the what happens next steps', function () {
+    $this->get(route('volunteer'))
+        ->assertOk()
+        ->assertSeeInOrder(['What happens next', 'Send your application', 'We get in touch', 'Join an outreach', 'Apply to Volunteer']);
 });

@@ -65,14 +65,14 @@
     <table class="kpi-grid">
         <tr>
             @if ($category === 'overview')
-                <td><div class="kpi-label">Total raised</div><div class="kpi-value">${{ number_format($kpis['donations']['value'] ?? 0) }}</div>{!! $delta($kpis['donations']['delta'] ?? null) !!}</td>
+                <td><div class="kpi-label">Total raised</div><div class="kpi-value">{{ \App\Support\Money::format($kpis['donations']['value'] ?? 0) }}</div>{!! $delta($kpis['donations']['delta'] ?? null) !!}</td>
                 <td><div class="kpi-label">Volunteer apps</div><div class="kpi-value">{{ $kpis['volunteer_apps']['value'] ?? 0 }}</div>{!! $delta($kpis['volunteer_apps']['delta'] ?? null) !!}</td>
                 <td><div class="kpi-label">Beneficiaries</div><div class="kpi-value">{{ $kpis['beneficiaries']['value'] ?? 0 }}</div>{!! $delta($kpis['beneficiaries']['delta'] ?? null) !!}</td>
                 <td><div class="kpi-label">Events</div><div class="kpi-value">{{ $kpis['events']['value'] ?? 0 }}</div>{!! $delta($kpis['events']['delta'] ?? null) !!}</td>
             @elseif ($category === 'donations')
-                <td><div class="kpi-label">Total raised</div><div class="kpi-value">${{ number_format($kpis['total']['value'] ?? 0) }}</div>{!! $delta($kpis['total']['delta'] ?? null) !!}</td>
+                <td><div class="kpi-label">Total raised</div><div class="kpi-value">{{ \App\Support\Money::format($kpis['total']['value'] ?? 0) }}</div>{!! $delta($kpis['total']['delta'] ?? null) !!}</td>
                 <td><div class="kpi-label">Gifts logged</div><div class="kpi-value">{{ $kpis['count']['value'] ?? 0 }}</div>{!! $delta($kpis['count']['delta'] ?? null) !!}</td>
-                <td><div class="kpi-label">Avg gift</div><div class="kpi-value">${{ number_format($kpis['avg']['value'] ?? 0, 2) }}</div>{!! $delta($kpis['avg']['delta'] ?? null) !!}</td>
+                <td><div class="kpi-label">Avg gift</div><div class="kpi-value">{{ \App\Support\Money::format($kpis['avg']['value'] ?? 0, 2) }}</div>{!! $delta($kpis['avg']['delta'] ?? null) !!}</td>
                 <td><div class="kpi-label">Unique donors</div><div class="kpi-value">{{ $kpis['unique_donors']['value'] ?? 0 }}</div>{!! $delta($kpis['unique_donors']['delta'] ?? null) !!}</td>
             @elseif ($category === 'volunteers')
                 <td><div class="kpi-label">Applications</div><div class="kpi-value">{{ $kpis['applications']['value'] ?? 0 }}</div>{!! $delta($kpis['applications']['delta'] ?? null) !!}</td>
@@ -81,8 +81,8 @@
                 <td><div class="kpi-label">Countries</div><div class="kpi-value">{{ $kpis['countries']['value'] ?? 0 }}</div></td>
             @elseif ($category === 'events')
                 <td><div class="kpi-label">Events</div><div class="kpi-value">{{ $kpis['events']['value'] ?? 0 }}</div>{!! $delta($kpis['events']['delta'] ?? null) !!}</td>
-                <td><div class="kpi-label">Total goal</div><div class="kpi-value">${{ number_format($kpis['goal']['value'] ?? 0) }}</div></td>
-                <td><div class="kpi-label">Total raised</div><div class="kpi-value">${{ number_format($kpis['raised']['value'] ?? 0) }}</div></td>
+                <td><div class="kpi-label">Total goal</div><div class="kpi-value">{{ \App\Support\Money::format($kpis['goal']['value'] ?? 0) }}</div></td>
+                <td><div class="kpi-label">Total raised</div><div class="kpi-value">{{ \App\Support\Money::format($kpis['raised']['value'] ?? 0) }}</div></td>
                 <td><div class="kpi-label">Achievement</div><div class="kpi-value">{{ $kpis['achievement_pct']['value'] ?? 0 }}%</div></td>
             @elseif ($category === 'beneficiaries')
                 <td><div class="kpi-label">Records</div><div class="kpi-value">{{ $kpis['records']['value'] ?? 0 }}</div>{!! $delta($kpis['records']['delta'] ?? null) !!}</td>
@@ -102,7 +102,7 @@
                 <div class="bar-row">
                     <div class="bar-label">{{ $pt['label'] }} {{ $pt['sublabel'] }}</div>
                     <div class="bar-track"><div class="bar-fill" style="width: {{ max(2, (int) round($pt['cents'] / $maxLine * 100)) }}%;"></div></div>
-                    <div class="bar-amount">${{ number_format($pt['cents'] / 100) }}</div>
+                    <div class="bar-amount">{{ \App\Support\Money::format($pt['cents'] / 100) }}</div>
                 </div>
             @endforeach
         @endif
@@ -132,7 +132,7 @@
                             <tr>
                                 <td>{{ $donor['donor_name'] }}</td>
                                 <td>{{ $donor['gift_count'] }}</td>
-                                <td style="text-align:right;">${{ number_format($donor['total_cents'] / 100) }}</td>
+                                <td style="text-align:right;">{{ \App\Support\Money::format($donor['total_cents'] / 100) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3">No donor activity in range.</td></tr>
@@ -149,7 +149,7 @@
                             <tr>
                                 <td>{{ $ev['title'] }}</td>
                                 <td>{{ $ev['status'] }}</td>
-                                <td style="text-align:right;">${{ number_format($ev['raised_cents'] / 100) }}</td>
+                                <td style="text-align:right;">{{ \App\Support\Money::format($ev['raised_cents'] / 100) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3">No event revenue in range.</td></tr>
@@ -167,7 +167,7 @@
                 <div class="bar-row">
                     <div class="bar-label">{{ ucfirst($row['label']) }}</div>
                     <div class="bar-track"><div class="bar-fill" style="width: {{ max(2, (int) round($row['cents'] / $totalMethod * 100)) }}%;"></div></div>
-                    <div class="bar-amount">${{ number_format($row['cents'] / 100) }} · {{ $row['count'] }}</div>
+                    <div class="bar-amount">{{ \App\Support\Money::format($row['cents'] / 100) }} · {{ $row['count'] }}</div>
                 </div>
             @endforeach
         @endif
@@ -182,7 +182,7 @@
                     <td>{{ $donor['donor_name'] }}</td>
                     <td>{{ $donor['donor_email'] ?: '—' }}</td>
                     <td>{{ $donor['gift_count'] }}</td>
-                    <td style="text-align:right;">${{ number_format($donor['total_cents'] / 100) }}</td>
+                    <td style="text-align:right;">{{ \App\Support\Money::format($donor['total_cents'] / 100) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="5">No donor activity in range.</td></tr>
@@ -245,8 +245,8 @@
             @forelse ($analytics['top_by_goal_pct'] ?? [] as $ev)
                 <tr>
                     <td>{{ $ev['title'] }}</td>
-                    <td>${{ number_format($ev['raised_cents'] / 100) }}</td>
-                    <td>${{ number_format($ev['goal_cents'] / 100) }}</td>
+                    <td>{{ \App\Support\Money::format($ev['raised_cents'] / 100) }}</td>
+                    <td>{{ \App\Support\Money::format($ev['goal_cents'] / 100) }}</td>
                     <td style="text-align:right;">{{ $ev['pct'] }}%</td>
                 </tr>
             @empty
@@ -299,6 +299,9 @@
     {{-- Detail rows (only when not overview) --}}
     @if ($category !== 'overview' && ! empty($rows))
         <h2>{{ $categoryLabel }} detail</h2>
+        @if (! empty($rowLimit))
+            <p class="meta">Showing the first {{ number_format($rowLimit) }} rows only. Narrow the date range or export CSV for the full list.</p>
+        @endif
         <table class="data">
             <thead>
                 <tr>

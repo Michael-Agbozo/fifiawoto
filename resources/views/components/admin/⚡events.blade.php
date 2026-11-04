@@ -3,11 +3,17 @@
 use App\Enums\EventStatus;
 use App\Mail\EventVolunteerInvitation;
 use App\Models\Event;
+use App\Models\EventRegistration;
+use App\Support\CsvCell;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\Volunteer;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -18,6 +24,7 @@ new class extends Component
     use WithFileUploads;
     use WithPagination;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public bool $showForm = false;
@@ -60,14 +67,83 @@ new class extends Component
     #[Validate('nullable|numeric|min:0|max:10000000')]
     public string $goal_amount = '';
 
-    #[Validate('required|string')]
     public string $status = 'draft';
 
+    #[Locked]
     public string $hero_image_path = '';
 
     public $hero_image_upload = null;
 
     public bool $remove_hero_image = false;
+
+    public bool $registration_enabled = false;
+
+    #[Validate('nullable|integer|min:1|max:1000000')]
+    public ?int $capacity = null;
+
+    public ?int $viewingRegistrationsForId = null;
+
+    public function showRegistrations(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view'), 403);
+
+        $this->viewingRegistrationsForId = Event::query()->findOrFail($id)->id;
+    }
+
+    public function closeRegistrations(): void
+    {
+        $this->viewingRegistrationsForId = null;
+    }
+
+    public function removeRegistration(int $registrationId): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'update'), 403);
+
+        EventRegistration::query()->where('event_id', $this->viewingRegistrationsForId)->whereKey($registrationId)->delete();
+    }
+
+    /** Attendee details are personal data, so exporting needs reports.export too. */
+    public function exportRegistrations(): StreamedResponse
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view') && auth()->user()->canDo('reports', 'export'), 403);
+
+        $event = Event::query()->findOrFail($this->viewingRegistrationsForId);
+        $rows = $event->registrations()->orderBy('full_name')->get();
+
+        return response()->streamDownload(function () use ($rows): void {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Email', 'Phone', 'People', 'Signed up']);
+            foreach ($rows as $registration) {
+                fputcsv($out, CsvCell::row([$registration->full_name, $registration->email, $registration->phone, $registration->party_size, $registration->created_at?->toDateTimeString()]));
+            }
+            fclose($out);
+        }, 'event-signups-'.$event->slug.'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    #[Computed]
+    public function viewingRegistrationsEvent(): ?Event
+    {
+        return $this->viewingRegistrationsForId
+            ? Event::query()->with(['registrations' => fn ($registrations) => $registrations->orderBy('full_name')])->find($this->viewingRegistrationsForId)
+            : null;
+    }
+
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view'), 403);
+    }
+
+    /**
+     * Enum-backed fields (merged with the #[Validate] attribute rules).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'status' => ['required', Rule::enum(EventStatus::class)],
+        ];
+    }
 
     public function startCreate(): void
     {
@@ -92,6 +168,8 @@ new class extends Component
         $this->volunteer_opportunities = (string) $e->volunteer_opportunities;
         $this->goal_amount = $e->goal_cents ? number_format($e->goal_cents / 100, 2, '.', '') : '';
         $this->status = $e->status->value;
+        $this->registration_enabled = $e->registration_enabled;
+        $this->capacity = $e->capacity;
         $this->hero_image_path = (string) $e->hero_image_path;
         $this->hero_image_upload = null;
         $this->remove_hero_image = false;
@@ -125,25 +203,24 @@ new class extends Component
             'hero_image_upload.dimensions' => 'The program image must be exactly 1080×1080 pixels.',
         ]);
 
-        $heroPath = $this->hero_image_path ?: null;
+        $existing = $this->editingId ? Event::query()->findOrFail($this->editingId) : null;
+
+        // Never trust the client-side hero_image_path; the stored file comes from the DB record.
+        $oldHeroPath = $existing?->hero_image_path ?: null;
+        $heroPath = $oldHeroPath;
 
         if ($this->remove_hero_image) {
-            if ($heroPath && Storage::disk('public')->exists($heroPath)) {
-                Storage::disk('public')->delete($heroPath);
-            }
             $heroPath = null;
         }
 
         if ($this->hero_image_upload) {
-            if ($heroPath && Storage::disk('public')->exists($heroPath)) {
-                Storage::disk('public')->delete($heroPath);
-            }
             $heroPath = $this->hero_image_upload->store('events', 'public');
         }
 
+        $isPublished = $data['status'] === EventStatus::Published->value;
+
         $payload = [
             'title' => $data['title'],
-            'slug' => Str::slug($data['title']).'-'.Str::lower(Str::random(4)),
             'starts_at' => $data['starts_at'],
             'ends_at' => $data['ends_at'] ?: null,
             'location' => $data['location'],
@@ -155,30 +232,33 @@ new class extends Component
             'goal_cents' => $data['goal_amount'] !== '' ? (int) round(((float) $data['goal_amount']) * 100) : null,
             'status' => $data['status'],
             'hero_image_path' => $heroPath,
-            'published_at' => $data['status'] === EventStatus::Published->value ? now() : null,
+            'registration_enabled' => $this->registration_enabled,
+            'capacity' => $data['capacity'] ?: null,
         ];
 
-        if ($this->editingId) {
-            $event = Event::query()->findOrFail($this->editingId);
-            // Keep existing slug on edit so public URLs don't break
-            $payload['slug'] = $event->slug;
-            $event->update($payload);
+        if ($existing) {
+            // Keep existing slug on edit so public URLs don't break.
+            if ($isPublished) {
+                $payload['published_at'] = $this->resolvePublishedAt($existing);
+            }
+            $existing->update($payload);
+            $event = $existing;
             $this->flashMessage = 'Event updated.';
         } else {
+            $payload['slug'] = Str::slug($data['title']).'-'.Str::lower(Str::random(4));
+            $payload['published_at'] = $isPublished ? now() : null;
             $event = Event::query()->create($payload);
             $this->flashMessage = 'Event created.';
+        }
 
-            $queued = 0;
-            Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($event, &$queued) {
-                foreach ($volunteers as $volunteer) {
-                    Mail::queue(new EventVolunteerInvitation($event, $volunteer));
-                    $queued++;
-                }
-            });
+        // Only remove the old file once the DB write has succeeded.
+        if ($oldHeroPath && $oldHeroPath !== $heroPath && Storage::disk('public')->exists($oldHeroPath)) {
+            Storage::disk('public')->delete($oldHeroPath);
+        }
 
-            if ($queued > 0) {
-                $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
-            }
+        $queued = $this->notifyVolunteersOnFirstPublish($event);
+        if ($queued > 0) {
+            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
         }
 
         $this->resetForm();
@@ -191,9 +271,55 @@ new class extends Component
         $e = Event::query()->findOrFail($id);
         $e->update([
             'status' => EventStatus::Published->value,
-            'published_at' => now(),
+            'published_at' => $this->resolvePublishedAt($e),
         ]);
         $this->flashMessage = "{$e->title} is now published.";
+
+        $queued = $this->notifyVolunteersOnFirstPublish($e);
+        if ($queued > 0) {
+            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
+        }
+    }
+
+    /**
+     * Keep the original publish date once set (and already in the past);
+     * otherwise publish as of now.
+     */
+    protected function resolvePublishedAt(Event $event): CarbonInterface
+    {
+        return $event->published_at && $event->published_at->lte(now())
+            ? $event->published_at
+            : now();
+    }
+
+    /**
+     * Queue volunteer invitations the first time an event is Published.
+     * The conditional update claims the event atomically so invites are
+     * never sent twice, even under concurrent publishes.
+     */
+    protected function notifyVolunteersOnFirstPublish(Event $event): int
+    {
+        $claimed = Event::query()
+            ->whereKey($event->id)
+            ->where('status', EventStatus::Published->value)
+            ->whereNull('volunteers_notified_at')
+            ->update(['volunteers_notified_at' => now()]);
+
+        if ($claimed === 0) {
+            return 0;
+        }
+
+        $event->refresh();
+
+        $queued = 0;
+        Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($event, &$queued) {
+            foreach ($volunteers as $volunteer) {
+                Mail::queue(new EventVolunteerInvitation($event, $volunteer));
+                $queued++;
+            }
+        });
+
+        return $queued;
     }
 
     public function unpublish(int $id): void
@@ -251,7 +377,7 @@ new class extends Component
         $this->reset([
             'editingId', 'showForm', 'title', 'starts_at', 'ends_at', 'location',
             'country', 'description', 'activities', 'expected_impact',
-            'volunteer_opportunities', 'goal_amount',
+            'volunteer_opportunities', 'goal_amount', 'registration_enabled', 'capacity',
             'hero_image_path', 'hero_image_upload', 'remove_hero_image',
         ]);
         $this->status = 'draft';
@@ -261,7 +387,7 @@ new class extends Component
     #[Computed]
     public function events()
     {
-        $query = Event::query()->withSum('donations as raised_cents', 'amount_cents');
+        $query = Event::query()->withSum(['donations as raised_cents' => fn ($donations) => $donations->inBaseCurrency()], 'amount_cents');
 
         if (filled($this->statusFilter)) {
             $query->where('status', $this->statusFilter);
@@ -326,14 +452,14 @@ new class extends Component
         :subtitle="$this->events->total().' programme(s) in view'"
     >
         <x-slot:actions>
-            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search title, location, country" class="rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-900/15">
-            <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search title, location, country" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 New event
             </button>
             @if (filled($statusFilter) || filled($search))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$reset('statusFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$reset('statusFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear all filters
                     </button>
@@ -352,52 +478,50 @@ new class extends Component
     <x-admin.modal :show="$showForm" :title="$editingId ? 'Edit event' : 'New event'" size="xl" onClose="cancel">
         <form wire:submit="save" class="space-y-5">
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Title</label>
-                <input type="text" wire:model="title" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Title</label>
+                <input type="text" wire:model="title" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 @error('title') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Start date</label>
-                    <input type="date" wire:model="starts_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Start date</label>
+                    <input type="date" wire:model="starts_at" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('starts_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">End date <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                    <input type="date" wire:model="ends_at" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">End date <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                    <input type="date" wire:model="ends_at" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                     @error('ends_at') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Location</label>
-                    <input type="text" wire:model="location" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Location</label>
+                    <input type="text" wire:model="location" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Country</label>
-                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country</label>
+                    <input type="text" wire:model="country" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Description</label>
-                <textarea wire:model="description" rows="4" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Description</label>
+                <textarea wire:model="description" rows="4" required class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 @error('description') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Program image <span class="font-normal normal-case tracking-normal text-red-600">required · 1080×1080</span></label>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Program image <span class="font-normal normal-case tracking-normal text-red-600">required · 1080×1080</span></label>
                 <div class="mt-2 flex flex-wrap items-center gap-4">
                     @php
                         $previewUrl = null;
                         if ($hero_image_upload) {
                             $previewUrl = $hero_image_upload->temporaryUrl();
                         } elseif (filled($hero_image_path) && ! $remove_hero_image) {
-                            $previewUrl = str_starts_with($hero_image_path, 'http')
-                                ? $hero_image_path
-                                : asset('storage/'.ltrim($hero_image_path, '/'));
+                            $previewUrl = \App\Support\MediaUrl::for($hero_image_path);
                         }
                     @endphp
                     <div class="grid size-32 place-items-center overflow-hidden rounded-2xl border border-dashed border-cream-300 bg-cream-100 text-ink-500">
@@ -411,7 +535,7 @@ new class extends Component
                         @endif
                     </div>
                     <div class="flex flex-col gap-2">
-                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-white px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                        <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
                             <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0 4 4m-4-4-4 4M4 20h16"/></svg>
                             {{ $hero_image_upload || filled($hero_image_path) ? 'Replace image' : 'Upload image' }}
                             <input type="file" wire:model="hero_image_upload" accept="image/png,image/jpeg,image/webp" class="hidden">
@@ -420,10 +544,10 @@ new class extends Component
                             <button type="button" wire:click="$set('remove_hero_image', true)" class="text-left text-xs font-semibold text-red-600 hover:text-red-700">Remove current image</button>
                         @endif
                         @if ($remove_hero_image)
-                            <p class="text-xs text-red-600">Image will be removed on save. <button type="button" wire:click="$set('remove_hero_image', false)" class="font-semibold text-brand-700 hover:text-brand-900">Undo</button></p>
+                            <p class="text-xs text-red-600">Image will be removed on save. <button type="button" wire:click="$set('remove_hero_image', false)" class="font-semibold text-label hover:text-heading">Undo</button></p>
                         @endif
                         <p class="text-xs text-ink-500">PNG, JPEG, or WebP. Must be exactly 1080×1080 pixels.</p>
-                        <div wire:loading wire:target="hero_image_upload" class="text-xs text-brand-700">Uploading…</div>
+                        <div wire:loading wire:target="hero_image_upload" class="text-xs text-label">Uploading…</div>
                     </div>
                 </div>
                 @error('hero_image_upload') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -431,28 +555,37 @@ new class extends Component
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Activities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
-                    <textarea wire:model="activities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Activities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
+                    <textarea wire:model="activities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Volunteer opportunities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
-                    <textarea wire:model="volunteer_opportunities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Volunteer opportunities <span class="font-normal normal-case tracking-normal text-ink-500">(one per line)</span></label>
+                    <textarea wire:model="volunteer_opportunities" rows="4" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Expected impact</label>
-                <textarea wire:model="expected_impact" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Expected impact</label>
+                <textarea wire:model="expected_impact" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Fundraising goal (USD)</label>
-                    <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Fundraising goal ({{ \App\Support\Money::baseCurrency() }})</label>
+                    <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Status</label>
-                    <select wire:model="status" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Maximum people (optional)</label>
+                    <input type="number" min="1" wire:model="capacity" placeholder="No limit" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('capacity') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <label class="flex cursor-pointer items-center gap-3 self-end pb-2.5 text-sm text-ink-700">
+                    <input type="checkbox" wire:model="registration_enabled" class="size-4 rounded border-cream-300 text-gold-500 focus:ring-gold-500">
+                    <span>Let people sign up on the event page</span>
+                </label>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Status</label>
+                    <select wire:model="status" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @foreach ($statusOptions as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
@@ -461,17 +594,17 @@ new class extends Component
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm">
                     {{ $editingId ? 'Save changes' : 'Create event' }}
                 </button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">
+                <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">
                     Cancel
                 </button>
             </div>
         </form>
     </x-admin.modal>
 
-    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+    <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         @if ($this->events->isEmpty())
             <div class="p-10 text-center text-sm text-ink-500">No events match these filters yet.</div>
         @else
@@ -496,7 +629,7 @@ new class extends Component
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     @if (filled($event->hero_image_path))
-                                        <img src="{{ asset('storage/'.ltrim($event->hero_image_path, '/')) }}" alt="" class="size-12 rounded-xl object-cover ring-1 ring-cream-200" loading="lazy">
+                                        <img src="{{ \App\Support\MediaUrl::for($event->hero_image_path) }}" alt="" class="size-12 rounded-xl object-cover ring-1 ring-cream-200" loading="lazy">
                                     @else
                                         <div class="grid size-12 place-items-center rounded-xl bg-cream-100 text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-500">No image</div>
                                     @endif
@@ -511,9 +644,9 @@ new class extends Component
                                 <x-admin.status-pill :palette="$event->status->palette()" :label="$event->status->label()" />
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <p class="font-semibold text-ink-900">${{ number_format($raised / 100) }}</p>
+                                <p class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</p>
                                 @if ($goal > 0)
-                                    <p class="text-xs text-ink-500">{{ $percent }}% of ${{ number_format($goal / 100) }}</p>
+                                    <p class="text-xs text-ink-500">{{ $percent }}% of {{ \App\Support\Money::fromCents((int) $goal) }}</p>
                                     <div class="mt-1 h-1 w-24 rounded-full bg-cream-200">
                                         <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
                                     </div>
@@ -524,22 +657,26 @@ new class extends Component
                                     @if ($confirmDeleteId === $event->id)
                                         <div class="flex flex-wrap items-center gap-2">
                                             <button type="button" wire:click="delete({{ $event->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                            <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                            <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
                                             @if ($event->status !== EventStatus::Published)
-                                                <button type="button" wire:click="publish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="publish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
                                                     Publish
                                                 </button>
                                             @else
-                                                <button type="button" wire:click="unpublish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                                <button type="button" wire:click="unpublish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21V9m0 0 4 4m-4-4-4 4M5 3h14"/></svg>
                                                     Unpublish
                                                 </button>
                                             @endif
-                                            <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                            <button type="button" wire:click="showRegistrations({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                                                Sign-ups
+                                            </button>
+                                            <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>
@@ -559,4 +696,27 @@ new class extends Component
     </div>
 
     <div>{{ $this->events->links() }}</div>
+
+    @if ($this->viewingRegistrationsEvent)
+        <x-admin.modal :show="true" :title="'Sign-ups: '.$this->viewingRegistrationsEvent->title" :subtitle="$this->viewingRegistrationsEvent->seatsTaken().' people'.($this->viewingRegistrationsEvent->capacity ? ' of '.$this->viewingRegistrationsEvent->capacity : '')" size="lg" onClose="closeRegistrations">
+            @if (auth()->user()?->canDo('reports', 'export') && $this->viewingRegistrationsEvent->registrations->isNotEmpty())
+                <button type="button" wire:click="exportRegistrations" class="btn btn-primary mb-4 px-4 py-2 text-xs">Export CSV</button>
+            @endif
+            <ul class="divide-y divide-cream-200 text-sm">
+                @forelse ($this->viewingRegistrationsEvent->registrations as $registration)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2.5" wire:key="registration-{{ $registration->id }}">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-ink-900">{{ $registration->full_name }} @if ($registration->party_size > 1)<span class="font-normal text-ink-500">+{{ $registration->party_size - 1 }}</span>@endif</p>
+                            <p class="break-all text-xs text-ink-500">{{ $registration->email }}{{ $registration->phone ? ' · '.$registration->phone : '' }}</p>
+                        </div>
+                        @if (auth()->user()?->canDo('events', 'update'))
+                            <button type="button" wire:click="removeRegistration({{ $registration->id }})" wire:confirm="Remove this sign-up?" class="text-xs font-semibold text-red-600 hover:underline">Remove</button>
+                        @endif
+                    </li>
+                @empty
+                    <li class="py-2.5 text-ink-500">No one has signed up yet.</li>
+                @endforelse
+            </ul>
+        </x-admin.modal>
+    @endif
 </div>

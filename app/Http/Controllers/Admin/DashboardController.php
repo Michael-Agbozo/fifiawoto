@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\ImpactMetricService;
+use App\Support\CsvCell;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,12 +27,13 @@ class DashboardController extends Controller
 
     public function exportActivity(Request $request, ImpactMetricService $metrics): StreamedResponse
     {
-        $tab = $request->query('tab', 'all');
-        $rows = collect($metrics->recentActivity(200));
+        abort_unless($request->user()?->canDo('reports', 'export'), 403);
 
-        if (in_array($tab, ['volunteer', 'donation', 'contact', 'newsletter'], true)) {
-            $rows = $rows->where('kind', $tab);
-        }
+        $tab = $request->query('tab', 'all');
+        $kind = in_array($tab, ['volunteer', 'donation', 'contact', 'newsletter'], true) ? $tab : null;
+
+        // Filter by kind before the 200-row limit is applied, not after.
+        $rows = $metrics->recentActivity(200, $kind);
 
         $filename = 'dashboard-activity-'.now()->format('Y-m-d-His').'.csv';
 
@@ -39,7 +41,7 @@ class DashboardController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Kind', 'Name', 'When', 'Detail', 'Category', 'Type', 'Status']);
             foreach ($rows as $entry) {
-                fputcsv($out, [
+                fputcsv($out, CsvCell::row([
                     $entry['kind'] ?? '',
                     $entry['name'] ?? '',
                     optional($entry['when'] ?? null)->toDateTimeString() ?? '',
@@ -47,7 +49,7 @@ class DashboardController extends Controller
                     $entry['category'] ?? '',
                     $entry['label'] ?? '',
                     $entry['status'] ?? '',
-                ]);
+                ]));
             }
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv']);

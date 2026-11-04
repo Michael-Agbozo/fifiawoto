@@ -31,6 +31,11 @@ new class extends Component
     #[Validate('in:IMAGE,VIDEO')]
     public string $media_type = 'IMAGE';
 
+    public function mount(): void
+    {
+        abort_unless(auth()->user()?->canDo('instagram', 'view'), 403);
+    }
+
     public function startCreate(): void
     {
         $this->reset(['permalink', 'caption', 'thumbnail_url', 'media_type']);
@@ -52,19 +57,24 @@ new class extends Component
 
         $data = $this->validate();
 
-        InstagramPost::query()->updateOrCreate(
-            ['external_id' => sha1($data['permalink'])],
-            [
-                'permalink' => $data['permalink'],
-                'caption' => $data['caption'] ?: null,
-                'thumbnail_url' => $data['thumbnail_url'] ?: null,
-                'media_type' => $data['media_type'],
-                'posted_at' => now(),
-                'is_approved' => true,
-                'is_hidden' => false,
-                'source' => InstagramSource::Manual->value,
-            ],
-        );
+        $post = InstagramPost::query()->firstOrNew(['external_id' => sha1($data['permalink'])]);
+
+        $post->fill([
+            'permalink' => $data['permalink'],
+            'caption' => $data['caption'] ?: null,
+            'thumbnail_url' => $data['thumbnail_url'] ?: null,
+            'media_type' => $data['media_type'],
+            'is_approved' => true,
+            'source' => InstagramSource::Manual->value,
+        ]);
+
+        // Re-adding an existing post must not bump its date or un-hide it.
+        if (! $post->exists) {
+            $post->posted_at = now();
+            $post->is_hidden = false;
+        }
+
+        $post->save();
 
         $this->flashMessage = 'Instagram post added.';
         $this->cancel();
@@ -166,13 +176,13 @@ new class extends Component
         :subtitle="$this->posts->total().' post(s) in view · automatic API pulls land in a later phase'"
     >
         <x-slot:actions>
-            <button type="button" wire:click="startCreate" class="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-900">
+            <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Paste a link
             </button>
             @if (filled($filter))
                 <x-admin.actions-menu>
-                    <button type="button" wire:click="$set('filter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                    <button type="button" wire:click="$set('filter', '')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear filter
                     </button>
@@ -191,21 +201,21 @@ new class extends Component
     <x-admin.modal :show="$showForm" title="Add an Instagram post" onClose="cancel">
         <form wire:submit="add" class="space-y-5">
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Post URL</label>
-                <input type="url" wire:model="permalink" required placeholder="https://www.instagram.com/p/…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Post URL</label>
+                <input type="url" wire:model="permalink" required placeholder="https://www.instagram.com/p/…" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 <p class="mt-1 text-xs text-ink-500">Paste the full URL of the Instagram post (e.g. <code class="rounded bg-cream-100 px-1">https://www.instagram.com/p/ABC123/</code>) so clicking the thumbnail opens the real post.</p>
                 @error('permalink') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Media type</label>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Media type</label>
                 <div class="mt-2 flex gap-2">
-                    <label class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-cream-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 transition has-checked:border-gold-500 has-checked:bg-gold-500/5 has-checked:text-brand-900">
+                    <label class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-cream-300 bg-surface px-4 py-2.5 text-sm font-semibold text-ink-700 transition has-checked:border-gold-500 has-checked:bg-gold-500/5 has-checked:text-heading">
                         <input type="radio" name="media_type" value="IMAGE" wire:model="media_type" class="sr-only">
                         <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159M3 19.5h18a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 6v12A1.5 1.5 0 0 0 3 19.5Z"/></svg>
                         Image
                     </label>
-                    <label class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-cream-300 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 transition has-checked:border-gold-500 has-checked:bg-gold-500/5 has-checked:text-brand-900">
+                    <label class="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-cream-300 bg-surface px-4 py-2.5 text-sm font-semibold text-ink-700 transition has-checked:border-gold-500 has-checked:bg-gold-500/5 has-checked:text-heading">
                         <input type="radio" name="media_type" value="VIDEO" wire:model="media_type" class="sr-only">
                         <svg class="size-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                         Reel / Video
@@ -215,38 +225,38 @@ new class extends Component
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Thumbnail URL <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                <input type="url" wire:model="thumbnail_url" placeholder="https://…/image.jpg" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Thumbnail URL <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                <input type="url" wire:model="thumbnail_url" placeholder="https://…/image.jpg" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 <p class="mt-1 text-xs text-ink-500">Leave blank to use a default placeholder while the Instagram Graph API isn't connected.</p>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-brand-700">Caption <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
-                <textarea wire:model="caption" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
+                <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Caption <span class="font-normal normal-case tracking-normal text-ink-500">(optional)</span></label>
+                <textarea wire:model="caption" rows="3" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"></textarea>
             </div>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <button type="submit" class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900">Add post</button>
-                <button type="button" wire:click="cancel" class="inline-flex items-center justify-center rounded-2xl border-2 border-cream-300 px-6 py-3 text-sm font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                <button type="submit" class="btn btn-primary px-6 py-3 text-sm">Add post</button>
+                <button type="button" wire:click="cancel" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
             </div>
         </form>
     </x-admin.modal>
 
     @if ($this->posts->isEmpty())
-        <div class="rounded-3xl border border-dashed border-cream-300 bg-white p-10 text-center text-sm text-ink-500">No Instagram posts yet — paste a link to get started.</div>
+        <div class="rounded-3xl border border-dashed border-cream-300 bg-surface p-10 text-center text-sm text-ink-500">No Instagram posts yet — paste a link to get started.</div>
     @else
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @foreach ($this->posts as $post)
-                <article class="rounded-3xl border border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+                <article class="rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
                     <div class="aspect-square overflow-hidden rounded-t-3xl bg-cream-200">
-                        @if ($post->thumbnail_url)
-                            <img src="{{ $post->thumbnail_url }}" alt="" class="h-full w-full object-cover" loading="lazy">
+                        @if ($post->previewImageUrl())
+                            <img src="{{ $post->previewImageUrl() }}" alt="" class="h-full w-full object-cover" loading="lazy">
                         @else
                             <div class="grid h-full place-items-center text-xs text-ink-500">No thumbnail</div>
                         @endif
                     </div>
                     <div class="p-4">
-                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-700">
+                        <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-label">
                             {{ $post->source?->label() ?? 'Manual' }} ·
                             @if ($post->is_hidden)
                                 <span class="text-red-600">Hidden</span>
@@ -259,21 +269,21 @@ new class extends Component
                         @if ($post->caption)
                             <p class="mt-2 text-xs text-ink-700">{{ \Illuminate\Support\Str::limit($post->caption, 100) }}</p>
                         @endif
-                        <a href="{{ $post->permalink }}" target="_blank" rel="noopener" class="mt-2 inline-flex text-xs font-semibold text-gold-500 hover:text-brand-900">View on Instagram →</a>
+                        <a href="{{ $post->permalink }}" target="_blank" rel="noopener" class="mt-2 inline-flex text-xs font-semibold text-gold-500 hover:text-heading">View on Instagram →</a>
 
                         <div class="mt-3 flex items-center justify-end">
                             @if ($confirmDeleteId === $post->id)
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button type="button" wire:click="delete({{ $post->id }})" class="inline-flex items-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">Confirm delete</button>
-                                    <button type="button" wire:click="cancelDelete" class="inline-flex items-center rounded-lg border border-cream-300 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-brand-900 hover:text-brand-900">Cancel</button>
+                                    <button type="button" wire:click="cancelDelete" class="btn btn-ghost px-3 py-1.5 text-xs">Cancel</button>
                                 </div>
                             @else
                                 <x-admin.actions-menu>
-                                    <button type="button" wire:click="toggleApprove({{ $post->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                    <button type="button" wire:click="toggleApprove({{ $post->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                         <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                         {{ $post->is_approved ? 'Unapprove' : 'Approve' }}
                                     </button>
-                                    <button type="button" wire:click="toggleHide({{ $post->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-brand-900">
+                                    <button type="button" wire:click="toggleHide({{ $post->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58M9.88 5.09A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 1 12s4 7 11 7a10.94 10.94 0 0 0 5.39-1.39"/></svg>
                                         {{ $post->is_hidden ? 'Unhide' : 'Hide' }}
                                     </button>

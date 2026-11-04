@@ -11,6 +11,7 @@ beforeEach(function () {
     RateLimiter::clear('public-form:volunteer:127.0.0.1');
     RateLimiter::clear('public-form:contact:127.0.0.1');
     RateLimiter::clear('public-form:newsletter:127.0.0.1');
+    RateLimiter::clear('public-form:beneficiary-application:127.0.0.1');
 });
 
 it('throttles repeated volunteer applications from the same IP', function () {
@@ -24,6 +25,7 @@ it('throttles repeated volunteer applications from the same IP', function () {
             ->set('availability', VolunteerAvailability::cases()[0]->value)
             ->set('motivation', 'I really want to help our community thrive together.')
             ->set('consent', true)
+            ->tap(fn () => $this->travel(5)->seconds())
             ->call('submit');
     };
 
@@ -45,6 +47,7 @@ it('throttles repeated contact form submissions from the same IP', function () {
             ->set('subject', ContactSubject::cases()[0]->value)
             ->set('message', 'I would love to learn more about what you do.')
             ->set('consent', true)
+            ->tap(fn () => $this->travel(5)->seconds())
             ->call('submit');
     };
 
@@ -59,6 +62,7 @@ it('throttles repeated newsletter signups from the same IP', function () {
     $submit = function () {
         return Livewire::test('site.newsletter-signup')
             ->set('email', 'sub'.uniqid().'@example.com')
+            ->tap(fn () => $this->travel(5)->seconds())
             ->call('subscribe');
     };
 

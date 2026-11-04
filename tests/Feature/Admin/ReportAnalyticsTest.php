@@ -128,3 +128,47 @@ it('renders the reports page with the overview tab by default', function () {
         ->assertSet('category', 'overview')
         ->assertSeeText('Foundation overview');
 });
+
+it('compares against a prior window of exactly the same length', function () {
+    // Current window: 2026-05-08 .. 2026-05-14 (7 days) → prior: 2026-05-01 .. 2026-05-07.
+    Donation::factory()->create(['received_at' => '2026-05-10', 'amount_cents' => 20000]);
+    Donation::factory()->create(['received_at' => '2026-05-01', 'amount_cents' => 10000]); // first prior day
+    Donation::factory()->create(['received_at' => '2026-05-07', 'amount_cents' => 0]);
+    Donation::factory()->create(['received_at' => '2026-04-30', 'amount_cents' => 99900]); // one day too early
+
+    $data = app(ReportAnalyticsService::class)->for('donations', '2026-05-08', '2026-05-14');
+
+    expect($data['kpis']['total']['value'])->toEqual(200)
+        ->and($data['kpis']['count'])->toBe(['value' => 1, 'delta' => -50.0])
+        ->and($data['kpis']['total']['delta'])->toBe(100.0);
+});
+
+it('uses a one-day prior window for a single-day report', function () {
+    Donation::factory()->create(['received_at' => '2026-05-10', 'amount_cents' => 5000]);
+    Donation::factory()->create(['received_at' => '2026-05-09', 'amount_cents' => 10000]);
+    Donation::factory()->create(['received_at' => '2026-05-08', 'amount_cents' => 70000]);
+
+    $data = app(ReportAnalyticsService::class)->for('donations', '2026-05-10', '2026-05-10');
+
+    expect($data['kpis']['total']['delta'])->toBe(-50.0);
+});
+
+it('returns a null delta when the prior period is zero', function () {
+    $data = app(ReportAnalyticsService::class)->for('donations', '2026-05-10', '2026-05-10');
+
+    expect($data['kpis']['total'])->toBe(['value' => 0, 'delta' => null]);
+});
+
+it('excludes donations outside the base currency from analytics', function () {
+    Donation::factory()->create(['received_at' => '2026-05-10', 'amount_cents' => 10000, 'currency' => 'USD', 'donor_name' => 'Usd Donor']);
+    Donation::factory()->create(['received_at' => '2026-05-10', 'amount_cents' => 500000, 'currency' => 'GHS', 'donor_name' => 'Ghs Donor']);
+
+    $service = app(ReportAnalyticsService::class);
+    $donations = $service->for('donations', '2026-05-01', '2026-05-31');
+    $overview = $service->for('overview', '2026-05-01', '2026-05-31');
+
+    expect($donations['kpis']['total']['value'])->toEqual(100)
+        ->and($donations['kpis']['count']['value'])->toBe(1)
+        ->and(collect($donations['top_donors'])->pluck('donor_name')->all())->toBe(['Usd Donor'])
+        ->and($overview['kpis']['donations']['value'])->toEqual(100);
+});

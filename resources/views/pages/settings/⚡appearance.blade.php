@@ -13,16 +13,13 @@ new #[Title('Appearance settings')] class extends Component
     <x-pages::settings.layout :heading="__('Appearance')" :subheading="__('Update the appearance settings for your account')">
         <div
             x-data="{
-                value: localStorage.getItem('appearance') || 'system',
+                value: $store.theme.preference(),
                 apply() {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    const dark = this.value === 'dark' || (this.value === 'system' && prefersDark);
-                    document.documentElement.classList.toggle('dark', dark);
-                    localStorage.setItem('appearance', this.value);
+                    this.value === 'system' ? $store.theme.followSystem() : $store.theme.setMode(this.value);
                 },
             }"
-            x-init="apply()"
-            class="inline-flex rounded-full border border-cream-300 bg-white p-1"
+            x-effect="value = $store.theme.mode && $store.theme.preference()"
+            class="inline-flex rounded-full border border-cream-300 bg-surface p-1"
             role="radiogroup"
             aria-label="{{ __('Appearance') }}"
         >

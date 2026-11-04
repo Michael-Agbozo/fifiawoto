@@ -67,3 +67,36 @@ test('users can logout', function () {
 
     $this->assertGuest();
 });
+
+test('inactive users can not authenticate and are told why', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertSessionHasErrors(['email' => 'Your account has been deactivated. Please contact the administrator.']);
+
+    $this->assertGuest();
+});
+
+test('inactive users with a wrong password get the generic error', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'wrong-password',
+    ])->assertSessionHasErrors(['email' => __('auth.failed')]);
+});
+
+test('a deactivated user is logged out on their next request', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $user->forceFill(['is_active' => false])->save();
+
+    $this->get(route('dashboard'))
+        ->assertRedirect(route('login'))
+        ->assertSessionHasErrors('email');
+
+    $this->assertGuest();
+});

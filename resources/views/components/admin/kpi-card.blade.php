@@ -18,8 +18,8 @@
     $deltaLabel = $delta === null ? null : ($delta > 0 ? '+' : '').number_format((float) $delta, 1).'%';
 @endphp
 
-<article {{ $attributes->class(['rounded-2xl border border-cream-300 bg-white p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]']) }}>
-    <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-brand-700">{{ $label }}</p>
+<article {{ $attributes->class(['tilt rounded-2xl border border-cream-300 bg-surface p-5 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]']) }}>
+    <p class="font-sans text-[10px] font-semibold uppercase tracking-[0.22em] text-label">{{ $label }}</p>
     <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $prefix }}{{ $value }}{{ $suffix }}</p>
     @if ($deltaLabel !== null)
         <p class="mt-1 flex items-center gap-1 text-xs font-semibold {{ $deltaClass }}">

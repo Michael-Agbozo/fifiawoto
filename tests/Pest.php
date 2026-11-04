@@ -44,7 +44,19 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Minimal Livewire update payload with one component snapshot per given page path,
+ * mirroring how Livewire batches several components into a single request.
+ *
+ * @return array{components: list<array{snapshot: string, updates: array<never>, calls: array<never>}>}
+ */
+function livewireUpdateFrom(string ...$paths): array
 {
-    // ..
+    return [
+        'components' => array_map(fn (string $path) => [
+            'snapshot' => json_encode(['memo' => ['path' => $path, 'method' => 'GET']]),
+            'updates' => [],
+            'calls' => [],
+        ], $paths),
+    ];
 }

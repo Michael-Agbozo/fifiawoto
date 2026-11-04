@@ -23,7 +23,7 @@ composer setup           # installs PHP+JS deps, .env, key, migrations, builds a
 composer dev             # starts artisan serve + queue + pail + vite concurrently
 ```
 
-Default seeded accounts (password `password`):
+Local demo accounts created by `php artisan db:seed` (password `password`; you'll be asked to change it on first login). `DatabaseSeeder` refuses to run in production — use `AdminUserSeeder` there (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)):
 
 | Role                  | Email                              |
 | --------------------- | ---------------------------------- |

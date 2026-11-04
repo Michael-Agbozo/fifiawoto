@@ -6,7 +6,11 @@ use App\Enums\SupportCategory;
 use App\Enums\SupportStatus;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
+use App\Models\BeneficiaryFolder;
+use App\Models\BeneficiaryTimelineEntry;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 beforeEach(fn () => $this->actingAs(User::factory()->superAdmin()->create()));
@@ -65,4 +69,88 @@ it('creates a folder on the profile page', function () {
         ->call('createFolder');
 
     expect($b->folders()->where('name', 'Custom Folder')->exists())->toBeTrue();
+});
+
+it('rejects invalid category and status values instead of saving them', function () {
+    Livewire::test('admin.beneficiaries')
+        ->call('startCreate')
+        ->set('full_name', 'Bad Enum')
+        ->set('country', 'Ghana')
+        ->set('category', 'not-a-category')
+        ->set('status', 'not-a-status')
+        ->set('description', 'A long-term widow support case in the Volta Region.')
+        ->call('save')
+        ->assertHasErrors(['category', 'status']);
+
+    expect(Beneficiary::query()->count())->toBe(0);
+});
+
+it('ignores a tampered photo_path and only deletes the record\'s own photo', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('leaders/someone-else.jpg', 'x');
+    Storage::disk('public')->put('beneficiaries/own.jpg', 'x');
+    $b = Beneficiary::factory()->create(['photo_path' => 'beneficiaries/own.jpg']);
+
+    $component = Livewire::test('admin.beneficiaries')->call('startEdit', $b->id);
+
+    expect(fn () => $component->set('photo_path', 'leaders/someone-else.jpg'))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+    expect(fn () => $component->set('editingId', 999))
+        ->toThrow(CannotUpdateLockedPropertyException::class);
+
+    $component->set('remove_photo', true)->call('save')->assertHasNoErrors();
+
+    Storage::disk('public')->assertExists('leaders/someone-else.jpg');
+    Storage::disk('public')->assertMissing('beneficiaries/own.jpg');
+    expect($b->refresh()->photo_path)->toBeNull();
+});
+
+it('keeps the old photo when the record update fails', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('beneficiaries/own.jpg', 'x');
+    $b = Beneficiary::factory()->create(['photo_path' => 'beneficiaries/own.jpg']);
+
+    Beneficiary::updating(fn () => throw new RuntimeException('db down'));
+
+    expect(fn () => Livewire::test('admin.beneficiaries')
+        ->call('startEdit', $b->id)
+        ->set('remove_photo', true)
+        ->call('save'))->toThrow(RuntimeException::class);
+
+    Storage::disk('public')->assertExists('beneficiaries/own.jpg');
+});
+
+it('rolls back the new record if seeding its folders fails', function () {
+    BeneficiaryTimelineEntry::creating(fn () => throw new RuntimeException('boom'));
+
+    expect(fn () => Livewire::test('admin.beneficiaries')
+        ->call('startCreate')
+        ->set('full_name', 'Half Made')
+        ->set('country', 'Ghana')
+        ->set('category', SupportCategory::WidowSupport->value)
+        ->set('description', 'A long-term widow support case in the Volta Region.')
+        ->call('save'))->toThrow(RuntimeException::class);
+
+    expect(Beneficiary::withTrashed()->count())->toBe(0)
+        ->and(BeneficiaryFolder::query()->count())->toBe(0);
+});
+
+it('refuses status changes on a converted application and hides the row actions', function () {
+    $app = BeneficiaryApplication::factory()->create([
+        'full_name' => 'Converted Applicant',
+        'status' => BeneficiaryApplicationStatus::New->value,
+        'assistance_type' => AssistanceType::Education->value,
+    ]);
+
+    $component = Livewire::test('admin.beneficiary-applications')
+        ->set('statusFilter', '')
+        ->call('convertToBeneficiary', $app->id);
+
+    $component->call('setStatus', $app->id, BeneficiaryApplicationStatus::Rejected->value);
+
+    expect($app->refresh()->status)->toBe(BeneficiaryApplicationStatus::Approved);
+
+    $component->call('$refresh')
+        ->assertDontSeeHtml("setStatus({$app->id}, 'rejected')")
+        ->assertDontSeeHtml("setStatus({$app->id}, 'under_review')");
 });

@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum ContactSubject: string
 {
+    case Sponsorship = 'sponsorship';
     case General = 'general';
     case Volunteer = 'volunteer';
     case Donation = 'donation';
@@ -12,6 +13,7 @@ enum ContactSubject: string
     public function label(): string
     {
         return match ($this) {
+            self::Sponsorship => 'Child Sponsorship Enquiry',
             self::General => 'General Inquiry',
             self::Volunteer => 'Volunteer Information',
             self::Donation => 'Donation Inquiry',

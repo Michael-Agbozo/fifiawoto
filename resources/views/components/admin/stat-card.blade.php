@@ -23,7 +23,7 @@
     ];
 
     $paletteClasses = [
-        'brand'  => 'bg-brand-50 text-brand-700',
+        'brand'  => 'bg-brand-50 text-label',
         'gold'   => 'bg-gold-300/30 text-gold-600',
         'green'  => 'bg-green-50 text-green-600',
         'amber'  => 'bg-amber-50 text-amber-600',
@@ -36,9 +36,9 @@
 @endphp
 
 <button type="button" {{ $attributes->class([
-    'group block rounded-2xl border p-5 text-left transition',
-    'border-brand-900 bg-brand-900/[0.04] shadow-[0_10px_30px_-15px_rgba(0,4,78,0.18)]' => $active,
-    'border-cream-300 bg-white shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)] hover:-translate-y-0.5 hover:border-brand-900 hover:shadow-[0_12px_40px_-18px_rgba(0,4,78,0.18)]' => ! $active,
+    'tilt group block rounded-2xl border p-5 text-left transition',
+    'border-heading bg-brand-900/[0.04] shadow-[0_10px_30px_-15px_rgba(0,4,78,0.18)]' => $active,
+    'border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)] hover:-translate-y-0.5 hover:border-heading hover:shadow-[0_12px_40px_-18px_rgba(0,4,78,0.18)]' => ! $active,
 ]) }}>
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">

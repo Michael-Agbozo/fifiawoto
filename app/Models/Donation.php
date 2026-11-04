@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Support\Money;
 use Database\Factories\DonationFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +25,8 @@ class Donation extends Model
         'received_at',
         'recorded_by',
         'notes',
+        'sponsorship_id',
+        'months_covered',
     ];
 
     /**
@@ -33,7 +37,35 @@ class Donation extends Model
         return [
             'amount_cents' => 'integer',
             'received_at' => 'date',
+            'months_covered' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        $syncPledge = fn (Donation $donation) => $donation->sponsorship?->syncNextDueOn();
+
+        static::saved($syncPledge);
+        static::deleted($syncPledge);
+    }
+
+    /**
+     * @return BelongsTo<Sponsorship, $this>
+     */
+    public function sponsorship(): BelongsTo
+    {
+        return $this->belongsTo(Sponsorship::class);
+    }
+
+    /**
+     * Restrict to gifts recorded in the foundation's base currency so
+     * aggregates never mix amounts in different currencies.
+     *
+     * @param  Builder<Donation>  $query
+     */
+    public function scopeInBaseCurrency(Builder $query): void
+    {
+        $query->where($query->qualifyColumn('currency'), Money::baseCurrency());
     }
 
     /**

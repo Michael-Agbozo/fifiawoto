@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DocumentDownloadController;
 use App\Models\Beneficiary;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,16 @@ Route::middleware('role:owner,super_admin,foundation_staff')->group(function () 
         return view('admin.beneficiaries.show', ['beneficiary' => $beneficiary]);
     })->name('beneficiaries.show');
 
+    Route::get('/beneficiaries/{beneficiary}/documents/{document}', [DocumentDownloadController::class, 'beneficiaryDocument'])
+        ->middleware('signed')
+        ->scopeBindings()
+        ->name('beneficiaries.documents.show');
+
+    Route::get('/beneficiary-applications/{application}/documents/{document}', [DocumentDownloadController::class, 'applicationDocument'])
+        ->middleware('signed')
+        ->scopeBindings()
+        ->name('beneficiary-applications.documents.show');
+
     Route::view('/beneficiary-applications', 'admin.beneficiary-applications.index')
         ->name('beneficiary-applications.index');
 
@@ -42,6 +53,9 @@ Route::middleware('role:owner,super_admin,foundation_staff')->group(function () 
 
     Route::view('/donations', 'admin.donations.index')
         ->name('donations.index');
+
+    Route::view('/sponsorships', 'admin.sponsorships.index')
+        ->name('sponsorships.index');
 
     Route::view('/reports', 'admin.reports.index')
         ->name('reports.index');
@@ -61,6 +75,9 @@ Route::middleware('role:owner,super_admin,media_manager,foundation_staff')->grou
     Route::view('/leaders', 'admin.leaders.index')
         ->name('leaders.index');
 
+    Route::view('/faqs', 'admin.faqs.index')
+        ->name('faqs.index');
+
     Route::view('/media', 'admin.media.index')
         ->name('media.index');
 
@@ -69,6 +86,15 @@ Route::middleware('role:owner,super_admin,media_manager,foundation_staff')->grou
 
     Route::view('/newsletter', 'admin.newsletter.index')
         ->name('newsletter.index');
+
+    Route::view('/newsletter/campaigns', 'admin.newsletter.campaigns')
+        ->name('newsletter.campaigns');
+});
+
+// Website analytics (Owner · Admin · Foundation Staff · Media Manager)
+Route::middleware('role:owner,super_admin,foundation_staff,media_manager')->group(function () {
+    Route::view('/analytics', 'admin.analytics.index')
+        ->name('analytics.index');
 });
 
 // Email inbox (Owner · Admin · Foundation Staff · Volunteer Coordinator · Media Manager)
@@ -77,10 +103,16 @@ Route::middleware('role:owner,super_admin,foundation_staff,volunteer_coordinator
         ->name('inbox.index');
 });
 
-// User management (Owner · Admin)
+// User management · Website popup (Owner · Admin)
 Route::middleware('role:owner,super_admin')->group(function () {
     Route::view('/users', 'admin.users.index')
         ->name('users.index');
+
+    Route::view('/settings/site', 'admin.settings.site')
+        ->name('settings.site');
+
+    Route::view('/settings/popup', 'admin.settings.popup')
+        ->name('settings.popup');
 });
 
 // System logs (Owner only — top-level super admin access)

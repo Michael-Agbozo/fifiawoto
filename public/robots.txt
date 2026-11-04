@@ -1,2 +1,5 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /newsletter/
+
+Sitemap: https://fifiawoto.org/sitemap.xml

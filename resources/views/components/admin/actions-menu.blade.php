@@ -30,7 +30,7 @@
         type="button"
         @click="toggle()"
         :aria-expanded="open"
-        class="grid aspect-square size-9 place-items-center rounded-xl border border-cream-300 bg-white text-ink-700 transition hover:border-brand-900 hover:text-brand-900"
+        class="grid aspect-square size-9 place-items-center rounded-xl border border-cream-300 bg-surface text-ink-700 transition hover:border-heading hover:text-heading"
         aria-label="{{ $label }}"
         title="{{ $label }}"
     >
@@ -52,7 +52,7 @@
         x-transition:leave-end="opacity-0 scale-95"
         :style="`top: ${y}px; left: ${x}px`"
         @click.outside="open = false"
-        class="fixed z-50 w-60 overflow-hidden rounded-2xl border border-cream-300 bg-white shadow-[0_20px_60px_-20px_rgba(0,4,78,0.25)]"
+        class="fixed z-50 w-60 overflow-hidden rounded-2xl border border-cream-300 bg-surface shadow-[0_20px_60px_-20px_rgba(0,4,78,0.25)]"
         role="menu"
     >
         <div class="py-1.5">

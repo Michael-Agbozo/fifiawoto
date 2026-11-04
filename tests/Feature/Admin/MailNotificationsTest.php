@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
 use App\Enums\UserRole;
 use App\Enums\VolunteerApplicationStatus;
@@ -8,13 +9,16 @@ use App\Enums\VolunteerInterest;
 use App\Enums\VolunteerRole;
 use App\Mail\BeneficiaryApplicationConverted;
 use App\Mail\ContactFormReceived;
+use App\Mail\ContactMessageReply;
 use App\Mail\DonationReceipt;
 use App\Mail\TeamInvitation;
 use App\Mail\VolunteerApplicationDecision;
 use App\Mail\VolunteerApplicationReceived;
 use App\Models\BeneficiaryApplication;
+use App\Models\ContactMessage;
 use App\Models\User;
 use App\Models\VolunteerApplication;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -32,10 +36,11 @@ it('emails the admin when a volunteer applies publicly', function () {
         ->set('availability', VolunteerAvailability::cases()[0]->value)
         ->set('motivation', 'I really want to help our community thrive together.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors();
 
-    Mail::assertSent(VolunteerApplicationReceived::class, function ($mail) {
+    Mail::assertQueued(VolunteerApplicationReceived::class, function ($mail) {
         return $mail->hasTo(config('notifications.admin_email'));
     });
 });
@@ -52,7 +57,7 @@ it('emails the applicant when a volunteer application is approved', function () 
         ->set('applicationRoleChoice.'.$app->id, VolunteerRole::Event->value)
         ->call('approve', $app->id);
 
-    Mail::assertSent(VolunteerApplicationDecision::class, function ($mail) use ($app) {
+    Mail::assertQueued(VolunteerApplicationDecision::class, function ($mail) use ($app) {
         return $mail->hasTo($app->email) && $mail->approved === true;
     });
 });
@@ -67,7 +72,7 @@ it('emails the applicant when a volunteer application is rejected', function () 
 
     Livewire::test('admin.volunteers')->call('reject', $app->id);
 
-    Mail::assertSent(VolunteerApplicationDecision::class, function ($mail) use ($app) {
+    Mail::assertQueued(VolunteerApplicationDecision::class, function ($mail) use ($app) {
         return $mail->hasTo($app->email) && $mail->approved === false;
     });
 });
@@ -81,7 +86,7 @@ it('emails the applicant when a beneficiary application is converted', function 
 
     Livewire::test('admin.beneficiary-applications')->call('convertToBeneficiary', $app->id);
 
-    Mail::assertSent(BeneficiaryApplicationConverted::class, function ($mail) use ($app) {
+    Mail::assertQueued(BeneficiaryApplicationConverted::class, function ($mail) use ($app) {
         return $mail->hasTo($app->email);
     });
 });
@@ -100,7 +105,7 @@ it('emails a receipt when a donation is recorded with a donor email', function (
         ->call('save')
         ->assertHasNoErrors();
 
-    Mail::assertSent(DonationReceipt::class, function ($mail) {
+    Mail::assertQueued(DonationReceipt::class, function ($mail) {
         return $mail->hasTo('donor@example.com');
     });
 });
@@ -118,7 +123,7 @@ it('does not email a receipt when no donor email is provided', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    Mail::assertNotSent(DonationReceipt::class);
+    Mail::assertNotQueued(DonationReceipt::class);
 });
 
 it('emails an invitation when a teammate is invited', function () {
@@ -132,7 +137,7 @@ it('emails an invitation when a teammate is invited', function () {
         ->call('invite')
         ->assertHasNoErrors();
 
-    Mail::assertSent(TeamInvitation::class, function ($mail) {
+    Mail::assertQueued(TeamInvitation::class, function ($mail) {
         return $mail->hasTo('teammate@example.com');
     });
 });
@@ -144,10 +149,51 @@ it('emails the admin when the contact form is submitted', function () {
         ->set('subject', ContactSubject::cases()[0]->value)
         ->set('message', 'I would love to learn more about what you do.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors();
 
-    Mail::assertSent(ContactFormReceived::class, function ($mail) {
+    Mail::assertQueued(ContactFormReceived::class, function ($mail) {
         return $mail->hasTo(config('notifications.admin_email'));
     });
+});
+
+it('emails the sender when an admin replies from the inbox', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $message = ContactMessage::factory()->create(['email' => 'visitor@example.com']);
+
+    Livewire::test('admin.inbox')
+        ->call('openMessage', $message->id)
+        ->call('startReply')
+        ->set('replySubject', 'Re: your enquiry')
+        ->set('replyBody', 'Thanks for reaching out — here is more detail.')
+        ->call('sendReply')
+        ->assertHasNoErrors()
+        ->assertSet('flashMessage', 'Reply sent to visitor@example.com.');
+
+    Mail::assertQueued(ContactMessageReply::class, fn ($mail) => $mail->hasTo('visitor@example.com'));
+});
+
+it('encrypts the queued team invitation because it carries a temporary password', function () {
+    expect(new TeamInvitation(User::factory()->make(), 'temp-pass'))
+        ->toBeInstanceOf(ShouldBeEncrypted::class);
+});
+
+it('shows the sent reply and resolved status immediately after replying', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $message = ContactMessage::factory()->create(['email' => 'visitor@example.com']);
+
+    Livewire::test('admin.inbox')
+        ->set('statusFilter', '')
+        ->call('openMessage', $message->id)
+        ->call('startReply')
+        ->set('replySubject', 'Re: your enquiry')
+        ->set('replyBody', 'A distinctive reply body for the stale-cache check.')
+        ->call('sendReply')
+        ->assertHasNoErrors()
+        ->assertSee('Replies sent')
+        ->assertSee('A distinctive reply body for the stale-cache check.');
+
+    expect($message->refresh()->status)->toBe(ContactMessageStatus::Resolved)
+        ->and($message->replies()->count())->toBe(1);
 });

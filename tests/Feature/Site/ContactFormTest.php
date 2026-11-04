@@ -23,6 +23,7 @@ it('persists a valid contact submission', function () {
         ->set('subject', ContactSubject::Partnership->value)
         ->set('message', 'We would like to explore a multi-year partnership focused on education.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasNoErrors()
         ->assertSet('submitted', true)
@@ -43,6 +44,7 @@ it('requires a valid subject choice', function () {
         ->set('subject', 'not-a-real-subject')
         ->set('message', 'A meaningful message at least fifteen chars.')
         ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['subject']);
 
@@ -56,6 +58,7 @@ it('requires consent', function () {
         ->set('subject', ContactSubject::General->value)
         ->set('message', 'A meaningful message at least fifteen chars.')
         ->set('consent', false)
+        ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['consent' => 'accepted']);
 });
