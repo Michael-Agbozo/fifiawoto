@@ -168,3 +168,22 @@ it('refuses to seed demo media in production', function () {
 
     expect(fn () => (new DemoMediaSeeder)->run())->toThrow(RuntimeException::class);
 });
+
+it('shows six albums per page and pages through the rest', function () {
+    foreach (range(1, 8) as $n) {
+        $event = publishedEvent(['title' => "Outreach number {$n}", 'starts_at' => now()->subDays($n)]);
+        EventImage::factory()->create(['event_id' => $event->id]);
+    }
+
+    $html = $this->get(route('media'))
+        ->assertOk()
+        ->assertSee('aria-label="Album pages"', escape: false)
+        ->assertSee('perPage: 6')
+        ->assertSee('Showing')
+        ->getContent();
+
+    // The first six render visible; the rest start hidden until paged to.
+    preg_match_all('/<li\s+class="glass-in"[^>]*?>/s', $html, $cards);
+    expect($cards[0])->toHaveCount(8)
+        ->and(collect($cards[0])->filter(fn ($tag) => preg_match('/\shidden\s/', $tag))->count())->toBe(2);
+});

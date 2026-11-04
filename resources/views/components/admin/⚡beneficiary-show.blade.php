@@ -14,6 +14,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use App\Support\SecureDocumentStore;
 use Livewire\WithFileUploads;
 
 new class extends Component
@@ -76,6 +77,9 @@ new class extends Component
 
     /** Files being staged for upload — supports multi-select. */
     public array $documentUploads = [];
+
+    /** Set by the "upload folder" picker: the name of the folder being uploaded. */
+    public string $uploadFolderName = '';
 
     public string $documentDescription = '';
 
@@ -306,6 +310,7 @@ new class extends Component
         $this->newFolderName = '';
         $this->documentUploads = [];
         $this->documentDescription = '';
+        $this->uploadFolderName = '';
         $this->renameFolderId = null;
         $this->confirmDeleteFolderId = null;
         $this->confirmDeleteDocumentId = null;
@@ -445,23 +450,41 @@ new class extends Component
             'documentUploads' => 'required|array|min:1',
             'documentUploads.*' => 'file|max:20480|mimes:'.implode(',', BeneficiaryDocument::ALLOWED_EXTENSIONS),
             'documentDescription' => 'nullable|string|max:255',
+            'uploadFolderName' => 'nullable|string|max:120',
         ]);
 
+        // Scan everything first, so one bad file stops the upload before anything is stored.
+        $scanResults = app(SecureDocumentStore::class)->scanAll($this->documentUploads, 'documentUploads');
+
+        // A whole-folder upload lands in a new folder of the same name, inside the current one.
+        $folderId = $this->currentFolderId;
+        if (filled($this->uploadFolderName)) {
+            $folderId = BeneficiaryFolder::query()->create([
+                'beneficiary_id' => $this->beneficiary->id,
+                'parent_id' => $this->currentFolderId,
+                'name' => $this->uploadFolderName,
+                'slug' => Str::slug($this->uploadFolderName).'-'.Str::lower(Str::random(4)),
+                'created_by' => auth()->id(),
+            ])->id;
+        }
+
         $saved = 0;
-        foreach ($this->documentUploads as $upload) {
-            $path = $upload->store("{$this->beneficiary->id}/documents", 'beneficiaries');
+        foreach ($this->documentUploads as $index => $upload) {
+            $path = app(SecureDocumentStore::class)->store($upload, "{$this->beneficiary->id}/documents");
 
             BeneficiaryDocument::query()->create([
                 'beneficiary_id' => $this->beneficiary->id,
-                'folder_id' => $this->currentFolderId,
+                'folder_id' => $folderId,
                 'disk' => 'beneficiaries',
                 'path' => $path,
+                'encrypted_at' => now(),
                 'original_name' => $upload->getClientOriginalName(),
                 'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
                 'size_bytes' => $upload->getSize() ?: 0,
                 'description' => $this->documentDescription ?: null,
                 'uploaded_by' => auth()->id(),
-                'scan_status' => 'pending',
+                'scan_status' => $scanResults[$index],
+                'scan_checked_at' => now(),
             ]);
             $saved++;
         }
@@ -850,6 +873,31 @@ new class extends Component
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-label">
                             Upload to {{ $this->currentFolder?->name ?? 'Root' }}
                         </p>
+                        <div
+                            x-data="{
+                                allowed: @js(\App\Models\BeneficiaryDocument::ALLOWED_EXTENSIONS),
+                                skipped: 0,
+                                pickFolder(event) {
+                                    const all = Array.from(event.target.files);
+                                    if (all.length === 0) return;
+                                    const files = all.filter((file) => this.allowed.includes(file.name.split('.').pop().toLowerCase()));
+                                    this.skipped = all.length - files.length;
+                                    if (files.length === 0) return;
+                                    $wire.set('uploadFolderName', all[0].webkitRelativePath.split('/')[0]);
+                                    $wire.uploadMultiple('documentUploads', files);
+                                },
+                            }"
+                            class="flex flex-wrap items-center gap-3 text-xs text-ink-500"
+                        >
+                            <label class="btn btn-ghost cursor-pointer px-3 py-2 text-xs">
+                                Upload a whole folder
+                                <input type="file" webkitdirectory multiple class="sr-only" @change="pickFolder($event)">
+                            </label>
+                            @if (filled($uploadFolderName))
+                                <span>Files go into a new folder named <strong>{{ $uploadFolderName }}</strong>.</span>
+                            @endif
+                            <span x-show="skipped > 0" x-cloak x-text="skipped + ' file(s) skipped: this type isn\'t allowed.'"></span>
+                        </div>
                         <label class="block">
                             <input
                                 type="file"

@@ -1,14 +1,16 @@
 <x-layouts::auth :title="__('Log in')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+    <div class="flex flex-col gap-8">
+        <x-auth-header eyebrow="Staff sign in" :title="__('Welcome back')" :description="__('Log in to your account with the email and password your administrator gave you.')" />
 
         <x-auth-session-status class="text-center" :status="session('status')" />
 
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-5">
+        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
             @csrf
 
             <div>
                 <label for="login-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Email address') }}</label>
+                <div class="relative mt-2">
+                <svg class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
                 <input
                     id="login-email"
                     name="email"
@@ -18,8 +20,9 @@
                     autofocus
                     autocomplete="email"
                     placeholder="email@example.com"
-                    class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                    class="block w-full rounded-2xl border border-cream-300 bg-surface py-3.5 pl-12 pr-4 text-base text-ink-900 shadow-sm placeholder-ink-500/60 transition focus:border-heading focus:outline-none focus:ring-4 focus:ring-heading/10"
                 >
+                </div>
                 @error('email')
                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                 @enderror
@@ -35,6 +38,7 @@
                     @endif
                 </div>
                 <div class="relative mt-2">
+                    <svg class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
                     <input
                         id="login-password"
                         name="password"
@@ -42,12 +46,12 @@
                         required
                         autocomplete="current-password"
                         placeholder="{{ __('Password') }}"
-                        class="block w-full rounded-lg border border-cream-300 bg-surface px-3.5 py-2.5 pr-10 text-sm text-ink-900 placeholder-ink-500/60 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30"
+                        class="block w-full rounded-2xl border border-cream-300 bg-surface py-3.5 pl-12 pr-12 text-base text-ink-900 shadow-sm placeholder-ink-500/60 transition focus:border-heading focus:outline-none focus:ring-4 focus:ring-heading/10"
                     >
                     <button
                         type="button"
                         @click="show = !show"
-                        class="absolute inset-y-0 right-0 grid w-10 place-items-center text-ink-500 hover:text-gold-500"
+                        class="absolute inset-y-0 right-1 grid w-11 place-items-center text-ink-500 hover:text-gold-500"
                         aria-label="Toggle password visibility"
                     >
                         <svg x-show="!show" class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -77,10 +81,15 @@
             <button
                 type="submit"
                 data-test="login-button"
-                class="inline-flex w-full items-center justify-center rounded-2xl bg-gold-500 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-900 disabled:opacity-60"
+                class="btn btn-primary btn-lg w-full gap-2 disabled:opacity-60"
             >
-                {{ __('Log in') }}
+                {{ __('Log in') }} <span aria-hidden="true">→</span>
             </button>
         </form>
+
+        <p class="flex items-start gap-3 rounded-2xl bg-cream-100 p-4 text-xs leading-relaxed text-ink-500 ring-1 ring-cream-300">
+            <svg class="mt-0.5 size-4 shrink-0 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"/></svg>
+            <span>This area is for foundation staff. Accounts are created by an administrator. Need access? <a href="{{ route('contact') }}" class="font-semibold text-heading underline-offset-2 hover:underline" wire:navigate>Contact the team</a>.</span>
+        </p>
     </div>
 </x-layouts::auth>

@@ -5,10 +5,13 @@ namespace App\Livewire\Site;
 use App\Concerns\DetectsSpamSubmissions;
 use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
+use App\Enums\SponsorshipStatus;
 use App\Mail\ContactFormReceived;
 use App\Models\Beneficiary;
 use App\Models\ContactMessage;
+use App\Models\Sponsorship;
 use App\Support\Money;
+use App\Support\SiteAnalytics;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +124,11 @@ class SponsorshipCheckout extends Component
             return;
         }
 
-        $this->child();
+        if ($this->child()->isSponsored()) {
+            $this->addError('review', 'This child has just been sponsored. Please choose another child, or contact our team.');
+
+            return;
+        }
 
         if ($this->step !== 'review') {
             $this->addError('review', 'Please review your details before submitting your request.');
@@ -181,7 +188,7 @@ class SponsorshipCheckout extends Component
                 ]);
                 $name = trim($details['firstName'].' '.$details['lastName']);
 
-                ContactMessage::query()->create([
+                $message = ContactMessage::query()->create([
                     'full_name' => $name,
                     'email' => $details['email'],
                     'phone' => $details['phone'] ?: null,
@@ -191,11 +198,26 @@ class SponsorshipCheckout extends Component
                     'status' => ContactMessageStatus::New,
                 ]);
 
+                Sponsorship::query()->create([
+                    'beneficiary_id' => $child->id,
+                    'contact_message_id' => $message->id,
+                    'sponsor_name' => $name,
+                    'sponsor_email' => $details['email'],
+                    'sponsor_phone' => $details['phone'] ?: null,
+                    'country' => $details['country'],
+                    'mailing_address' => collect([$details['address'], $details['addressLine2'], $details['city'], $details['region'], $details['postalCode']])->filter()->implode(', ') ?: null,
+                    'monthly_amount_cents' => $details['monthly_cents'],
+                    'one_time_gift_cents' => $details['gift_cents'],
+                    'currency' => $details['currency'],
+                    'status' => SponsorshipStatus::Pending,
+                ]);
+
                 Mail::to(config('notifications.admin_email'))->queue(
                     (new ContactFormReceived($name, $details['email'], $details['phone'], 'Sponsorship request', $messageBody))->afterCommit()
                 );
             });
 
+            SiteAnalytics::conversion('sponsorship_request');
             Cache::put($completedKey, true, now()->addDay());
             $this->step = 'complete';
 

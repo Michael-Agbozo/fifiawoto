@@ -1,11 +1,13 @@
 <?php
 
 use App\Enums\ContactSubject;
+use App\Enums\SponsorshipStatus;
 use App\Livewire\Site\SponsorshipCheckout;
 use App\Mail\ContactFormReceived;
 use App\Models\Beneficiary;
 use App\Models\ContactMessage;
 use App\Models\Donation;
+use App\Models\Sponsorship;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -186,4 +188,53 @@ it('lets authorised staff save separate public story sections without exposing c
     $this->get(route('sponsor-a-child.show', $child->public_sponsorship_slug))
         ->assertOk()->assertSee('Public community context.')->assertSee('Public country context.')
         ->assertDontSee('PRIVATE INTERNAL NOTES');
+});
+
+it('saves a pending sponsorship alongside the staff message', function () {
+    Mail::fake();
+    $child = checkoutProfile();
+
+    $component = filledSponsorshipCheckout($child)
+        ->set('monthlyAmount', '75')
+        ->call('review')
+        ->set('consent', true);
+    $this->travel(5)->seconds();
+    $component->call('submit')->assertHasNoErrors()->assertSet('step', 'complete');
+
+    $sponsorship = Sponsorship::query()->sole();
+
+    expect($sponsorship)
+        ->beneficiary_id->toBe($child->id)
+        ->sponsor_email->toBe('akua@example.test')
+        ->monthly_amount_cents->toBe(7500)
+        ->status->toBe(SponsorshipStatus::Pending)
+        ->contact_message_id->toBe(ContactMessage::query()->sole()->id);
+    expect($child->isSponsored())->toBeFalse();
+});
+
+it('shows a sponsored child as sponsored without revealing the sponsor', function () {
+    $child = checkoutProfile();
+    Sponsorship::factory()->active()->create(['beneficiary_id' => $child->id, 'sponsor_name' => 'Secret Sponsor']);
+
+    $this->get(route('sponsor-a-child'))->assertOk()->assertSee('Sponsored')->assertDontSee('Secret Sponsor');
+
+    $this->get(route('sponsor-a-child.show', $child->public_sponsorship_slug))
+        ->assertOk()
+        ->assertSee('already has a sponsor')
+        ->assertDontSee('Secret Sponsor')
+        ->assertDontSee(route('sponsor-a-child.checkout', $child->public_sponsorship_slug));
+
+    $this->get(route('sponsor-a-child.checkout', $child->public_sponsorship_slug))
+        ->assertRedirect(route('sponsor-a-child.show', $child->public_sponsorship_slug));
+});
+
+it('stops a request if the child was sponsored in the meantime', function () {
+    Mail::fake();
+    $child = checkoutProfile();
+    $component = filledSponsorshipCheckout($child)->call('review')->set('consent', true);
+    Sponsorship::factory()->active()->create(['beneficiary_id' => $child->id]);
+
+    $component->call('submit')->assertHasErrors('review');
+
+    expect(Sponsorship::query()->where('status', SponsorshipStatus::Pending->value)->count())->toBe(0);
 });

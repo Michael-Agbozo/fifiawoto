@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Support\SecureDocumentStore;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -97,8 +98,11 @@ new class extends Component
 
         $storedPaths = [];
 
+        // Scan first, so a bad file stops the application before anything is saved.
+        $scanResults = app(SecureDocumentStore::class)->scanAll($this->documents, 'documents');
+
         try {
-            $application = DB::transaction(function () use ($data, &$storedPaths): BeneficiaryApplication {
+            $application = DB::transaction(function () use ($data, &$storedPaths, $scanResults): BeneficiaryApplication {
                 $application = new BeneficiaryApplication([
                     'full_name' => $data['full_name'],
                     'phone' => $data['phone'],
@@ -111,13 +115,16 @@ new class extends Component
                 ]);
                 $application->forceFill(['consented_at' => now()])->save();
 
-                foreach ($this->documents as $upload) {
-                    $path = $upload->store("applications/{$application->id}", 'beneficiaries');
+                foreach ($this->documents as $index => $upload) {
+                    $path = app(SecureDocumentStore::class)->store($upload, "applications/{$application->id}");
                     $storedPaths[] = $path;
 
                     $application->documents()->create([
                         'disk' => 'beneficiaries',
                         'path' => $path,
+                        'encrypted_at' => now(),
+                        'scan_status' => $scanResults[$index],
+                        'scan_checked_at' => now(),
                         'original_name' => $upload->getClientOriginalName(),
                         'mime_type' => $upload->getMimeType() ?: 'application/octet-stream',
                         'size_bytes' => $upload->getSize() ?: 0,
@@ -155,18 +162,18 @@ new class extends Component
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
-                <p class="eyebrow">Application</p>
-                <h2 id="support-form-heading" class="section-title text-heading mt-3">Apply for Support</h2>
+                <p class="eyebrow">{{ __('Application') }}</p>
+                <h2 id="support-form-heading" class="section-title text-heading mt-3">{{ __('Apply for Support') }}</h2>
                 <p class="mt-3 text-sm text-ink-500">
-                    Tell us about your situation. Everything you share is kept confidential and seen only by our case team.
+                    {{ __('Tell us about your situation. Everything you share is kept confidential and seen only by our case team.') }}
                 </p>
             </div>
 
             @if ($submitted)
                 <div role="status" class="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-sm text-heading-soft">
-                    <p class="font-semibold text-heading">Thank you — your application has been received.</p>
+                    <p class="font-semibold text-heading">{{ __('Thank you — your application has been received.') }}</p>
                     <p class="mt-1 text-ink-500">
-                        A member of our team will review it and contact you by phone or email. Reviews usually take one to two weeks.
+                        {{ __('A member of our team will review it and contact you by phone or email. Reviews usually take one to two weeks.') }}
                     </p>
                 </div>
             @else
@@ -178,31 +185,31 @@ new class extends Component
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label for="sup-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Full name</label>
+                            <label for="sup-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Full name') }}</label>
                             <input id="sup-name" type="text" wire:model="full_name" required autocomplete="name"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Phone number</label>
+                            <label for="sup-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Phone number') }}</label>
                             <input id="sup-phone" type="tel" wire:model="phone" required autocomplete="tel"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="sup-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Email address <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                            <label for="sup-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Email address') }} <span class="normal-case tracking-normal text-ink-500">{{ __('(optional)') }}</span></label>
                             <input id="sup-email" type="email" wire:model="email" autocomplete="email"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-country" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Country</label>
+                            <label for="sup-country" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Country') }}</label>
                             <input id="sup-country" type="text" wire:model="country" required autocomplete="country-name"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('country') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="sup-region" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Region / town <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
+                            <label for="sup-region" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Region / town') }} <span class="normal-case tracking-normal text-ink-500">{{ __('(optional)') }}</span></label>
                             <input id="sup-region" type="text" wire:model="region"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('region') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -210,12 +217,12 @@ new class extends Component
                     </div>
 
                     <fieldset>
-                        <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Type of support needed</legend>
+                        <legend class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Type of support needed') }}</legend>
                         <div class="mt-3 flex flex-wrap gap-2">
                             @foreach ($assistanceOptions as $value => $label)
                                 <label class="cursor-pointer rounded-full border border-brand-200 bg-cream-50 px-4 py-2 text-sm text-heading-soft has-checked:border-brand-700 has-checked:bg-brand-700 has-checked:text-paper">
                                     <input type="radio" name="assistance_type" value="{{ $value }}" wire:model.live="assistance_type" class="sr-only">
-                                    {{ $label }}
+                                    {{ __($label) }}
                                 </label>
                             @endforeach
                         </div>
@@ -223,23 +230,23 @@ new class extends Component
                     </fieldset>
 
                     <div>
-                        <label for="sup-situation" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Your situation</label>
+                        <label for="sup-situation" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Your situation') }}</label>
                         <textarea id="sup-situation" wire:model="situation" rows="5" required
                             class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                            placeholder="Briefly describe your circumstances and how the foundation could help."></textarea>
+                            placeholder="{{ __('Briefly describe your circumstances and how the foundation could help.') }}"></textarea>
                         @error('situation') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
-                        <label for="sup-documents" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Supporting documents <span class="normal-case tracking-normal text-ink-500">(optional)</span></label>
-                        <p class="mt-1 text-xs text-ink-500">ID, medical or school records — up to {{ $maxDocuments }} files, 10 MB each (PDF, images, Word, Excel).</p>
+                        <label for="sup-documents" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Supporting documents') }} <span class="normal-case tracking-normal text-ink-500">{{ __('(optional)') }}</span></label>
+                        <p class="mt-1 text-xs text-ink-500">{{ __('ID, medical or school records — up to :v1 files, 10 MB each (PDF, images, Word, Excel).', ['v1' => $maxDocuments]) }}</p>
                         <input id="sup-documents" type="file" wire:model="documents" multiple
                             accept=".{{ implode(',.', \App\Models\BeneficiaryDocument::ALLOWED_EXTENSIONS) }}"
                             class="mt-2 block w-full text-sm text-ink-700 file:mr-3 file:rounded-full file:border-0 file:bg-gold-500 file:px-4 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-brand-900">
-                        <p class="mt-1 text-xs text-ink-500" wire:loading wire:target="documents">Uploading…</p>
+                        <p class="mt-1 text-xs text-ink-500" wire:loading wire:target="documents">{{ __('Uploading…') }}</p>
                         @error('documents') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         @foreach ($errors->get('documents.*') as $messages)
-                            <p class="mt-1 text-xs text-red-600">{{ $messages[0] }}</p>
+                            <p class="mt-1 text-xs text-red-600">{{ __($messages[0]) }}</p>
                         @endforeach
 
                         @if ($documents)
@@ -247,7 +254,7 @@ new class extends Component
                                 @foreach ($documents as $index => $document)
                                     <li class="flex items-center justify-between gap-3 px-3 py-2" wire:key="sup-doc-{{ $index }}">
                                         <span class="truncate text-heading">{{ $document->getClientOriginalName() }}</span>
-                                        <button type="button" wire:click="removeDocument({{ $index }})" class="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700">Remove</button>
+                                        <button type="button" wire:click="removeDocument({{ $index }})" class="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700">{{ __('Remove') }}</button>
                                     </li>
                                 @endforeach
                             </ul>
@@ -257,8 +264,7 @@ new class extends Component
                     <label class="flex items-start gap-3 text-sm text-heading-soft">
                         <input type="checkbox" wire:model.live="consent" class="mt-1 rounded border-brand-300 text-label focus:ring-brand-500" required>
                         <span>
-                            I consent to the foundation securely storing this information and any documents to assess my application and contact me about support.
-                            See our <a href="{{ route('legal.privacy') }}" class="font-semibold text-gold-500 hover:text-heading" wire:navigate>privacy policy</a>.
+                            {{ __('I consent to the foundation securely storing this information and any documents to assess my application and contact me about support. See our') }} <a href="{{ route('legal.privacy') }}" class="font-semibold text-gold-500 hover:text-heading" wire:navigate>{{ __('privacy policy') }}</a>.
                         </span>
                     </label>
                     @error('consent') <p class="-mt-3 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -267,8 +273,8 @@ new class extends Component
                         <button type="submit"
                             class="btn btn-primary disabled:opacity-60"
                             wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="submit">Submit application</span>
-                            <span wire:loading wire:target="submit">Submitting…</span>
+                            <span wire:loading.remove wire:target="submit">{{ __('Submit application') }}</span>
+                            <span wire:loading wire:target="submit">{{ __('Submitting…') }}</span>
                         </button>
                     </div>
                 </form>

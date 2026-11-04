@@ -5,13 +5,15 @@ namespace App\Http\Controllers\Site;
 use App\Enums\MediaCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\Faq;
 use App\Models\Testimonial;
+use App\Services\ImpactMetricService;
 use App\Support\MediaAlbums;
 use Illuminate\Contracts\View\View;
 
 class PageController extends Controller
 {
-    public function home(): View
+    public function home(ImpactMetricService $metrics): View
     {
         $featuredEvent = Event::query()
             ->published()
@@ -37,6 +39,7 @@ class PageController extends Controller
             'featuredEvent' => $featuredEvent,
             'popularCauses' => $popularCauses,
             'featuredTestimonials' => $featuredTestimonials,
+            'impact' => $metrics->publicStats(),
         ]);
     }
 
@@ -57,7 +60,9 @@ class PageController extends Controller
 
     public function contact(): View
     {
-        return view('site.contact');
+        return view('site.contact', [
+            'faqs' => Faq::query()->onPage('contact')->published()->ordered()->get(),
+        ]);
     }
 
     public function donate(): View

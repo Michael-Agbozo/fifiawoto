@@ -4,6 +4,7 @@ use App\Enums\VolunteerApplicationStatus;
 use App\Enums\VolunteerRole;
 use App\Mail\VolunteerApplicationDecision;
 use App\Models\Volunteer;
+use App\Models\VolunteerHourLog;
 use App\Models\VolunteerApplication;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -52,6 +53,58 @@ new class extends Component
     {
         $this->viewingApplicationId = null;
         $this->viewingVolunteerId = null;
+    }
+
+    public ?int $loggingHoursForId = null;
+
+    public string $log_hours = '';
+
+    public string $log_served_on = '';
+
+    public ?int $log_event_id = null;
+
+    public string $log_notes = '';
+
+    public function startLogHours(int $volunteerId): void
+    {
+        abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
+
+        $this->loggingHoursForId = Volunteer::query()->findOrFail($volunteerId)->id;
+        $this->reset(['log_hours', 'log_event_id', 'log_notes']);
+        $this->log_served_on = today()->toDateString();
+        $this->resetErrorBag();
+    }
+
+    public function cancelLogHours(): void
+    {
+        $this->loggingHoursForId = null;
+    }
+
+    /** Logged hours feed the public volunteer-hours figure on the home page. */
+    public function saveHours(): void
+    {
+        abort_unless(auth()->user()?->canDo('volunteers', 'update'), 403);
+
+        $data = $this->validate([
+            'log_hours' => ['required', 'numeric', 'min:0.25', 'max:1000'],
+            'log_served_on' => ['required', 'date', 'before_or_equal:today'],
+            'log_event_id' => ['nullable', 'integer', 'exists:events,id'],
+            'log_notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $volunteer = Volunteer::query()->findOrFail($this->loggingHoursForId);
+
+        VolunteerHourLog::query()->create([
+            'volunteer_id' => $volunteer->id,
+            'event_id' => $data['log_event_id'] ?: null,
+            'hours' => $data['log_hours'],
+            'served_on' => $data['log_served_on'],
+            'notes' => $data['log_notes'] ?: null,
+            'recorded_by' => auth()->id(),
+        ]);
+
+        $this->loggingHoursForId = null;
+        $this->flashMessage = "Logged {$data['log_hours']} hour(s) for {$volunteer->full_name}.";
     }
 
     public function mount(): void
@@ -251,7 +304,7 @@ new class extends Component
     #[Computed]
     public function volunteers()
     {
-        $query = Volunteer::query()->latest('assigned_at');
+        $query = Volunteer::query()->withSum('hourLogs', 'hours')->latest('assigned_at');
 
         if (filled($this->rosterFilter)) {
             $query->where('role', $this->rosterFilter);
@@ -457,6 +510,7 @@ new class extends Component
                             <th class="px-6 py-3">Country</th>
                             <th class="px-6 py-3">Role</th>
                             <th class="px-6 py-3">Assigned</th>
+                            <th class="px-6 py-3">Hours</th>
                             <th class="px-6 py-3 text-right">Action</th>
                         </tr>
                     </thead>
@@ -489,6 +543,7 @@ new class extends Component
                                 <td class="px-6 py-4 text-xs text-ink-500">
                                     {{ $volunteer->assigned_at?->format('M j, Y') }}
                                 </td>
+                                <td class="px-6 py-4 text-xs text-ink-500">{{ (float) $volunteer->hour_logs_sum_hours }}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center justify-end">
                                         @if ($editingVolunteerId === $volunteer->id)
@@ -506,6 +561,10 @@ new class extends Component
                                                 <button type="button" wire:click="viewVolunteer({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                     View details
+                                                </button>
+                                                <button type="button" wire:click="startLogHours({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                    <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
+                                                    Log hours
                                                 </button>
                                                 <button type="button" wire:click="startEditRole({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
@@ -709,5 +768,42 @@ new class extends Component
                 </section>
             @endif
         @endif
+    </x-admin.modal>
+
+    <x-admin.modal :show="$loggingHoursForId !== null" title="Log volunteer hours" size="sm" onClose="cancelLogHours">
+        <form wire:submit="saveHours" class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="log_hours" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Hours</label>
+                    <input id="log_hours" type="number" step="0.25" min="0.25" wire:model="log_hours" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('log_hours') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="log_served_on" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Date</label>
+                    <input id="log_served_on" type="date" wire:model="log_served_on" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('log_served_on') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </div>
+            <div>
+                <label for="log_event_id" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Event (optional)</label>
+                <select id="log_event_id" wire:model="log_event_id" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    <option value="">No event</option>
+                    @if ($loggingHoursForId)
+                        @foreach (\App\Models\Event::query()->latest('starts_at')->limit(50)->get(['id', 'title']) as $eventOption)
+                            <option value="{{ $eventOption->id }}">{{ $eventOption->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+            <div>
+                <label for="log_notes" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Notes</label>
+                <input id="log_notes" type="text" wire:model="log_notes" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm text-ink-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                @error('log_notes') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button type="submit" wire:loading.attr="disabled" class="btn btn-primary px-6 py-3 text-sm disabled:opacity-60">Save hours</button>
+                <button type="button" wire:click="cancelLogHours" class="btn btn-ghost px-6 py-3 text-sm">Cancel</button>
+            </div>
+        </form>
     </x-admin.modal>
 </div>

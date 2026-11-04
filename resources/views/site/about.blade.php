@@ -1,9 +1,9 @@
-<x-layouts::site title="About">
+<x-layouts::site :title="__('About')">
     <x-site.page-hero
-        title="About Us"
-        breadcrumb="About"
+        :title="__('About Us')"
+        :breadcrumb="__('About')"
         image="images/foundation/about/team-group.jpg"
-        alt="The Fifiawoto Foundation team and supporters in matching foundation t-shirts"
+        :alt="__('The Fifiawoto Foundation team and supporters in matching foundation t-shirts')"
     />
 
     {{-- OUR LEGACY · Serving with Heart --}}
@@ -12,37 +12,37 @@
             <div class="reveal-left">
                 <img
                     src="{{ asset('images/foundation/about/serving-with-heart.jpg') }}"
-                    alt="Children holding up new school bags donated through the foundation"
+                    alt="{{ __('Children holding up new school bags donated through the foundation') }}"
                     class="img-fade aspect-[4/3] w-full rounded-3xl object-cover shadow-[0_24px_60px_-30px_rgba(0,4,78,0.35)]"
                     loading="lazy"
                 >
             </div>
             <div class="reveal-right" style="transition-delay: 160ms">
-                <p class="eyebrow">Our Legacy</p>
-                <h2 id="legacy-heading" class="section-title text-heading mt-3">Serving with Heart</h2>
+                <p class="eyebrow">{{ __('Our Legacy') }}</p>
+                <h2 id="legacy-heading" class="section-title text-heading mt-3">{{ __('Serving with Heart') }}</h2>
                 <p class="mt-7 text-base leading-relaxed text-ink-500">
-                    The Fifiawoto Foundation, established in honour of the esteemed Madam Dadaa Fifiawoto Nyamadi-Adabla, embodies the spirit of compassion and service that she exemplified throughout her life. Like the revered Mother Teresa, Madam Dadaa Fifiawoto was a dedicated humanitarian who devoted herself to the well-being of her community, her church (Apostles Revelation Society), and humanity at large. In her memory, her descendants founded the Fifiawoto Foundation to continue her legacy of selfless service.
+                    {{ __('The Fifiawoto Foundation, established in honour of the esteemed Madam Dadaa Fifiawoto Nyamadi-Adabla, embodies the spirit of compassion and service that she exemplified throughout her life. Like the revered Mother Teresa, Madam Dadaa Fifiawoto was a dedicated humanitarian who devoted herself to the well-being of her community, her church (Apostles Revelation Society), and humanity at large. In her memory, her descendants founded the Fifiawoto Foundation to continue her legacy of selfless service.') }}
                 </p>
                 <p class="mt-4 text-base leading-relaxed text-ink-500">
-                    The foundation is committed to supporting women, children, and all individuals in need, including orphanages, widows, and those with physical and mental challenges. The foundation's activities currently span the United States and several African countries, including Ghana and Togo.
+                    {{ __('The foundation is committed to supporting women, children, and all individuals in need, including orphanages, widows, and those with physical and mental challenges. The foundation\'s activities currently span the United States and several African countries, including Ghana and Togo.') }}
                 </p>
             </div>
         </div>
     </section>
 
     {{-- LEGACY QUOTE BAND --}}
-    <section class="section bg-brand-200/80" aria-label="Foundation tribute">
+    <section class="section bg-brand-200/80" aria-label="{{ __('Foundation tribute') }}">
         <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <div class="reveal-down mx-auto grid size-14 place-items-center overflow-hidden rounded-full bg-surface shadow-[0_10px_30px_-15px_rgba(0,4,78,0.4)] ring-4 ring-white">
                 <img
                     src="{{ asset('images/foundation/about/madam-dadaa-portrait.jpg') }}"
-                    alt="Portrait of Madam Dadaa Fifiawoto Nyamadi-Adabla"
+                    alt="{{ __('Portrait of Madam Dadaa Fifiawoto Nyamadi-Adabla') }}"
                     class="size-full object-cover"
                     loading="lazy"
                 >
             </div>
             <blockquote class="reveal mt-6 font-serif text-2xl font-bold leading-snug text-ink-900 sm:text-3xl" style="transition-delay: 160ms">
-                Compassion is a legacy that never fades. The Fifiawoto Foundation honours Madam Dadaa Fifiawoto by turning care into action.
+                {{ __('Compassion is a legacy that never fades. The Fifiawoto Foundation honours Madam Dadaa Fifiawoto by turning care into action.') }}
             </blockquote>
         </div>
     </section>
@@ -53,20 +53,20 @@
             {{-- LEFT: heading + Mission/Vision copy --}}
             <div>
                 <h2 id="mission-vision-heading" class="section-title text-heading reveal-left">
-                    Empowering Hope,<br>Inspiring Change
+                    {{ __('Empowering Hope,') }}<br>{{ __('Inspiring Change') }}
                 </h2>
 
                 <div class="reveal mt-8 space-y-8" style="transition-delay: 160ms">
                     <div>
-                        <p class="eyebrow">Mission</p>
+                        <p class="eyebrow">{{ __('Mission') }}</p>
                         <p class="mt-3 text-base leading-relaxed text-ink-500">
-                            To honour the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla by empowering and uplifting underserved communities through comprehensive support and sustainable initiatives, with a focus on women, children, and vulnerable individuals.
+                            {{ __('To honour the legacy of Madam Dadaa Fifiawoto Nyamadi-Adabla by empowering and uplifting underserved communities through comprehensive support and sustainable initiatives, with a focus on women, children, and vulnerable individuals.') }}
                         </p>
                     </div>
                     <div>
-                        <p class="eyebrow">Vision</p>
+                        <p class="eyebrow">{{ __('Vision') }}</p>
                         <p class="mt-3 text-base leading-relaxed text-ink-500">
-                            To create a world where every individual, regardless of their circumstances, has the opportunity for a new beginning and a brighter future, inspired by the enduring values of compassion, service, and community.
+                            {{ __('To create a world where every individual, regardless of their circumstances, has the opportunity for a new beginning and a brighter future, inspired by the enduring values of compassion, service, and community.') }}
                         </p>
                     </div>
                 </div>
@@ -76,7 +76,7 @@
             <div class="reveal-right relative" style="transition-delay: 240ms">
                 <img
                     src="{{ asset('images/foundation/about/empowering-hope.jpg') }}"
-                    alt="Foundation volunteers distributing school bags to children"
+                    alt="{{ __('Foundation volunteers distributing school bags to children') }}"
                     class="img-fade aspect-[4/3] w-full rounded-3xl object-cover shadow-[0_24px_60px_-30px_rgba(0,4,78,0.35)]"
                     loading="lazy"
                 >
@@ -85,7 +85,7 @@
                     href="{{ config('social.instagram_reel', config('social.instagram')) }}"
                     target="_blank"
                     rel="noopener"
-                    aria-label="Watch our story on Instagram"
+                    aria-label="{{ __('Watch our story on Instagram') }}"
                     class="group absolute -bottom-6 -left-6 grid aspect-square w-32 place-items-center rounded-2xl bg-brand-200/85 backdrop-blur transition hover:bg-gold-500 sm:w-40"
                 >
                     <span class="grid size-14 place-items-center rounded-full bg-surface text-heading shadow-lg transition group-hover:bg-surface group-hover:text-gold-500 sm:size-16">
@@ -100,8 +100,8 @@
     <section class="section bg-cream-50" aria-labelledby="values-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="eyebrow reveal-down">What we stand for</p>
-                <h2 id="values-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">Core Values</h2>
+                <p class="eyebrow reveal-down">{{ __('What we stand for') }}</p>
+                <h2 id="values-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">{{ __('Core Values') }}</h2>
             </div>
 
             @php
@@ -130,8 +130,8 @@
                                 <div class="grid size-11 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $valueIcons[$value['icon']] !!}</svg>
                                 </div>
-                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight sm:mt-8 sm:text-xl">{{ $value['title'] }}</h3>
-                                <p class="mt-2 text-sm leading-relaxed text-white/75">{{ $value['copy'] }}</p>
+                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight sm:mt-8 sm:text-xl">{{ __($value['title']) }}</h3>
+                                <p class="mt-2 text-sm leading-relaxed text-white/75">{{ __($value['copy']) }}</p>
                             </div>
                         </article>
                     @else
@@ -140,8 +140,8 @@
                                 <div class="grid size-11 place-items-center rounded-xl bg-brand-50 text-label ring-1 ring-brand-100">
                                     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $valueIcons[$value['icon']] !!}</svg>
                                 </div>
-                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight text-ink-900 sm:mt-8 sm:text-xl">{{ $value['title'] }}</h3>
-                                <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ $value['copy'] }}</p>
+                                <h3 class="mt-5 font-serif text-lg font-bold leading-tight text-ink-900 sm:mt-8 sm:text-xl">{{ __($value['title']) }}</h3>
+                                <p class="mt-2 text-sm leading-relaxed text-ink-500">{{ __($value['copy']) }}</p>
                             </div>
                         </article>
                     @endif
@@ -164,18 +164,18 @@
     <section class="bg-stage-light section text-white" aria-labelledby="global-presence-heading">
         <div class="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center lg:gap-16 lg:px-8">
             <div>
-                <p class="eyebrow eyebrow-light reveal-down">Where we work</p>
-                <h2 id="global-presence-heading" class="section-title reveal mt-3 text-white" style="transition-delay: 120ms">A Global Presence</h2>
+                <p class="eyebrow eyebrow-light reveal-down">{{ __('Where we work') }}</p>
+                <h2 id="global-presence-heading" class="section-title reveal mt-3 text-white" style="transition-delay: 120ms">{{ __('A Global Presence') }}</h2>
                 <p class="reveal mt-6 max-w-md text-base leading-relaxed text-white/80" style="transition-delay: 240ms">
-                    The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programmes where they're needed most.
+                    {{ __('The Fifiawoto Foundation operates across four countries, partnering with churches, schools, and community leaders to deliver programmes where they\'re needed most.') }}
                 </p>
                 <dl class="reveal mt-10 grid max-w-sm grid-cols-2 gap-6 border-t border-white/15 pt-6" style="transition-delay: 320ms">
                     <div>
-                        <dt class="text-xs font-medium text-white/60">Countries</dt>
+                        <dt class="text-xs font-medium text-white/60">{{ __('Countries') }}</dt>
                         <dd class="mt-1 font-serif text-4xl font-bold">4</dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium text-white/60">Upcoming events</dt>
+                        <dt class="text-xs font-medium text-white/60">{{ __('Upcoming events') }}</dt>
                         <dd class="mt-1 font-serif text-4xl font-bold">{{ $upcomingByCountry->sum() }}</dd>
                     </div>
                 </dl>
@@ -190,14 +190,14 @@
                                 <span class="size-2.5 rounded-full bg-gold-300 shadow-[0_0_14px_rgba(255,176,176,0.9)]" aria-hidden="true"></span>
                                 <span class="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">{{ str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             </span>
-                            <span class="mt-4 font-serif text-xl font-bold leading-tight text-white sm:mt-5 sm:text-3xl">{{ $country }}</span>
-                            <span class="mt-2 text-xs leading-relaxed text-white/75 sm:mt-3 sm:text-sm">{{ $focus }}</span>
+                            <span class="mt-4 font-serif text-xl font-bold leading-tight text-white sm:mt-5 sm:text-3xl">{{ __($country) }}</span>
+                            <span class="mt-2 text-xs leading-relaxed text-white/75 sm:mt-3 sm:text-sm">{{ __($focus) }}</span>
                             <span class="mt-auto flex items-center justify-between gap-3 border-t border-white/15 pt-4 text-xs sm:text-sm">
                                 <span class="text-white/70">
                                     @if ($upcoming > 0)
-                                        {{ $upcoming }} upcoming {{ \Illuminate\Support\Str::plural('event', $upcoming) }}
+                                        {{ __(':v1 upcoming :v2', ['v1' => $upcoming, 'v2' => \Illuminate\Support\Str::plural('event', $upcoming)]) }}
                                     @else
-                                        View past events
+                                        {{ __('View past events') }}
                                     @endif
                                 </span>
                                 <span class="hidden size-9 shrink-0 place-items-center rounded-full bg-white/10 transition group-hover:bg-gold-500 sm:grid" aria-hidden="true">→</span>
@@ -213,12 +213,12 @@
     <section class="section bg-cream-50" aria-labelledby="leadership-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="eyebrow">Our leadership</p>
+                <p class="eyebrow">{{ __('Our leadership') }}</p>
                 <h2 id="leadership-heading" class="section-title text-heading mt-3">
-                    Meet the leadership team
+                    {{ __('Meet the leadership team') }}
                 </h2>
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
-                    A founder, a board, and a circle of advisors who guide the foundation's direction and accountability.
+                    {{ __('A founder, a board, and a circle of advisors who guide the foundation\'s direction and accountability.') }}
                 </p>
             </div>
 
@@ -250,7 +250,7 @@
                                     >
                                 @endif
                                 <div data-fallback class="absolute inset-0 {{ $photoSrc ? 'hidden' : 'flex' }} items-center justify-center bg-gradient-to-br from-brand-100 via-cream-200 to-brand-50">
-                                    <span class="font-serif text-5xl font-bold text-heading/70">{{ $initials }}</span>
+                                    <span class="font-serif text-5xl font-bold text-heading/70">{{ __($initials) }}</span>
                                 </div>
 
                                 {{-- Name plate, with the bio sliding up on hover --}}
@@ -258,7 +258,7 @@
                                     <p class="text-[9px] font-semibold uppercase tracking-[0.16em] text-gold-300 sm:text-[11px] sm:tracking-[0.22em]">{{ $leader->role }}</p>
                                     <p class="mt-1 font-serif text-base font-bold leading-tight sm:mt-1.5 sm:text-xl">{{ $leader->name }}</p>
                                     @if ($bio)
-                                        <p class="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-white/80 opacity-0 transition-all duration-500 group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">{{ $bio }}</p>
+                                        <p class="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-white/80 opacity-0 transition-all duration-500 group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">{{ __($bio) }}</p>
                                     @endif
                                 </div>
                             </div>
@@ -269,13 +269,13 @@
 
             <div class="mt-14 flex flex-col items-center justify-between gap-4 rounded-3xl border border-brand-100 bg-surface/70 p-8 backdrop-blur sm:flex-row">
                 <div>
-                    <p class="eyebrow">Get involved</p>
+                    <p class="eyebrow">{{ __('Get involved') }}</p>
                     <p class="mt-2 max-w-xl text-sm text-ink-700">
-                        Interested in serving on our advisory board, partnering on a program, or supporting a specific country office? We'd love to hear from you.
+                        {{ __('Interested in serving on our advisory board, partnering on a program, or supporting a specific country office? We\'d love to hear from you.') }}
                     </p>
                 </div>
                 <a href="{{ route('contact') }}" class="btn btn-primary shrink-0" wire:navigate>
-                    Reach out to the foundation
+                    {{ __('Reach out to the foundation') }}
                     <span aria-hidden="true">→</span>
                 </a>
             </div>

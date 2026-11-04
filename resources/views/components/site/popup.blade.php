@@ -23,7 +23,7 @@
         aria-labelledby="site-popup-heading"
         data-site-popup
     >
-        <button type="button" @click="dismiss()" class="absolute inset-0 bg-night/55" tabindex="-1" aria-label="Close"></button>
+        <button type="button" @click="dismiss()" class="absolute inset-0 bg-night/55" tabindex="-1" aria-label="{{ __('Close') }}"></button>
 
         <div
             x-show="open"
@@ -36,7 +36,7 @@
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             class="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-[0_30px_80px_-20px_rgba(0,4,78,0.45)]"
         >
-            <button type="button" @click="dismiss()" class="absolute right-4 top-4 grid size-9 place-items-center rounded-full text-ink-500 transition hover:bg-cream-200 hover:text-heading" aria-label="Close">
+            <button type="button" @click="dismiss()" class="absolute right-4 top-4 grid size-9 place-items-center rounded-full text-ink-500 transition hover:bg-cream-200 hover:text-heading" aria-label="{{ __('Close') }}">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
             </button>
 

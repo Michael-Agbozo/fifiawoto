@@ -104,6 +104,10 @@ new class extends Component
             'status' => ContactMessageStatus::New->value,
         ]);
 
+        if ($data['subject'] === ContactSubject::Donation->value) {
+            \App\Support\SiteAnalytics::conversion('donation_enquiry');
+        }
+
         Mail::to(config('notifications.admin_email'))
             ->queue(new ContactFormReceived(
                 senderName: $data['full_name'],
@@ -132,22 +136,22 @@ new class extends Component
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
-                <p class="eyebrow">Send a Message</p>
+                <p class="eyebrow">{{ __('Send a Message') }}</p>
                 <h2 id="contact-form-heading" class="section-title text-heading mt-3">{{ $sponsorshipName ? 'Enquire about supporting '.$sponsorshipName : 'Contact the Foundation' }}</h2>
                 <p class="mt-3 text-sm text-ink-500">
                     @if ($sponsorshipName)
-                        Your enquiry is about {{ $sponsorshipName }}. Our team will help you explore sponsorship and explain the next steps.
+                        {{ __('Your enquiry is about :v1. Our team will help you explore sponsorship and explain the next steps.', ['v1' => $sponsorshipName]) }}
                     @else
-                        We welcome inquiries from individuals, organizations, and partners interested in supporting the mission.
+                        {{ __('We welcome inquiries from individuals, organizations, and partners interested in supporting the mission.') }}
                     @endif
                 </p>
             </div>
 
             @if ($submitted)
                 <div role="status" class="mt-8 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-sm text-heading-soft">
-                    <p class="font-semibold text-heading">Message received.</p>
+                    <p class="font-semibold text-heading">{{ __('Message received.') }}</p>
                     <p class="mt-1 text-ink-500">
-                        Thank you for reaching out. The team will follow up to discuss next steps. @if ($sponsorshipProfile) This enquiry does not confirm sponsorship or take a payment. @endif
+                        {{ __('Thank you for reaching out. The team will follow up to discuss next steps.') }} @if ($sponsorshipProfile) {{ __('This enquiry does not confirm sponsorship or take a payment.') }} @endif
                     </p>
                 </div>
             @else
@@ -158,31 +162,31 @@ new class extends Component
                     @enderror
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label for="contact-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Full name</label>
+                            <label for="contact-name" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Full name') }}</label>
                             <input id="contact-name" type="text" wire:model="full_name" required
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="contact-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Email address</label>
+                            <label for="contact-email" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Email address') }}</label>
                             <input id="contact-email" type="email" wire:model="email" required
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="contact-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Phone number <span class="font-normal normal-case tracking-normal text-brand-500">(optional)</span></label>
+                            <label for="contact-phone" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Phone number') }} <span class="font-normal normal-case tracking-normal text-brand-500">{{ __('(optional)') }}</span></label>
                             <input id="contact-phone" type="tel" wire:model="phone"
                                 class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500">
                             @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="contact-subject" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Subject</label>
+                            <label for="contact-subject" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Subject') }}</label>
                             <div class="relative mt-2">
                                 <select id="contact-subject" wire:model.live="subject" required
                                     class="w-full appearance-none rounded-md border border-brand-200 bg-cream-50 py-2.5 pl-3 pr-12 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 forced-colors:appearance-auto">
-                                    <option value="">Select a subject…</option>
+                                    <option value="">{{ __('Select a subject…') }}</option>
                                     @foreach ($subjectOptions as $value => $label)
-                                        <option value="{{ $value }}" @selected($subject === $value)>{{ $label }}</option>
+                                        <option value="{{ $value }}" @selected($subject === $value)>{{ __($label) }}</option>
                                     @endforeach
                                 </select>
                                 <svg aria-hidden="true" class="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-label forced-colors:hidden" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75"><path d="m5 7.5 5 5 5-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -192,16 +196,16 @@ new class extends Component
                     </div>
 
                     <div>
-                        <label for="contact-message" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Message</label>
+                        <label for="contact-message" class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">{{ __('Message') }}</label>
                         <textarea id="contact-message" wire:model="message" rows="5" required
                             class="mt-2 w-full rounded-md border border-brand-200 bg-cream-50 px-3 py-2.5 text-sm text-heading focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                            placeholder="Share your message, question, or proposal."></textarea>
+                            placeholder="{{ __('Share your message, question, or proposal.') }}"></textarea>
                         @error('message') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <label class="flex items-start gap-3 text-sm text-heading-soft">
                         <input type="checkbox" wire:model.live="consent" class="mt-1 rounded border-brand-300 text-label focus:ring-brand-500" required>
-                        <span>I consent to the foundation contacting me at the details I have provided.</span>
+                        <span>{{ __('I consent to the foundation contacting me at the details I have provided.') }}</span>
                     </label>
                     @error('consent') <p class="-mt-3 text-xs text-red-600">{{ $message }}</p> @enderror
 
@@ -210,7 +214,7 @@ new class extends Component
                             class="btn btn-primary disabled:opacity-60"
                             wire:loading.attr="disabled">
                             <span wire:loading.remove>{{ $sponsorshipProfile ? 'Send sponsorship enquiry' : 'Send Message' }}</span>
-                            <span wire:loading>Sending…</span>
+                            <span wire:loading>{{ __('Sending…') }}</span>
                         </button>
                     </div>
                 </form>

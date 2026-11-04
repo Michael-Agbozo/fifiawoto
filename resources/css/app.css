@@ -491,7 +491,8 @@ img.img-fade[data-loaded="true"] {
     .btn-outline-light:hover { background-color: #ffffff; border-color: #ffffff; color: #00044e; }
 
     .eyebrow { font-size: 0.75rem; line-height: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3em; color: var(--color-gold-500); }
-    .eyebrow-light { color: var(--color-gold-300); }
+    /* On navy and photo backgrounds: the brand red, lifted so small caps stay readable. */
+    .eyebrow-light { color: var(--color-gold-400); }
 
     .section-title { font-family: var(--font-serif); font-weight: 700; font-size: 1.875rem; line-height: 1.15; letter-spacing: -0.01em; text-wrap: balance; }
     @media (min-width: 40rem) { .section-title { font-size: 2.25rem; } }
@@ -522,10 +523,16 @@ img.img-fade[data-loaded="true"] {
 }
 .glass-in {
     position: relative;
+}
+/* Waits off-screen; the scroll observer in app.js adds .is-visible when it arrives. */
+.glass-in:not(.is-visible) {
+    opacity: 0;
+}
+.glass-in.is-visible {
     animation: glass-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
     animation-delay: calc(var(--i, 0) * 70ms);
 }
-.glass-in > :first-child::after {
+.glass-in.is-visible > :first-child::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -537,7 +544,7 @@ img.img-fade[data-loaded="true"] {
     animation-delay: calc(var(--i, 0) * 70ms + 250ms);
 }
 @media (prefers-reduced-motion: reduce) {
-    .glass-in, .glass-in > :first-child::after { animation: none !important; }
+    .glass-in, .glass-in > :first-child::after { animation: none !important; opacity: 1 !important; }
 }
 
 /* ------------------------------------------------------------------

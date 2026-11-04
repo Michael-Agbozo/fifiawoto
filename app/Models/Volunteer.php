@@ -7,6 +7,7 @@ use Database\Factories\VolunteerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Volunteer extends Model
 {
@@ -25,6 +26,12 @@ class Volunteer extends Model
             'assigned_at' => 'date',
             'role' => VolunteerRole::class,
         ];
+    }
+
+    /** @return HasMany<VolunteerHourLog, $this> */
+    public function hourLogs(): HasMany
+    {
+        return $this->hasMany(VolunteerHourLog::class);
     }
 
     /** @return BelongsTo<User, $this> */

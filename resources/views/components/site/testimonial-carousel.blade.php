@@ -25,7 +25,7 @@
 @endphp
 
 @if ($items->isEmpty())
-    <div class="rounded-3xl border border-dashed border-brand-100 bg-surface p-10 text-center text-sm text-ink-500">No testimonials yet.</div>
+    <div class="rounded-3xl border border-dashed border-brand-100 bg-surface p-10 text-center text-sm text-ink-500">{{ __('No testimonials yet.') }}</div>
 @else
     <div
         x-data="{
@@ -49,10 +49,10 @@
         class="relative"
     >
         <div class="mx-auto max-w-2xl text-center">
-            <p class="eyebrow">{{ $kicker }}</p>
-            <h2 id="testimonials-heading" class="section-title text-heading mt-3">{{ $heading }}</h2>
+            <p class="eyebrow">{{ __($kicker) }}</p>
+            <h2 id="testimonials-heading" class="section-title text-heading mt-3">{{ __($heading) }}</h2>
             @if ($subtitle)
-                <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ $subtitle }}</p>
+                <p class="mt-4 text-sm leading-relaxed text-ink-500">{{ __($subtitle) }}</p>
             @endif
         </div>
 
@@ -60,7 +60,7 @@
             <button
                 type="button"
                 @click="prev()"
-                aria-label="Previous testimonials"
+                aria-label="{{ __('Previous testimonials') }}"
                 class="hidden size-11 place-items-center justify-self-start rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
@@ -142,7 +142,7 @@
                                             <p class="text-sm text-ink-500">{{ $testimonial->author_role }}</p>
                                         </div>
                                         @if (($testimonial->featured ?? false))
-                                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500">Featured</span>
+                                            <span class="shrink-0 text-[10px] font-bold uppercase tracking-[0.24em] text-ink-500">{{ __('Featured') }}</span>
                                         @endif
                                     </figcaption>
                                 </figure>
@@ -155,7 +155,7 @@
             <button
                 type="button"
                 @click="next()"
-                aria-label="Next testimonials"
+                aria-label="{{ __('Next testimonials') }}"
                 class="hidden size-11 place-items-center justify-self-end rounded-full border border-brand-100 bg-surface text-label shadow-sm transition hover:border-brand-700 hover:bg-brand-700 hover:text-white sm:grid sm:size-12"
             >
                 <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
@@ -164,7 +164,7 @@
 
         @if ($pages->count() > 1)
             <div class="mt-6 flex items-center justify-center gap-4">
-                <button type="button" @click="prev()" aria-label="Previous testimonials" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                <button type="button" @click="prev()" aria-label="{{ __('Previous testimonials') }}" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
                     <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
                 </button>
                 <div class="flex gap-2">
@@ -178,7 +178,7 @@
                         ></button>
                     @endforeach
                 </div>
-                <button type="button" @click="next()" aria-label="Next testimonials" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
+                <button type="button" @click="next()" aria-label="{{ __('Next testimonials') }}" class="grid size-10 place-items-center rounded-full border border-brand-100 bg-surface text-label shadow-sm sm:hidden">
                     <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
                 </button>
             </div>

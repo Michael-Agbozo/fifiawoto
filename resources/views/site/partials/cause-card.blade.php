@@ -25,10 +25,10 @@
                 <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
             </div>
             <div class="mt-3 flex justify-between gap-3 text-sm text-ink-500">
-                <span>Raised: <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($raised) }}</b></span>
-                <span>{{ $percent }}% of <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($goal) }}</b></span>
+                <span>{{ __('Raised:') }} <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($raised) }}</b></span>
+                <span>{{ __(':v1% of', ['v1' => $percent]) }} <b class="font-semibold text-heading">{{ \App\Support\Money::fromCents($goal) }}</b></span>
             </div>
-            <a href="{{ route('events.show', $cause) }}" class="btn btn-primary mt-5 w-full" wire:navigate>View Cause</a>
+            <a href="{{ route('events.show', $cause) }}" class="btn btn-primary mt-5 w-full" wire:navigate>{{ __('View Cause') }}</a>
         </div>
     </div>
 </article>

@@ -11,23 +11,23 @@
 <x-layouts::site :title="$heading" :noindex="true">
     <section class="section" aria-labelledby="newsletter-heading">
         <div class="mx-auto max-w-xl px-4 text-center sm:px-6 lg:px-8">
-            <p class="eyebrow">Newsletter</p>
-            <h1 id="newsletter-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ $heading }}</h1>
+            <p class="eyebrow">{{ __('Newsletter') }}</p>
+            <h1 id="newsletter-heading" class="mt-3 font-serif text-3xl text-heading sm:text-4xl">{{ __($heading) }}</h1>
 
             @if ($done)
                 <p role="status" class="mt-4 text-sm leading-relaxed text-ink-500">
                     @if ($isUnsubscribe)
-                        {{ $subscriber->email }} will no longer receive newsletter emails from the foundation.
+                        {{ __(':v1 will no longer receive newsletter emails from the foundation.', ['v1' => $subscriber->email]) }}
                     @else
-                        Thank you — {{ $subscriber->email }} will receive our updates again. You can unsubscribe at any time.
+                        {{ __('Thank you — :v1 will receive our updates again. You can unsubscribe at any time.', ['v1' => $subscriber->email]) }}
                     @endif
                 </p>
             @else
                 <p class="mt-4 text-sm leading-relaxed text-ink-500">
                     @if ($isUnsubscribe)
-                        Stop sending newsletter emails to {{ $subscriber->email }}?
+                        {{ __('Stop sending newsletter emails to :v1?', ['v1' => $subscriber->email]) }}
                     @else
-                        Resume sending newsletter emails to {{ $subscriber->email }}?
+                        {{ __('Resume sending newsletter emails to :v1?', ['v1' => $subscriber->email]) }}
                     @endif
                 </p>
                 <form method="POST" action="{{ $formUrl }}" class="mt-8">
@@ -38,7 +38,7 @@
                 </form>
             @endif
 
-            <a href="{{ route('home') }}" wire:navigate class="mt-8 inline-block text-sm font-semibold text-gold-500 hover:text-heading">Back to the homepage</a>
+            <a href="{{ route('home') }}" wire:navigate class="mt-8 inline-block text-sm font-semibold text-gold-500 hover:text-heading">{{ __('Back to the homepage') }}</a>
         </div>
     </section>
 </x-layouts::site>

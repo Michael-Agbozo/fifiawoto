@@ -23,7 +23,7 @@ class BeneficiaryDocument extends Model
     protected $fillable = [
         'beneficiary_id', 'folder_id', 'disk', 'path', 'original_name',
         'mime_type', 'size_bytes', 'description', 'uploaded_by',
-        'scan_status', 'scan_checked_at',
+        'scan_status', 'scan_checked_at', 'encrypted_at',
     ];
 
     /** @return array<string, string> */
@@ -31,6 +31,7 @@ class BeneficiaryDocument extends Model
     {
         return [
             'scan_checked_at' => 'datetime',
+            'encrypted_at' => 'datetime',
             'size_bytes' => 'integer',
         ];
     }

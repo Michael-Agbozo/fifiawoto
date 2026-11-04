@@ -21,7 +21,7 @@
 
     <h3>Analytics</h3>
     <p>
-        If we enable an analytics service to understand how visitors use the site, it will be a privacy-respecting provider configured to anonymise IP addresses and avoid cross-site tracking. We will update this section when that is in place. Today, we use no third-party analytics cookies.
+        We count page views ourselves so we can see which pages and campaigns are useful. This uses no analytics cookies and no third-party service. We don't store your IP address: visits are counted using a code that changes every day, so it can't follow you over time. We keep these counts for 13 months, and we skip them if your browser sends a Do Not Track or Global Privacy Control signal.
     </p>
 
     <h2>Third-party services</h2>

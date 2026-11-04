@@ -15,6 +15,9 @@
                     Last updated {{ \Illuminate\Support\Carbon::parse($updated)->format('F j, Y') }}
                 </p>
             @endif
+            @if (app()->getLocale() === 'fr')
+                <p lang="fr" class="mx-auto mt-6 max-w-2xl rounded-xl bg-surface px-4 py-3 text-sm text-ink-700">{{ __('This page is available in English only.') }}</p>
+            @endif
             @if ($intro)
                 <p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-ink-500">{{ $intro }}</p>
             @endif

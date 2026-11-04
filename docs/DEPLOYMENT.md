@@ -315,6 +315,28 @@ On Forge / Ploi this is one click — they generate the script above by default.
 
 ---
 
+## Protecting beneficiary documents
+
+Documents are encrypted with `APP_KEY` when uploaded. **If `APP_KEY` is lost, those files can't be recovered**, so back it up. When rotating it, keep the old key in `APP_PREVIOUS_KEYS`.
+
+After deploying, encrypt documents uploaded before this was added:
+
+```bash
+php artisan beneficiaries:secure-documents --dry-run
+php artisan beneficiaries:secure-documents
+```
+
+To scan uploads for viruses, install ClamAV, make sure `clamd` is running, and set:
+
+```
+UPLOAD_SCANNER=clamav
+CLAMAV_SOCKET=unix:///var/run/clamav/clamd.ctl
+```
+
+With scanning on, uploads are refused if `clamd` can't be reached. The scheduler and queue worker must also be running: pledge reminders and newsletters depend on both.
+
+---
+
 ## 8. Backups
 
 | What                  | How                                                                                   |

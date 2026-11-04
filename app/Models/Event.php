@@ -34,6 +34,8 @@ class Event extends Model
         'status',
         'published_at',
         'volunteers_notified_at',
+        'registration_enabled',
+        'capacity',
     ];
 
     /**
@@ -47,6 +49,8 @@ class Event extends Model
             'published_at' => 'datetime',
             'volunteers_notified_at' => 'datetime',
             'goal_cents' => 'integer',
+            'registration_enabled' => 'boolean',
+            'capacity' => 'integer',
             'status' => EventStatus::class,
         ];
     }
@@ -58,6 +62,26 @@ class Event extends Model
                 $event->slug = Str::slug($event->title);
             }
         });
+    }
+
+    /**
+     * @return HasMany<EventRegistration, $this>
+     */
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(EventRegistration::class);
+    }
+
+    /** Seats taken, counting everyone each person is bringing. */
+    public function seatsTaken(): int
+    {
+        return (int) $this->registrations()->sum('party_size');
+    }
+
+    public function isOpenForRegistration(): bool
+    {
+        return $this->registration_enabled
+            && ($this->ends_at ?? $this->starts_at)?->endOfDay()->isFuture() === true;
     }
 
     public function getRouteKeyName(): string

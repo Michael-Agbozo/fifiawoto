@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\VolunteerApplication;
 use App\Services\ReportAnalyticsService;
 use App\Support\CsvCell;
+use App\Support\SimpleXlsx;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
@@ -188,6 +189,22 @@ new class extends Component
         }, $filename, ['Content-Type' => 'text/csv']);
     }
 
+    public function downloadExcel(): StreamedResponse
+    {
+        abort_unless(auth()->user()?->canDo('reports', 'export'), 403);
+
+        $this->validate();
+
+        $rows = $this->rowsForCategory();
+        $filename = "report-{$this->category}-".now()->format('Y-m-d-His').'.xlsx';
+
+        return response()->streamDownload(function () use ($rows): void {
+            $path = SimpleXlsx::write($this->categoryLabel(), $rows);
+            readfile($path);
+            unlink($path);
+        }, $filename, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
     public function downloadPdf()
     {
         abort_unless(auth()->user()?->canDo('reports', 'export'), 403);
@@ -259,6 +276,10 @@ new class extends Component
                 <button type="button" wire:click="downloadCsv" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                     <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
                     Download CSV
+                </button>
+                <button type="button" wire:click="downloadExcel" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                    <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M7 11l5 5 5-5M12 4v12"/></svg>
+                    Download Excel
                 </button>
                 <button type="button" wire:click="downloadPdf" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                     <svg class="size-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4M5 19h14M7 4h10v8H7z"/></svg>

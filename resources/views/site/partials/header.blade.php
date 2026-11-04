@@ -17,18 +17,18 @@
     class="sticky top-3 z-40 mx-2 overflow-clip rounded-full sm:mx-6 lg:mx-10 xl:mx-16 bg-surface text-ink-900 shadow-[0_10px_40px_-15px_rgba(0,4,78,0.18)] transition-colors sm:top-4 lg:top-6"
 >
     <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 py-3 pl-2.5 pr-3 sm:pl-3 sm:pr-3 lg:py-3 lg:pl-3 lg:pr-3">
-        <a href="{{ route('home') }}" class="flex items-center" aria-label="Fifiawoto Foundation home" wire:navigate>
+        <a href="{{ route('home') }}" class="flex items-center" aria-label="{{ __('Fifiawoto Foundation home') }}" wire:navigate>
             <img
                 x-show="!scrolled"
                 src="{{ asset('images/logos/dff.svg') }}"
-                alt="Dadaa Fifiawoto Nyamadi Foundation"
+                alt="{{ __('Dadaa Fifiawoto Nyamadi Foundation') }}"
                 class="h-12 w-auto sm:h-14 dark:hidden"
             >
             <img
                 x-show="scrolled || $store.theme.isDark()"
                 x-cloak
                 src="{{ asset('images/logos/dff-sticky.svg') }}"
-                alt="Dadaa Fifiawoto Nyamadi Foundation"
+                alt="{{ __('Dadaa Fifiawoto Nyamadi Foundation') }}"
                 class="h-12 w-auto sm:h-14"
             >
         </a>
@@ -37,7 +37,7 @@
             @foreach ($navItems as $item)
                 @php $isCurrent = request()->routeIs($item['route'], $item['route'].'.*'); @endphp
                 @if ($isCurrent)
-                    <a href="{{ route($item['route']) }}" class="whitespace-nowrap text-sm font-semibold text-gold-500" wire:navigate>{{ $item['label'] }}</a>
+                    <a href="{{ route($item['route']) }}" class="whitespace-nowrap text-sm font-semibold text-gold-500" wire:navigate>{{ __($item['label']) }}</a>
                 @else
                     <a
                         href="{{ route($item['route']) }}"
@@ -45,13 +45,14 @@
                         class="whitespace-nowrap text-sm font-medium text-ink-700 transition-colors hover:text-gold-500"
                         wire:navigate
                     >
-                        {{ $item['label'] }}
+                        {{ __($item['label']) }}
                     </a>
                 @endif
             @endforeach
         </nav>
 
         <div class="hidden items-center gap-3 lg:flex">
+            <x-site.language-switch />
             <x-site.theme-toggle />
             <a
                 href="{{ route('volunteer') }}"
@@ -59,14 +60,14 @@
                 class="btn btn-secondary"
                 wire:navigate
             >
-                Get Involved
+                {{ __('Get Involved') }}
             </a>
             <a
                 href="{{ route('donate') }}"
                 class="btn btn-primary"
                 wire:navigate
             >
-                Donate
+                {{ __('Donate') }}
             </a>
         </div>
 
@@ -76,7 +77,7 @@
             class="inline-flex items-center justify-center rounded-md p-2 text-ink-900 lg:hidden"
             @click="open = ! open"
             :aria-expanded="open"
-            aria-label="Toggle navigation"
+            aria-label="{{ __('Toggle navigation') }}"
         >
             <svg x-show="!open" class="size-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
@@ -100,13 +101,14 @@
                     ])
                     wire:navigate
                 >
-                    {{ $item['label'] }}
+                    {{ __($item['label']) }}
                 </a>
             @endforeach
             <div class="mt-4 flex items-center gap-3 pt-3">
+                <x-site.language-switch />
                 <x-site.theme-toggle size="md" />
-                <a href="{{ route('volunteer') }}" class="btn btn-secondary btn-sm flex-1" wire:navigate>Get Involved</a>
-                <a href="{{ route('donate') }}" class="btn btn-primary btn-sm flex-1" wire:navigate>Donate</a>
+                <a href="{{ route('volunteer') }}" class="btn btn-secondary btn-sm flex-1" wire:navigate>{{ __('Get Involved') }}</a>
+                <a href="{{ route('donate') }}" class="btn btn-primary btn-sm flex-1" wire:navigate>{{ __('Donate') }}</a>
             </div>
         </nav>
     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\Beneficiary;
+use App\Models\Faq;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class SponsorshipController extends Controller
             $query->whereDate('date_of_birth', '>', today()->subYears($max + 1)->toDateString())->whereDate('date_of_birth', '<=', today()->subYears($min)->toDateString());
         }
 
-        return view('site.sponsor-a-child', ['children' => $query->orderBy('public_display_name')->paginate(9)->withQueryString(), 'countries' => $countries, 'filters' => $filters]);
+        return view('site.sponsor-a-child', ['children' => $query->withSponsoredFlag()->orderBy('is_sponsored')->orderBy('public_display_name')->paginate(9)->withQueryString(), 'countries' => $countries, 'filters' => $filters, 'faqs' => Faq::query()->onPage('sponsorship')->published()->ordered()->get()]);
     }
 
     public function show(string $profile): View|RedirectResponse
@@ -44,13 +45,18 @@ class SponsorshipController extends Controller
         }
 
         $child->load('sponsorshipPhotos');
+        $isSponsored = $child->isSponsored();
 
-        return view('site.sponsorship-show', compact('child'));
+        return view('site.sponsorship-show', compact('child', 'isSponsored'));
     }
 
-    public function checkout(string $profile): View
+    public function checkout(string $profile): View|RedirectResponse
     {
         $child = Beneficiary::query()->publicSponsorship()->where('public_sponsorship_slug', $profile)->firstOrFail();
+
+        if ($child->isSponsored()) {
+            return redirect()->route('sponsor-a-child.show', $child->public_sponsorship_slug);
+        }
 
         return view('site.sponsorship-checkout', compact('child'));
     }

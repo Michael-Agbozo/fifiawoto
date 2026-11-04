@@ -57,7 +57,7 @@ function markRevealVisible(el) {
 function setupObservers() {
     if (typeof IntersectionObserver === 'undefined') {
         // Bail out gracefully on ancient browsers — show everything immediately.
-        document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d')
+        document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d,.glass-in')
             .forEach((el) => el.classList.add('is-visible'))
         document.querySelectorAll('[data-counter]:not([data-counted="true"])')
             .forEach((el) => {
@@ -92,7 +92,7 @@ function setupObservers() {
         { threshold: 0.4 },
     )
 
-    document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d')
+    document.querySelectorAll('.reveal,.reveal-fade,.reveal-up,.reveal-down,.reveal-left,.reveal-right,.reveal-zoom,.reveal-3d,.glass-in')
         .forEach((el) => {
             if (!el.classList.contains('is-visible')) revealObserver.observe(el)
         })

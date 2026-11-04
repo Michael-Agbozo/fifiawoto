@@ -38,7 +38,10 @@ If you forget your password, click **Forgot password?** on the login screen.
 - **Instagram sync** — manage which Instagram posts surface in the home page's "Follow Our Journey" strip. Admins can paste real `instagram.com/p/...` permalinks; until the Graph API is connected, seeded highlights all link to the foundation's profile.
 - **Testimonials** — quotes, photos, and optional video URLs shown on the home carousel and the `/testimonials` page. Featuring a testimonial promotes it to the home page.
 - **Leadership team** — board members and advisors shown on the about page. Add a photo, role, optional bio, sort order, and toggle publish on/off.
-- **Newsletter subscribers** — every signup from the public footer. Export CSV for use in Mailchimp/Mailerlite/etc.
+- **Newsletter subscribers** — every signup from the public footer. Export CSV if you need the list elsewhere.
+- **Send newsletter** — write an update, send yourself a test, then send it to every active subscriber.
+- **Site settings** — contact details, social links, home page photos and the starting figures behind the impact numbers.
+- **Analytics** — page views, where visitors come from, and which campaigns lead to completed forms.
 
 ### Operations
 

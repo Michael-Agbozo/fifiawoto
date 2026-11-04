@@ -1,18 +1,18 @@
-<x-layouts::site title="Events">
+<x-layouts::site :title="__('Events')">
     <x-site.page-hero
-        title="Outreach in Action"
-        breadcrumb="Events"
+        :title="__('Outreach in Action')"
+        :breadcrumb="__('Events')"
         image="images/foundation/outreach-1.jpg"
-        alt="Foundation volunteers and community members at an outreach event"
+        :alt="__('Foundation volunteers and community members at an outreach event')"
     >
-        Events and outreach programs allow the foundation to deliver direct support to communities. Each event below has its own story, goals, volunteer roles, and donation page.
+        {{ __('Events and outreach programs allow the foundation to deliver direct support to communities. Each event below has its own story, goals, volunteer roles, and donation page.') }}
     </x-site.page-hero>
 
     {{-- SEARCH --}}
     <section class="bg-cream-50 py-14 sm:py-20">
         <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-            <p class="eyebrow">Find an event</p>
-            <h2 class="section-title mt-3 text-heading">Find an outreach near you</h2>
+            <p class="eyebrow">{{ __('Find an event') }}</p>
+            <h2 class="section-title mt-3 text-heading">{{ __('Find an outreach near you') }}</h2>
 
             <form
                 method="get"
@@ -25,30 +25,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.3-4.3M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"/>
                     </svg>
                 </span>
-                <label for="event-search" class="sr-only">Search events</label>
+                <label for="event-search" class="sr-only">{{ __('Search events') }}</label>
                 <input
                     id="event-search"
                     type="search"
                     name="q"
                     value="{{ $search ?? '' }}"
-                    placeholder="Event, town or country…"
+                    placeholder="{{ __('Event, town or country…') }}"
                     autocomplete="off"
                     class="min-w-0 flex-1 border-0 bg-transparent px-3 py-3 text-base text-heading placeholder-ink-500 focus:outline-none focus:ring-0 sm:text-lg"
                 >
                 @if (filled($search ?? ''))
-                    <a href="{{ route('events.index') }}" class="grid size-10 shrink-0 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-heading" title="Clear search" aria-label="Clear search">
+                    <a href="{{ route('events.index') }}" class="grid size-10 shrink-0 place-items-center rounded-full text-ink-500 transition hover:bg-cream-100 hover:text-heading" title="{{ __('Clear search') }}" aria-label="{{ __('Clear search') }}">
                         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                     </a>
                 @endif
                 <button type="submit" class="btn btn-primary btn-lg shrink-0 px-5 sm:px-7">
-                    <span class="hidden sm:inline">Search</span>
+                    <span class="hidden sm:inline">{{ __('Search') }}</span>
                     <svg class="size-5 sm:size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    <span class="sr-only sm:hidden">Search</span>
+                    <span class="sr-only sm:hidden">{{ __('Search') }}</span>
                 </button>
             </form>
 
             <div class="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
-                <span class="text-ink-500">Popular:</span>
+                <span class="text-ink-500">{{ __('Popular:') }}</span>
                 @foreach (['Ghana', 'Togo', 'Benin', 'United States'] as $country)
                     @php $isActive = strcasecmp(trim($search ?? ''), $country) === 0; @endphp
                     <a
@@ -59,14 +59,14 @@
                             'border-cream-300 bg-surface text-ink-700 hover:border-heading hover:text-heading' => ! $isActive,
                         ])
                         @if ($isActive) aria-current="true" @endif
-                    >{{ $country }}</a>
+                    >{{ __($country) }}</a>
                 @endforeach
             </div>
 
             @if (filled($search ?? ''))
                 <p class="mt-4 text-sm text-ink-500">
-                    Showing results for <strong class="font-semibold text-heading">"{{ $search }}"</strong>
-                    · {{ $upcoming->count() }} upcoming, {{ $past->count() }} past
+                    {{ __('Showing results for') }} <strong class="font-semibold text-heading">"{{ $search }}"</strong>
+                    {{ __('· :v1 upcoming, :v2 past', ['v1' => $upcoming->count(), 'v2' => $past->count()]) }}
                 </p>
             @endif
         </div>
@@ -76,26 +76,26 @@
     <section class="section" aria-labelledby="upcoming-events-heading">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between">
-                <h2 id="upcoming-events-heading" class="reveal font-serif text-2xl text-heading sm:text-3xl">Upcoming events</h2>
-                <p class="eyebrow reveal" style="transition-delay: 120ms">{{ $upcoming->count() }} upcoming</p>
+                <h2 id="upcoming-events-heading" class="reveal font-serif text-2xl text-heading sm:text-3xl">{{ __('Upcoming events') }}</h2>
+                <p class="eyebrow reveal" style="transition-delay: 120ms">{{ __(':v1 upcoming', ['v1' => $upcoming->count()]) }}</p>
             </div>
 
             @if ($upcoming->isEmpty())
                 <div class="mt-8 rounded-2xl border border-dashed border-brand-200 bg-surface p-12 text-center">
                     <h3 class="font-serif text-xl text-heading">
                         @if (filled($search ?? ''))
-                            No upcoming events match "{{ $search }}"
+                            {{ __('No upcoming events match ":v1"', ['v1' => $search]) }}
                         @else
-                            No upcoming events yet
+                            {{ __('No upcoming events yet') }}
                         @endif
                     </h3>
                     <p class="mx-auto mt-2 max-w-xl text-sm text-ink-500">
                         @if (filled($search ?? ''))
-                            Try a different keyword, or
-                            <a href="{{ route('events.index') }}" class="font-semibold text-label hover:text-gold-500">clear the search</a>
-                            to see everything.
+                            {{ __('Try a different keyword, or') }}
+                            <a href="{{ route('events.index') }}" class="font-semibold text-label hover:text-gold-500">{{ __('clear the search') }}</a>
+                            {{ __('to see everything.') }}
                         @else
-                            Check back soon, or get involved through one of the other ways below.
+                            {{ __('Check back soon, or get involved through one of the other ways below.') }}
                         @endif
                     </p>
                     @if (! filled($search ?? ''))
@@ -125,7 +125,7 @@
                             </div>
                             <div class="flex flex-1 flex-col p-5 sm:p-6">
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
-                                    {{ $event->starts_at?->format('M j, Y') }}
+                                    {{ $event->starts_at?->translatedFormat('M j, Y') }}
                                 </p>
                                 <h3 class="mt-2 font-serif text-xl text-heading">
                                     <a href="{{ route('events.show', $event) }}" class="hover:text-gold-600" wire:navigate>
@@ -143,8 +143,8 @@
                                 @if ($goal > 0)
                                     <div class="mt-5">
                                         <div class="flex items-center justify-between text-xs text-ink-500">
-                                            <span>{{ \App\Support\Money::fromCents((int) $raised) }} raised</span>
-                                            <span>Goal {{ \App\Support\Money::fromCents((int) $goal) }}</span>
+                                            <span>{{ __(':v1 raised', ['v1' => \App\Support\Money::fromCents((int) $raised)]) }}</span>
+                                            <span>{{ __('Goal :v1', ['v1' => \App\Support\Money::fromCents((int) $goal)]) }}</span>
                                         </div>
                                         <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-brand-100">
                                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
@@ -153,7 +153,7 @@
                                 @endif
 
                                 <div class="mt-auto flex flex-wrap items-center gap-2 pt-5 sm:pt-6">
-                                    <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>Read More</a>
+                                    <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>{{ __('Read More') }}</a>
                                     <x-site.event-actions :event="$event" variant="light" size="sm" />
                                 </div>
                             </div>
@@ -170,10 +170,10 @@
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex items-end justify-between">
                     <div class="reveal-left">
-                        <h2 id="past-events-heading" class="font-serif text-2xl text-heading sm:text-3xl">Past events</h2>
-                        <p class="mt-2 text-sm text-ink-500">Programmes the foundation has already delivered.</p>
+                        <h2 id="past-events-heading" class="font-serif text-2xl text-heading sm:text-3xl">{{ __('Past events') }}</h2>
+                        <p class="mt-2 text-sm text-ink-500">{{ __('Programmes the foundation has already delivered.') }}</p>
                     </div>
-                    <p class="eyebrow reveal-right">{{ $past->count() }} completed</p>
+                    <p class="eyebrow reveal-right">{{ __(':v1 completed', ['v1' => $past->count()]) }}</p>
                 </div>
 
                 <div class="mt-8 grid grid-cols-2 gap-3 sm:mt-10 sm:gap-6">
@@ -196,12 +196,12 @@
                                 <div class="absolute inset-0 bg-gradient-to-t from-brand-900/55 via-transparent to-transparent"></div>
                                 <span class="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2 py-1 text-[9px] sm:left-4 sm:top-4 sm:px-3 sm:text-[10px] font-bold uppercase tracking-[0.18em] text-brand-900 shadow-sm">
                                     <svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
-                                    Completed
+                                    {{ __('Completed') }}
                                 </span>
                             </a>
                             <div class="flex flex-1 flex-col p-3 sm:p-7">
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-500">
-                                    {{ $event->starts_at?->format('M j, Y') }}
+                                    {{ $event->starts_at?->translatedFormat('M j, Y') }}
                                 </p>
                                 <h3 class="mt-1 font-serif text-base leading-snug text-heading sm:mt-2 sm:text-2xl">
                                     <a href="{{ route('events.show', $event) }}" class="hover:text-gold-600" wire:navigate>
@@ -219,8 +219,8 @@
                                 @if ($goal > 0)
                                     <div class="mt-3 sm:mt-5">
                                         <div class="flex flex-wrap items-center justify-between gap-x-2 text-[11px] text-ink-500 sm:text-xs">
-                                            <span><strong class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</strong> raised</span>
-                                            <span>{{ $percent }}%<span class="hidden sm:inline"> of {{ \App\Support\Money::fromCents((int) $goal) }} goal</span></span>
+                                            <span><strong class="font-semibold text-ink-900">{{ \App\Support\Money::fromCents((int) $raised) }}</strong> {{ __('raised') }}</span>
+                                            <span>{{ $percent }}%<span class="hidden sm:inline"> {{ __('of :v1 goal', ['v1' => \App\Support\Money::fromCents((int) $goal)]) }}</span></span>
                                         </div>
                                         <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-brand-100">
                                             <div class="h-full rounded-full bg-gold-500" style="width: {{ $percent }}%"></div>
@@ -230,7 +230,7 @@
 
                                 <div class="mt-auto hidden pt-6 sm:block">
                                     <a href="{{ route('events.show', $event) }}" class="btn btn-secondary btn-sm" wire:navigate>
-                                        See impact
+                                        {{ __('See impact') }}
                                         <span aria-hidden="true">→</span>
                                     </a>
                                 </div>

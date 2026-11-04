@@ -6,6 +6,9 @@ use App\Http\Controllers\Site\NewsletterController;
 use App\Http\Controllers\Site\PageController;
 use App\Http\Controllers\Site\SitemapController;
 use App\Http\Controllers\Site\SponsorshipController;
+use App\Http\Controllers\Site\SponsorshipReminderController;
+use App\Http\Middleware\SetLocale;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
@@ -25,6 +28,12 @@ Route::get('/media/collections/{category}', [PageController::class, 'mediaCollec
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{event:slug}', [EventController::class, 'show'])->name('events.show');
 
+Route::post('/language/{locale}', function (Request $request, string $locale) {
+    $request->session()->put('locale', $locale);
+
+    return back();
+})->whereIn('locale', SetLocale::LOCALES)->name('language.switch');
+
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 Route::prefix('newsletter')->as('newsletter.')->middleware('signed')->group(function () {
@@ -32,6 +41,11 @@ Route::prefix('newsletter')->as('newsletter.')->middleware('signed')->group(func
     Route::post('/unsubscribe/{subscriber}', [NewsletterController::class, 'unsubscribe'])->name('unsubscribe.confirm');
     Route::get('/resubscribe/{subscriber}', [NewsletterController::class, 'showResubscribe'])->name('resubscribe');
     Route::post('/resubscribe/{subscriber}', [NewsletterController::class, 'resubscribe'])->name('resubscribe.confirm');
+});
+
+Route::prefix('sponsorship-reminders')->as('sponsorship-reminders.')->middleware('signed')->group(function () {
+    Route::get('/stop/{sponsorship}', [SponsorshipReminderController::class, 'show'])->name('stop');
+    Route::post('/stop/{sponsorship}', [SponsorshipReminderController::class, 'stop'])->name('stop.confirm');
 });
 
 Route::prefix('legal')->as('legal.')->group(function () {

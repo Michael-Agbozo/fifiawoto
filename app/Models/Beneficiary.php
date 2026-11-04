@@ -117,6 +117,27 @@ class Beneficiary extends Model
         return $this->hasMany(SponsorshipPhoto::class)->orderBy('sort')->orderBy('id');
     }
 
+    /** @return HasMany<Sponsorship, $this> */
+    public function sponsorships(): HasMany
+    {
+        return $this->hasMany(Sponsorship::class);
+    }
+
+    public function isSponsored(): bool
+    {
+        return $this->sponsorships()->active()->exists();
+    }
+
+    /**
+     * Adds an `is_sponsored` attribute, without loading any sponsor details.
+     *
+     * @param  Builder<Beneficiary>  $query
+     */
+    public function scopeWithSponsoredFlag(Builder $query): void
+    {
+        $query->withExists(['sponsorships as is_sponsored' => fn ($sponsorships) => $sponsorships->active()]);
+    }
+
     /** @return HasMany<BeneficiaryTimelineEntry, $this> */
     public function timeline(): HasMany
     {

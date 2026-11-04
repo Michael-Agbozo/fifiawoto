@@ -1,9 +1,10 @@
 @php
-    $socials = [
-        'Instagram' => config('social.instagram') ?: 'https://instagram.com',
-        'Facebook' => config('social.facebook') ?: 'https://facebook.com',
-        'YouTube' => config('social.youtube') ?: 'https://youtube.com',
-    ];
+    $socials = array_filter([
+        'Instagram' => \App\Support\SiteSettings::get('instagram_url'),
+        'Facebook' => \App\Support\SiteSettings::get('facebook_url'),
+        'YouTube' => \App\Support\SiteSettings::get('youtube_url'),
+    ]);
+    $contactEmail = \App\Support\SiteSettings::get('contact_email');
 
     $socialIcons = [
         'Instagram' => '<path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.06-.41-2.23C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 1.92c-3.15 0-3.51.01-4.74.07-1.04.05-1.61.22-1.98.36-.5.2-.85.43-1.23.8-.37.38-.6.73-.8 1.23-.14.37-.31.94-.36 1.98-.06 1.23-.07 1.59-.07 4.74s.01 3.51.07 4.74c.05 1.04.22 1.61.36 1.98.2.5.43.85.8 1.23.38.37.73.6 1.23.8.37.14.94.31 1.98.36 1.23.06 1.59.07 4.74.07s3.51-.01 4.74-.07c1.04-.05 1.61-.22 1.98-.36.5-.2.85-.43 1.23-.8.37-.38.6-.73.8-1.23.14-.37.31-.94.36-1.98.06-1.23.07-1.59.07-4.74s-.01-3.51-.07-4.74c-.05-1.04-.22-1.61-.36-1.98-.2-.5-.43-.85-.8-1.23-.38-.37-.73-.6-1.23-.8-.37-.14-.94-.31-1.98-.36-1.23-.06-1.59-.07-4.74-.07zm0 3.27a4.65 4.65 0 1 1 0 9.3 4.65 4.65 0 0 1 0-9.3zm0 1.92a2.73 2.73 0 1 0 0 5.46 2.73 2.73 0 0 0 0-5.46zm5.9-2.13a1.09 1.09 0 1 1-2.18 0 1.09 1.09 0 0 1 2.18 0z"/>',
@@ -48,17 +49,17 @@
             {{-- Legacy card --}}
             <div class="lg:col-span-4">
                 <a href="{{ route('home') }}" class="inline-block" wire:navigate>
-                    <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="Dadaa Fifiawoto Nyamadi Foundation" class="h-14 w-auto">
+                    <img src="{{ asset('images/logos/dff-sticky.svg') }}" alt="{{ __('Dadaa Fifiawoto Nyamadi Foundation') }}" class="h-14 w-auto">
                 </a>
                 <p class="mt-6 max-w-sm text-sm leading-relaxed text-white/70">
-                    The Fifiawoto Foundation works to empower communities through compassion, service, and sustainable development initiatives across the United States, Ghana, Togo, and Benin.
+                    {{ __(\App\Support\SiteSettings::get('summary')) }}
                 </p>
                 <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
-                    <a href="mailto:hello@fifiawoto.org" class="group inline-flex items-center gap-2 text-sm font-semibold text-white">
+                    <a href="mailto:{{ $contactEmail }}" class="group inline-flex items-center gap-2 text-sm font-semibold text-white">
                         <span class="grid size-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/15 transition group-hover:bg-gold-500 group-hover:ring-gold-500" aria-hidden="true">
                             <svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
                         </span>
-                        hello@fifiawoto.org
+                        {{ __($contactEmail) }}
                     </a>
                     <div class="flex items-center gap-2">
                         @foreach ($socials as $network => $url)
@@ -73,13 +74,13 @@
             {{-- Link columns --}}
             @foreach ($columns as $heading => $links)
                 <nav class="lg:col-span-2" aria-label="{{ $heading }}">
-                    <h3 class="eyebrow eyebrow-light">{{ $heading }}</h3>
+                    <h3 class="eyebrow eyebrow-light">{{ __($heading) }}</h3>
                     <ul class="mt-5 space-y-3">
                         @foreach ($links as [$label, $url])
                             <li>
                                 <a href="{{ $url }}" class="group inline-flex items-center gap-2 text-[15px] text-white/75 transition hover:text-white" wire:navigate>
                                     <span class="h-px w-0 bg-gold-300 transition-all duration-300 group-hover:w-3" aria-hidden="true"></span>
-                                    {{ $label }}
+                                    {{ __($label) }}
                                 </a>
                             </li>
                         @endforeach
@@ -89,17 +90,17 @@
 
             {{-- Where we work + give --}}
             <div class="md:col-span-2 lg:col-span-4">
-                <h3 class="eyebrow eyebrow-light">Where we work</h3>
+                <h3 class="eyebrow eyebrow-light">{{ __('Where we work') }}</h3>
                 <ul class="mt-5 grid grid-cols-2 gap-3">
                     @foreach ($countries as $country)
                         <li class="flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 font-serif text-lg font-bold text-white ring-1 ring-white/10">
                             <span class="size-2 rounded-full bg-gold-300 shadow-[0_0_10px_rgba(255,176,176,0.8)]" aria-hidden="true"></span>
-                            {{ $country }}
+                            {{ __($country) }}
                         </li>
                     @endforeach
                 </ul>
                 <a href="{{ route('donate') }}" class="btn btn-primary btn-on-dark mt-6 w-full" wire:navigate>
-                    Donate to our work
+                    {{ __('Donate to our work') }}
                     <span aria-hidden="true">→</span>
                 </a>
             </div>
@@ -108,16 +109,16 @@
 
     {{-- Signature wordmark --}}
     <div class="pointer-events-none select-none overflow-hidden px-5 sm:px-6 lg:px-8" aria-hidden="true">
-        <p class="mx-auto max-w-7xl translate-y-[18%] text-center font-serif text-[clamp(64px,17vw,250px)] font-bold leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.14)]">Fifiawoto</p>
+        <p class="mx-auto max-w-7xl translate-y-[18%] text-center font-serif text-[clamp(64px,17vw,250px)] font-bold leading-none tracking-tight text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.14)]">{{ __('Fifiawoto') }}</p>
     </div>
 
     {{-- Bottom bar --}}
     <div class="relative border-t border-white/10 bg-brand-900/80 backdrop-blur">
         <div class="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-6 text-xs text-white/60 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-            <p>&copy; {{ now()->year }} Dadaa Fifiawoto Nyamadi Foundation. All rights reserved.</p>
-            <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal">
+            <p>{{ __('© :v1 Dadaa Fifiawoto Nyamadi Foundation. All rights reserved.', ['v1' => now()->year]) }}</p>
+            <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="{{ __('Legal') }}">
                 @foreach ($legal as [$label, $url])
-                    <a href="{{ $url }}" class="hover:text-white" wire:navigate>{{ $label }}</a>
+                    <a href="{{ $url }}" class="hover:text-white" wire:navigate>{{ __($label) }}</a>
                 @endforeach
             </nav>
         </div>

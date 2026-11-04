@@ -3,6 +3,9 @@
 use App\Enums\EventStatus;
 use App\Mail\EventVolunteerInvitation;
 use App\Models\Event;
+use App\Models\EventRegistration;
+use App\Support\CsvCell;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\Volunteer;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Mail;
@@ -73,6 +76,58 @@ new class extends Component
 
     public bool $remove_hero_image = false;
 
+    public bool $registration_enabled = false;
+
+    #[Validate('nullable|integer|min:1|max:1000000')]
+    public ?int $capacity = null;
+
+    public ?int $viewingRegistrationsForId = null;
+
+    public function showRegistrations(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view'), 403);
+
+        $this->viewingRegistrationsForId = Event::query()->findOrFail($id)->id;
+    }
+
+    public function closeRegistrations(): void
+    {
+        $this->viewingRegistrationsForId = null;
+    }
+
+    public function removeRegistration(int $registrationId): void
+    {
+        abort_unless(auth()->user()?->canDo('events', 'update'), 403);
+
+        EventRegistration::query()->where('event_id', $this->viewingRegistrationsForId)->whereKey($registrationId)->delete();
+    }
+
+    /** Attendee details are personal data, so exporting needs reports.export too. */
+    public function exportRegistrations(): StreamedResponse
+    {
+        abort_unless(auth()->user()?->canDo('events', 'view') && auth()->user()->canDo('reports', 'export'), 403);
+
+        $event = Event::query()->findOrFail($this->viewingRegistrationsForId);
+        $rows = $event->registrations()->orderBy('full_name')->get();
+
+        return response()->streamDownload(function () use ($rows): void {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Name', 'Email', 'Phone', 'People', 'Signed up']);
+            foreach ($rows as $registration) {
+                fputcsv($out, CsvCell::row([$registration->full_name, $registration->email, $registration->phone, $registration->party_size, $registration->created_at?->toDateTimeString()]));
+            }
+            fclose($out);
+        }, 'event-signups-'.$event->slug.'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    #[Computed]
+    public function viewingRegistrationsEvent(): ?Event
+    {
+        return $this->viewingRegistrationsForId
+            ? Event::query()->with(['registrations' => fn ($registrations) => $registrations->orderBy('full_name')])->find($this->viewingRegistrationsForId)
+            : null;
+    }
+
     public function mount(): void
     {
         abort_unless(auth()->user()?->canDo('events', 'view'), 403);
@@ -113,6 +168,8 @@ new class extends Component
         $this->volunteer_opportunities = (string) $e->volunteer_opportunities;
         $this->goal_amount = $e->goal_cents ? number_format($e->goal_cents / 100, 2, '.', '') : '';
         $this->status = $e->status->value;
+        $this->registration_enabled = $e->registration_enabled;
+        $this->capacity = $e->capacity;
         $this->hero_image_path = (string) $e->hero_image_path;
         $this->hero_image_upload = null;
         $this->remove_hero_image = false;
@@ -175,6 +232,8 @@ new class extends Component
             'goal_cents' => $data['goal_amount'] !== '' ? (int) round(((float) $data['goal_amount']) * 100) : null,
             'status' => $data['status'],
             'hero_image_path' => $heroPath,
+            'registration_enabled' => $this->registration_enabled,
+            'capacity' => $data['capacity'] ?: null,
         ];
 
         if ($existing) {
@@ -318,7 +377,7 @@ new class extends Component
         $this->reset([
             'editingId', 'showForm', 'title', 'starts_at', 'ends_at', 'location',
             'country', 'description', 'activities', 'expected_impact',
-            'volunteer_opportunities', 'goal_amount',
+            'volunteer_opportunities', 'goal_amount', 'registration_enabled', 'capacity',
             'hero_image_path', 'hero_image_upload', 'remove_hero_image',
         ]);
         $this->status = 'draft';
@@ -516,6 +575,15 @@ new class extends Component
                     <input type="number" step="0.01" min="0" wire:model="goal_amount" placeholder="10000" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                 </div>
                 <div>
+                    <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Maximum people (optional)</label>
+                    <input type="number" min="1" wire:model="capacity" placeholder="No limit" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
+                    @error('capacity') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <label class="flex cursor-pointer items-center gap-3 self-end pb-2.5 text-sm text-ink-700">
+                    <input type="checkbox" wire:model="registration_enabled" class="size-4 rounded border-cream-300 text-gold-500 focus:ring-gold-500">
+                    <span>Let people sign up on the event page</span>
+                </label>
+                <div>
                     <label class="block text-xs font-semibold uppercase tracking-[0.22em] text-label">Status</label>
                     <select wire:model="status" class="mt-2 block w-full rounded-lg border border-cream-300 bg-surface px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/30">
                         @foreach ($statusOptions as $value => $label)
@@ -604,6 +672,10 @@ new class extends Component
                                                     Unpublish
                                                 </button>
                                             @endif
+                                            <button type="button" wire:click="showRegistrations({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                                <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+                                                Sign-ups
+                                            </button>
                                             <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
@@ -624,4 +696,27 @@ new class extends Component
     </div>
 
     <div>{{ $this->events->links() }}</div>
+
+    @if ($this->viewingRegistrationsEvent)
+        <x-admin.modal :show="true" :title="'Sign-ups: '.$this->viewingRegistrationsEvent->title" :subtitle="$this->viewingRegistrationsEvent->seatsTaken().' people'.($this->viewingRegistrationsEvent->capacity ? ' of '.$this->viewingRegistrationsEvent->capacity : '')" size="lg" onClose="closeRegistrations">
+            @if (auth()->user()?->canDo('reports', 'export') && $this->viewingRegistrationsEvent->registrations->isNotEmpty())
+                <button type="button" wire:click="exportRegistrations" class="btn btn-primary mb-4 px-4 py-2 text-xs">Export CSV</button>
+            @endif
+            <ul class="divide-y divide-cream-200 text-sm">
+                @forelse ($this->viewingRegistrationsEvent->registrations as $registration)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2.5" wire:key="registration-{{ $registration->id }}">
+                        <div class="min-w-0">
+                            <p class="font-semibold text-ink-900">{{ $registration->full_name }} @if ($registration->party_size > 1)<span class="font-normal text-ink-500">+{{ $registration->party_size - 1 }}</span>@endif</p>
+                            <p class="break-all text-xs text-ink-500">{{ $registration->email }}{{ $registration->phone ? ' · '.$registration->phone : '' }}</p>
+                        </div>
+                        @if (auth()->user()?->canDo('events', 'update'))
+                            <button type="button" wire:click="removeRegistration({{ $registration->id }})" wire:confirm="Remove this sign-up?" class="text-xs font-semibold text-red-600 hover:underline">Remove</button>
+                        @endif
+                    </li>
+                @empty
+                    <li class="py-2.5 text-ink-500">No one has signed up yet.</li>
+                @endforelse
+            </ul>
+        </x-admin.modal>
+    @endif
 </div>

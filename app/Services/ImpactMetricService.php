@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\EventStatus;
+use App\Enums\SupportCategory;
 use App\Enums\SupportStatus;
 use App\Enums\VolunteerApplicationStatus;
 use App\Models\Beneficiary;
@@ -11,11 +12,41 @@ use App\Models\Donation;
 use App\Models\Event;
 use App\Models\NewsletterSubscriber;
 use App\Models\VolunteerApplication;
+use App\Models\VolunteerHourLog;
 use App\Support\Money;
+use App\Support\SiteSettings;
 use Illuminate\Support\Carbon;
 
 class ImpactMetricService
 {
+    /**
+     * Figures for the public home page. Saved baselines cover the work done before this
+     * system existed: children and hours are added on top of them, while communities and
+     * countries use whichever is higher, because new records often repeat places already counted.
+     *
+     * @return array{children: int, communities: int, countries: int, volunteer_hours: int}
+     */
+    public function publicStats(): array
+    {
+        $supported = Beneficiary::query()->whereIn('status', [
+            SupportStatus::Approved->value,
+            SupportStatus::Active->value,
+            SupportStatus::Completed->value,
+        ]);
+
+        $children = (clone $supported)->where(fn ($query) => $query
+            ->where('category', SupportCategory::ChildEducation->value)
+            ->orWhereDate('date_of_birth', '>', today()->subYears(18)->toDateString()))
+            ->count();
+
+        return [
+            'children' => (int) SiteSettings::get('baseline_children') + $children,
+            'communities' => max((int) SiteSettings::get('baseline_communities'), (clone $supported)->whereNotNull('region')->distinct()->count('region')),
+            'countries' => max((int) SiteSettings::get('baseline_countries'), (clone $supported)->whereNotNull('country')->distinct()->count('country')),
+            'volunteer_hours' => (int) SiteSettings::get('baseline_volunteer_hours') + (int) floor((float) VolunteerHourLog::query()->sum('hours')),
+        ];
+    }
+
     /**
      * KPI cards with current value + month-over-month delta.
      *

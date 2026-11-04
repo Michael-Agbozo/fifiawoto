@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryApplicationDocument;
 use App\Models\BeneficiaryDocument;
+use App\Support\SecureDocumentStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -54,22 +55,23 @@ class DocumentDownloadController extends Controller
     {
         abort_unless($request->user()?->canDo('beneficiaries', 'view'), 403);
 
-        return $this->stream($request, $document->disk, $document->path, $document->original_name, $document->mime_type);
+        return $this->stream($request, $document);
     }
 
     public function applicationDocument(Request $request, BeneficiaryApplication $application, BeneficiaryApplicationDocument $document): StreamedResponse
     {
         abort_unless($request->user()?->canDo('beneficiary_applications', 'view'), 403);
 
-        return $this->stream($request, $document->disk, $document->path, $document->original_name, $document->mime_type);
+        return $this->stream($request, $document);
     }
 
-    protected function stream(Request $request, ?string $disk, ?string $path, ?string $name, ?string $mimeType): StreamedResponse
+    protected function stream(Request $request, BeneficiaryDocument|BeneficiaryApplicationDocument $document): StreamedResponse
     {
-        $storage = Storage::disk($disk ?: 'beneficiaries');
+        $storage = Storage::disk($document->disk ?: 'beneficiaries');
 
-        abort_unless(filled($path) && $storage->exists($path), 404);
+        abort_unless(filled($document->path) && $storage->exists($document->path), 404);
 
+        $mimeType = $document->mime_type;
         $headers = [
             'Content-Type' => $mimeType ?: 'application/octet-stream',
             'X-Content-Type-Options' => 'nosniff',
@@ -77,7 +79,20 @@ class DocumentDownloadController extends Controller
         ];
 
         $inline = ! $request->boolean('download') && in_array($mimeType, self::INLINE_MIME_TYPES, true);
+        $disposition = $inline ? 'inline' : 'attachment';
 
-        return $storage->response($path, $name, $headers, $inline ? 'inline' : 'attachment');
+        if (! $document->encrypted_at) {
+            return $storage->response($document->path, $document->original_name, $headers, $disposition);
+        }
+
+        return response()->streamDownload(function () use ($document, $storage): void {
+            $stream = $storage->readStream($document->path);
+
+            foreach (app(SecureDocumentStore::class)->decrypt($stream) as $chunk) {
+                echo $chunk;
+            }
+
+            fclose($stream);
+        }, $document->original_name, $headers, $disposition);
     }
 }

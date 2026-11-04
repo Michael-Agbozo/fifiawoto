@@ -70,6 +70,7 @@ new class extends Component
                 'subscribed_at' => now(),
                 'source' => $this->source,
             ]);
+            \App\Support\SiteAnalytics::conversion('newsletter_signup');
         } elseif ($subscriber->unsubscribed_at !== null) {
             // Never silently re-subscribe an address that opted out: the owner must confirm by email.
             Mail::to($subscriber->email)->queue(new NewsletterResubscribeConfirmation($subscriber));
@@ -85,10 +86,10 @@ new class extends Component
 <section @class(['bg-cream-100 py-20' => ! $compact])>
     <div @class(['mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8' => ! $compact])>
         @unless ($compact)
-            <p class="eyebrow">Newsletter</p>
-            <h2 class="section-title text-heading mt-3">Stay Connected</h2>
+            <p class="eyebrow">{{ __('Newsletter') }}</p>
+            <h2 class="section-title text-heading mt-3">{{ __('Stay Connected') }}</h2>
             <p class="mt-4 text-sm leading-relaxed text-ink-500">
-                Subscribe to receive updates about our programs, events, and community initiatives.
+                {{ __('Subscribe to receive updates about our programs, events, and community initiatives.') }}
             </p>
         @endunless
 
@@ -97,10 +98,9 @@ new class extends Component
                 role="status"
                 @class(['rounded-2xl border border-brand-200 bg-surface p-6 text-sm text-heading-soft', 'mx-auto mt-8 max-w-xl' => ! $compact])
             >
-                <p class="font-semibold text-heading">Thank you for subscribing.</p>
+                <p class="font-semibold text-heading">{{ __('Thank you for subscribing.') }}</p>
                 <p class="mt-1 text-ink-500">
-                    We'll keep you posted on the foundation's work, you can unsubscribe at any time.
-                    If this address previously unsubscribed, check your inbox for a link to confirm.
+                    {{ __('We\'ll keep you posted on the foundation\'s work, you can unsubscribe at any time. If this address previously unsubscribed, check your inbox for a link to confirm.') }}
                 </p>
             </div>
         @else
@@ -110,21 +110,21 @@ new class extends Component
             >
                 @include('components.site.partials.honeypot')
 
-                <label class="sr-only" for="newsletter-name-{{ $this->getId() }}">Name</label>
+                <label class="sr-only" for="newsletter-name-{{ $this->getId() }}">{{ __('Name') }}</label>
                 <input
                     id="newsletter-name-{{ $this->getId() }}"
                     type="text"
                     wire:model="name"
-                    placeholder="Name"
+                    placeholder="{{ __('Name') }}"
                     class="rounded-md border border-brand-200 bg-surface px-4 py-2.5 text-sm text-heading placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
 
-                <label class="sr-only" for="newsletter-email-{{ $this->getId() }}">Email address</label>
+                <label class="sr-only" for="newsletter-email-{{ $this->getId() }}">{{ __('Email address') }}</label>
                 <input
                     id="newsletter-email-{{ $this->getId() }}"
                     type="email"
                     wire:model="email"
-                    placeholder="Email address"
+                    placeholder="{{ __('Email address') }}"
                     required
                     class="rounded-md border border-brand-200 bg-surface px-4 py-2.5 text-sm text-heading placeholder-brand-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
@@ -134,8 +134,8 @@ new class extends Component
                     class="btn btn-primary disabled:opacity-60"
                     wire:loading.attr="disabled"
                 >
-                    <span wire:loading.remove>Subscribe</span>
-                    <span wire:loading>Subscribing…</span>
+                    <span wire:loading.remove>{{ __('Subscribe') }}</span>
+                    <span wire:loading>{{ __('Subscribing…') }}</span>
                 </button>
 
                 @error('rate')

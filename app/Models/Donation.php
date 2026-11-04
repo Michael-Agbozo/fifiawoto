@@ -25,6 +25,8 @@ class Donation extends Model
         'received_at',
         'recorded_by',
         'notes',
+        'sponsorship_id',
+        'months_covered',
     ];
 
     /**
@@ -35,7 +37,24 @@ class Donation extends Model
         return [
             'amount_cents' => 'integer',
             'received_at' => 'date',
+            'months_covered' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        $syncPledge = fn (Donation $donation) => $donation->sponsorship?->syncNextDueOn();
+
+        static::saved($syncPledge);
+        static::deleted($syncPledge);
+    }
+
+    /**
+     * @return BelongsTo<Sponsorship, $this>
+     */
+    public function sponsorship(): BelongsTo
+    {
+        return $this->belongsTo(Sponsorship::class);
     }
 
     /**
