@@ -227,43 +227,140 @@
             @endphp
 
             @if ($leaders->isNotEmpty())
-                <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-6 lg:grid-cols-4">
-                    @foreach ($leaders as $i => $leader)
-                        @php
-                            $initials = collect(preg_split('/\s+/', trim($leader->name)))
-                                ->filter()
-                                ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
-                                ->take(2)
-                                ->implode('');
-                            $photoSrc = \App\Support\MediaUrl::for($leader->photo_path);
-                            $bio = \Illuminate\Support\Str::limit(strip_tags((string) $leader->bio), 180);
-                        @endphp
-                        <figure class="reveal-3d" style="transition-delay: {{ ($i % 4) * 90 }}ms">
-                            <div class="tilt group relative aspect-[4/5] overflow-hidden rounded-3xl bg-cream-200 shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)]">
-                                @if ($photoSrc)
-                                    <img
-                                        src="{{ $photoSrc }}"
-                                        alt="{{ $leader->name }}, {{ $leader->role }}"
-                                        class="img-fade absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
-                                        loading="lazy"
-                                        onerror="this.style.display='none'; this.parentElement.querySelector('[data-fallback]').style.display='flex';"
-                                    >
-                                @endif
-                                <div data-fallback class="absolute inset-0 {{ $photoSrc ? 'hidden' : 'flex' }} items-center justify-center bg-gradient-to-br from-brand-100 via-cream-200 to-brand-50">
-                                    <span class="font-serif text-5xl font-bold text-heading/70">{{ __($initials) }}</span>
-                                </div>
+                @php
+                    $leaderProfiles = $leaders->map(fn ($leader) => [
+                        'name' => $leader->name,
+                        'role' => $leader->role,
+                        'photo' => \App\Support\MediaUrl::for($leader->photo_path),
+                        'bio' => filled($leader->bio) ? __($leader->bio) : null,
+                    ])->values();
 
-                                {{-- Name plate, with the bio sliding up on hover --}}
-                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/70 to-transparent px-3 pb-3 pt-12 text-white sm:px-5 sm:pb-5 sm:pt-16">
-                                    <p class="text-[9px] font-semibold uppercase tracking-[0.16em] text-gold-300 sm:text-[11px] sm:tracking-[0.22em]">{{ $leader->role }}</p>
-                                    <p class="mt-1 font-serif text-base font-bold leading-tight sm:mt-1.5 sm:text-xl">{{ $leader->name }}</p>
-                                    @if ($bio)
-                                        <p class="mt-0 max-h-0 overflow-hidden text-sm leading-relaxed text-white/80 opacity-0 transition-all duration-500 group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">{{ __($bio) }}</p>
+                    // Unset settings fall back to a network's home page, which isn't a foundation profile.
+                    $foundationLinks = array_filter([
+                        'Instagram' => \App\Support\SiteSettings::get('instagram_url'),
+                        'Facebook' => \App\Support\SiteSettings::get('facebook_url'),
+                        'YouTube' => \App\Support\SiteSettings::get('youtube_url'),
+                    ], fn ($url) => filled($url) && trim((string) parse_url($url, PHP_URL_PATH), '/') !== '');
+                @endphp
+
+                <div
+                    x-data="{
+                        leaders: @js($leaderProfiles),
+                        open: null,
+                        trigger: null,
+                        show(index, button) {
+                            this.trigger = button;
+                            this.open = index;
+                            document.documentElement.classList.add('overflow-hidden');
+                            this.$nextTick(() => document.getElementById('leader-bio-close')?.focus());
+                        },
+                        close() {
+                            this.open = null;
+                            document.documentElement.classList.remove('overflow-hidden');
+                            this.trigger?.focus();
+                        },
+                    }"
+                    @keydown.escape.window="if (open !== null) close()"
+                >
+                    <div class="mt-10 grid grid-cols-2 gap-3 sm:mt-14 sm:gap-6 lg:grid-cols-4">
+                        @foreach ($leaders as $i => $leader)
+                            @php
+                                $initials = collect(preg_split('/\s+/', trim($leader->name)))
+                                    ->filter()
+                                    ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))
+                                    ->take(2)
+                                    ->implode('');
+                                $photoSrc = \App\Support\MediaUrl::for($leader->photo_path);
+                            @endphp
+                            <figure class="reveal-3d" style="transition-delay: {{ ($i % 4) * 90 }}ms">
+                                <button
+                                    type="button"
+                                    @click="show({{ $loop->index }}, $event.currentTarget)"
+                                    aria-haspopup="dialog"
+                                    aria-label="{{ __('Read the bio of :v1', ['v1' => $leader->name]) }}"
+                                    class="tilt group relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-3xl bg-cream-200 text-left shadow-[0_24px_50px_-30px_rgba(0,4,78,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500"
+                                >
+                                    @if ($photoSrc)
+                                        <img
+                                            src="{{ $photoSrc }}"
+                                            alt="{{ $leader->name }}, {{ $leader->role }}"
+                                            class="img-fade absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
+                                            loading="lazy"
+                                            onerror="this.style.display='none'; this.parentElement.querySelector('[data-fallback]').style.display='flex';"
+                                        >
                                     @endif
-                                </div>
+                                    <span data-fallback class="absolute inset-0 {{ $photoSrc ? 'hidden' : 'flex' }} items-center justify-center bg-gradient-to-br from-brand-100 via-cream-200 to-brand-50">
+                                        <span class="font-serif text-5xl font-bold text-heading/70">{{ __($initials) }}</span>
+                                    </span>
+
+                                    <span class="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-[#00044e]/95 via-[#00044e]/70 to-transparent px-3 pb-3 pt-12 text-white sm:px-5 sm:pb-5 sm:pt-16">
+                                        <span class="block text-[9px] font-semibold uppercase tracking-[0.16em] text-gold-300 sm:text-[11px] sm:tracking-[0.22em]">{{ $leader->role }}</span>
+                                        <span class="mt-1 block font-serif text-base font-bold leading-tight sm:mt-1.5 sm:text-xl">{{ $leader->name }}</span>
+                                        <span class="mt-1.5 block text-[11px] font-semibold text-white/80 underline-offset-2 group-hover:underline sm:text-xs">{{ __('Read bio') }}</span>
+                                    </span>
+                                </button>
+                            </figure>
+                        @endforeach
+                    </div>
+
+                    <template x-teleport="body">
+                        <div
+                            x-show="open !== null"
+                            x-cloak
+                            x-transition.opacity.duration.200ms
+                            @click.self="close()"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-[#020524]/70 p-4 backdrop-blur-sm"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="leader-bio-name"
+                        >
+                            <div class="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface p-6 shadow-2xl sm:p-8">
+                                <button
+                                    id="leader-bio-close"
+                                    type="button"
+                                    @click="close()"
+                                    aria-label="{{ __('Close') }}"
+                                    class="absolute right-3 top-3 grid size-11 cursor-pointer place-items-center rounded-full text-ink-500 transition hover:bg-cream-200 hover:text-heading"
+                                >
+                                    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                                </button>
+
+                                <template x-if="open !== null">
+                                    <div>
+                                        <div class="flex items-center gap-4 pr-10">
+                                            <template x-if="leaders[open].photo">
+                                                <img :src="leaders[open].photo" alt="" x-on:error="$el.remove()" class="size-20 shrink-0 rounded-2xl object-cover">
+                                            </template>
+                                            <div class="min-w-0">
+                                                <p class="eyebrow" x-text="leaders[open].role"></p>
+                                                <h3 id="leader-bio-name" class="mt-1 font-serif text-2xl font-bold leading-tight text-heading" x-text="leaders[open].name"></h3>
+                                            </div>
+                                        </div>
+                                        <p
+                                            class="mt-5 whitespace-pre-line text-sm leading-relaxed text-ink-700"
+                                            x-text="leaders[open].bio || @js(__('A full biography is coming soon.'))"
+                                        ></p>
+                                    </div>
+                                </template>
+
+                                @foreach ($leaders as $leader)
+                                    @php
+                                        $personalLinks = $leader->socialLinks();
+                                    @endphp
+                                    <div x-show="open === {{ $loop->index }}" class="mt-6 border-t border-cream-300 pt-4">
+                                        <p class="text-xs font-semibold text-ink-500">{{ $personalLinks ? __('Connect with :v1', ['v1' => $leader->name]) : __('Follow the foundation') }}</p>
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            @foreach ($personalLinks ?: $foundationLinks as $network => $url)
+                                                <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ $network }}" class="grid size-11 place-items-center rounded-full bg-cream-200 text-heading transition hover:bg-gold-500 hover:text-white">
+                                                    <x-site.social-icon :network="$network" class="size-[18px]" />
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
-                        </figure>
-                    @endforeach
+                        </div>
+                    </template>
                 </div>
             @endif
 
