@@ -66,11 +66,6 @@ class Permissions
         return $out;
     }
 
-    public static function isValid(string $key): bool
-    {
-        return in_array($key, self::keys(), true);
-    }
-
     /**
      * Filter an array of keys to only those that exist in the registry.
      *
@@ -82,16 +77,6 @@ class Permissions
         $valid = self::keys();
 
         return array_values(array_intersect(array_unique($keys), $valid));
-    }
-
-    public static function resourceLabel(string $resource): string
-    {
-        return self::registry()[$resource]['label'] ?? $resource;
-    }
-
-    public static function actionLabel(string $resource, string $action): string
-    {
-        return self::registry()[$resource]['actions'][$action] ?? ucfirst($action);
     }
 
     public static function buildKey(string $resource, string $action): string
