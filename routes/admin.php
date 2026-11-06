@@ -26,15 +26,27 @@ Route::redirect('/', '/admin/dashboard');
 Route::get('/dashboard', DashboardController::class)->name('dashboard');
 Route::get('/dashboard/export', [DashboardController::class, 'exportActivity'])->name('dashboard.export');
 
-// Beneficiaries + applications · Events · Donations · Reports (Owner · Admin · Foundation Staff)
+/*
+| Each page is gated on the same "{resource}.view" key the sidebar and its Livewire
+| component check, so role defaults and per-user grants behave alike. See
+| docs/PERMISSIONS.md. Three things stay locked to a role list on purpose: identity and
+| medical files, user management, and system logs. Per-user grants don't open those.
+*/
+
+Route::view('/beneficiaries', 'admin.beneficiaries.index')
+    ->middleware('permission:beneficiaries.view')
+    ->name('beneficiaries.index');
+
+Route::get('/beneficiaries/{beneficiary}', function (Beneficiary $beneficiary) {
+    return view('admin.beneficiaries.show', ['beneficiary' => $beneficiary]);
+})->middleware('permission:beneficiaries.view')->name('beneficiaries.show');
+
+// Record photo: shown wherever the record is, so it's gated on the same view permission (checked in the controller).
+Route::get('/beneficiaries/{beneficiary}/photo', [DocumentDownloadController::class, 'beneficiaryPhoto'])
+    ->name('beneficiaries.photo');
+
+// Private beneficiary + application files (Owner · Admin · Foundation Staff)
 Route::middleware('role:owner,super_admin,foundation_staff')->group(function () {
-    Route::view('/beneficiaries', 'admin.beneficiaries.index')
-        ->name('beneficiaries.index');
-
-    Route::get('/beneficiaries/{beneficiary}', function (Beneficiary $beneficiary) {
-        return view('admin.beneficiaries.show', ['beneficiary' => $beneficiary]);
-    })->name('beneficiaries.show');
-
     Route::get('/beneficiaries/{beneficiary}/documents/{document}', [DocumentDownloadController::class, 'beneficiaryDocument'])
         ->middleware('signed')
         ->scopeBindings()
@@ -44,79 +56,82 @@ Route::middleware('role:owner,super_admin,foundation_staff')->group(function () 
         ->middleware('signed')
         ->scopeBindings()
         ->name('beneficiary-applications.documents.show');
-
-    Route::view('/beneficiary-applications', 'admin.beneficiary-applications.index')
-        ->name('beneficiary-applications.index');
-
-    Route::view('/events', 'admin.events.index')
-        ->name('events.index');
-
-    Route::view('/donations', 'admin.donations.index')
-        ->name('donations.index');
-
-    Route::view('/sponsorships', 'admin.sponsorships.index')
-        ->name('sponsorships.index');
-
-    Route::view('/reports', 'admin.reports.index')
-        ->name('reports.index');
 });
 
-// Volunteers (Owner · Admin · Volunteer Coordinator)
-Route::middleware('role:owner,super_admin,volunteer_coordinator')->group(function () {
-    Route::view('/volunteers', 'admin.volunteers.index')
-        ->name('volunteers.index');
-});
+Route::view('/beneficiary-applications', 'admin.beneficiary-applications.index')
+    ->middleware('permission:beneficiary_applications.view')
+    ->name('beneficiary-applications.index');
 
-// Testimonials · Media · Instagram · Newsletter (Owner · Admin · Media Manager · Foundation Staff for newsletter)
-Route::middleware('role:owner,super_admin,media_manager,foundation_staff')->group(function () {
-    Route::view('/testimonials', 'admin.testimonials.index')
-        ->name('testimonials.index');
+Route::view('/volunteers', 'admin.volunteers.index')
+    ->middleware('permission:volunteers.view')
+    ->name('volunteers.index');
 
-    Route::view('/leaders', 'admin.leaders.index')
-        ->name('leaders.index');
+Route::view('/events', 'admin.events.index')
+    ->middleware('permission:events.view')
+    ->name('events.index');
 
-    Route::view('/faqs', 'admin.faqs.index')
-        ->name('faqs.index');
+Route::view('/donations', 'admin.donations.index')
+    ->middleware('permission:donations.view')
+    ->name('donations.index');
 
-    Route::view('/media', 'admin.media.index')
-        ->name('media.index');
+Route::view('/sponsorships', 'admin.sponsorships.index')
+    ->middleware('permission:sponsorships.view')
+    ->name('sponsorships.index');
 
-    Route::view('/instagram', 'admin.instagram.index')
-        ->name('instagram.index');
+Route::view('/reports', 'admin.reports.index')
+    ->middleware('permission:reports.view')
+    ->name('reports.index');
 
-    Route::view('/newsletter', 'admin.newsletter.index')
-        ->name('newsletter.index');
+Route::view('/testimonials', 'admin.testimonials.index')
+    ->middleware('permission:testimonials.view')
+    ->name('testimonials.index');
 
-    Route::view('/newsletter/campaigns', 'admin.newsletter.campaigns')
-        ->name('newsletter.campaigns');
-});
+Route::view('/leaders', 'admin.leaders.index')
+    ->middleware('permission:leaders.view')
+    ->name('leaders.index');
 
-// Website analytics (Owner · Admin · Foundation Staff · Media Manager)
-Route::middleware('role:owner,super_admin,foundation_staff,media_manager')->group(function () {
-    Route::view('/analytics', 'admin.analytics.index')
-        ->name('analytics.index');
-});
+Route::view('/faqs', 'admin.faqs.index')
+    ->middleware('permission:faqs.view')
+    ->name('faqs.index');
 
-// Email inbox (Owner · Admin · Foundation Staff · Volunteer Coordinator · Media Manager)
-Route::middleware('role:owner,super_admin,foundation_staff,volunteer_coordinator,media_manager')->group(function () {
-    Route::view('/inbox', 'admin.inbox.index')
-        ->name('inbox.index');
-});
+Route::view('/media', 'admin.media.index')
+    ->middleware('permission:media.view')
+    ->name('media.index');
 
-// User management · Website popup (Owner · Admin)
-Route::middleware('role:owner,super_admin')->group(function () {
-    Route::view('/users', 'admin.users.index')
-        ->name('users.index');
+Route::view('/instagram', 'admin.instagram.index')
+    ->middleware('permission:instagram.view')
+    ->name('instagram.index');
 
-    Route::view('/settings/site', 'admin.settings.site')
-        ->name('settings.site');
+Route::view('/newsletter', 'admin.newsletter.index')
+    ->middleware('permission:newsletter.view')
+    ->name('newsletter.index');
 
-    Route::view('/settings/popup', 'admin.settings.popup')
-        ->name('settings.popup');
-});
+Route::view('/newsletter/campaigns', 'admin.newsletter.campaigns')
+    ->middleware('permission:newsletter.view')
+    ->name('newsletter.campaigns');
+
+Route::view('/analytics', 'admin.analytics.index')
+    ->middleware('permission:analytics.view')
+    ->name('analytics.index');
+
+Route::view('/inbox', 'admin.inbox.index')
+    ->middleware('permission:inbox.view')
+    ->name('inbox.index');
+
+Route::view('/settings/site', 'admin.settings.site')
+    ->middleware('permission:site_settings.view')
+    ->name('settings.site');
+
+Route::view('/settings/popup', 'admin.settings.popup')
+    ->middleware('permission:site_popup.view')
+    ->name('settings.popup');
+
+// User management (Owner · Admin)
+Route::view('/users', 'admin.users.index')
+    ->middleware('role:owner,super_admin')
+    ->name('users.index');
 
 // System logs (Owner only — top-level super admin access)
-Route::middleware('role:owner')->group(function () {
-    Route::view('/system-logs', 'admin.system-logs.index')
-        ->name('system-logs.index');
-});
+Route::view('/system-logs', 'admin.system-logs.index')
+    ->middleware('role:owner')
+    ->name('system-logs.index');

@@ -63,8 +63,8 @@ The platform has six roles, each with a default permission set. Owner and Admin 
 | --------------------- | ---------------------------------------------------------------------------------------------------------- |
 | Super Admin (Owner)   | Everything, including system logs                                                                          |
 | Admin                 | Everything except system logs                                                                              |
-| Foundation Staff      | Beneficiaries, applications, events, donations, reports, inbox + read-only media/testimonials/instagram     |
-| Volunteer Coordinator | Volunteers (full), beneficiaries (view), events (view), reports (view), inbox (view)                       |
+| Foundation Staff      | Beneficiaries, applications, events, donations, reports, inbox + read-only volunteers/media/testimonials/instagram |
+| Volunteer Coordinator | Volunteers (full), beneficiaries (view, not private files), events (view), reports (view, no donor details), inbox (view) |
 | Media Manager         | Media, Instagram, testimonials, leaders, newsletter (full), events (view), inbox (view)                    |
 | Volunteer             | Cannot access `/admin` — public site only                                                                  |
 

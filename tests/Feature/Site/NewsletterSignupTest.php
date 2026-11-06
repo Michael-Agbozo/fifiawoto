@@ -2,6 +2,7 @@
 
 use App\Mail\NewsletterResubscribeConfirmation;
 use App\Models\NewsletterSubscriber;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -137,4 +138,59 @@ it('records the source label per signup location', function () {
 
     expect(NewsletterSubscriber::query()->where('email', 'footerfan@example.test')->value('source'))
         ->toBe('footer');
+});
+
+it('does not fail when two signups for one address race', function () {
+    NewsletterSubscriber::creating(function (): void {
+        throw new UniqueConstraintViolationException('sqlite', 'insert', [], new Exception('UNIQUE constraint failed'));
+    });
+
+    Livewire::test('site.newsletter-signup')
+        ->set('email', 'race@example.test')
+        ->tap(fn () => $this->travel(5)->seconds())
+        ->call('subscribe')
+        ->assertHasNoErrors()
+        ->assertSet('submitted', true);
+});
+
+it('counts a signup as new only once', function () {
+    NewsletterSubscriber::factory()->create(['email' => 'existing@example.test', 'source' => 'footer', 'unsubscribed_at' => null]);
+
+    Livewire::test('site.newsletter-signup', ['source' => 'home'])
+        ->set('email', 'existing@example.test')
+        ->tap(fn () => $this->travel(5)->seconds())
+        ->call('subscribe')
+        ->assertSet('submitted', true);
+
+    expect(NewsletterSubscriber::query()->sole()->source)->toBe('footer');
+});
+
+it('sends the resubscribe confirmation in the language of the visitor', function () {
+    Mail::fake();
+    app()->setLocale('fr');
+    $subscriber = NewsletterSubscriber::factory()->create(['email' => 'back@example.test', 'unsubscribed_at' => now()->subDay()]);
+
+    Livewire::test('site.newsletter-signup')
+        ->set('email', 'back@example.test')
+        ->tap(fn () => $this->travel(5)->seconds())
+        ->call('subscribe');
+
+    Mail::assertQueued(NewsletterResubscribeConfirmation::class, fn (NewsletterResubscribeConfirmation $mail) => $mail->locale === 'fr');
+
+    app()->setLocale('en');
+    $mail = (new NewsletterResubscribeConfirmation($subscriber))->locale('fr');
+
+    $mail->assertSeeInHtml('Confirmez votre abonnement')
+        ->assertSeeInHtml('Oui, réabonnez-moi')
+        ->assertSeeInHtml('Se désabonner</a>', false)
+        ->assertDontSeeInHtml('Yes, subscribe me again');
+});
+
+it('shows the unsubscribe page button in French', function () {
+    $subscriber = NewsletterSubscriber::factory()->create(['email' => 'fr@example.test']);
+
+    $this->withSession(['locale' => 'fr'])
+        ->get(URL::signedRoute('newsletter.unsubscribe', ['subscriber' => $subscriber]))
+        ->assertOk()
+        ->assertSee('Se désabonner');
 });

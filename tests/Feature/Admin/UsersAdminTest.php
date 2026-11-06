@@ -3,9 +3,11 @@
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
@@ -371,4 +373,113 @@ it('does not generate a new password for your own account', function () {
         ->assertForbidden();
 
     expect(auth()->user()->fresh()->password)->toBe($originalHash);
+});
+
+function storeSessionFor(User $user, string $id): void
+{
+    DB::table('sessions')->insert([
+        'id' => $id,
+        'user_id' => $user->id,
+        'payload' => '',
+        'last_activity' => now()->timestamp,
+    ]);
+}
+
+it('makes an invited user choose a new password', function () {
+    Mail::fake();
+
+    Livewire::test('admin.users')
+        ->set('name', 'New Hire')
+        ->set('email', 'new-hire@example.com')
+        ->set('role', UserRole::FoundationStaff->value)
+        ->call('invite')
+        ->assertHasNoErrors();
+
+    expect(User::query()->where('email', 'new-hire@example.com')->sole()->force_password_change)->toBeTrue();
+});
+
+it('asks for confirmation before a one-click password reset', function () {
+    User::factory()->create(['name' => 'Target Person']);
+
+    Livewire::test('admin.users')
+        ->assertSeeHtml('wire:confirm="Reset the password for Target Person?');
+});
+
+it('makes a one-click reset user choose a new password and signs them out everywhere', function () {
+    config(['session.driver' => 'database']);
+    $target = User::factory()->create(['remember_token' => 'old-token']);
+    $bystander = User::factory()->create();
+    storeSessionFor($target, 'target-session');
+    storeSessionFor($bystander, 'bystander-session');
+
+    Livewire::test('admin.users')->call('resetPassword', $target->id);
+
+    $target->refresh();
+    expect($target->force_password_change)->toBeTrue()
+        ->and($target->remember_token)->not->toBe('old-token')
+        ->and(DB::table('sessions')->pluck('id')->all())->toBe(['bystander-session']);
+});
+
+it('signs a user out everywhere when an admin sets their password', function () {
+    config(['session.driver' => 'database']);
+    $target = User::factory()->create();
+    storeSessionFor($target, 'target-session');
+
+    Livewire::test('admin.users')
+        ->call('startResetPassword', $target->id)
+        ->set('newPassword', 'a-Str0ng-Passw0rd!-x9')
+        ->set('newPasswordConfirm', 'a-Str0ng-Passw0rd!-x9')
+        ->call('saveResetPassword')
+        ->assertHasNoErrors();
+
+    expect(DB::table('sessions')->count())->toBe(0);
+});
+
+it('signs a user out everywhere when deactivated, but not when reactivated', function () {
+    config(['session.driver' => 'database']);
+    $target = User::factory()->create();
+    storeSessionFor($target, 'target-session');
+
+    $component = Livewire::test('admin.users')->call('toggleActive', $target->id);
+    expect(DB::table('sessions')->count())->toBe(0);
+
+    storeSessionFor($target, 'after-deactivation');
+    $component->call('toggleActive', $target->id);
+    expect(DB::table('sessions')->count())->toBe(1);
+});
+
+it('leaves sessions alone on other session drivers', function () {
+    config(['session.driver' => 'array']);
+    $target = User::factory()->create();
+    storeSessionFor($target, 'target-session');
+
+    Livewire::test('admin.users')->call('resetPassword', $target->id);
+
+    expect(DB::table('sessions')->count())->toBe(1);
+});
+
+it('reports the forced password change in the message after saving a reset', function () {
+    $target = User::factory()->create();
+
+    Livewire::test('admin.users')
+        ->call('startResetPassword', $target->id)
+        ->set('newPassword', 'a-Str0ng-Passw0rd!-x9')
+        ->set('newPasswordConfirm', 'a-Str0ng-Passw0rd!-x9')
+        ->set('forcePasswordChange', true)
+        ->call('saveResetPassword')
+        ->assertHasNoErrors()
+        ->assertSet('forcePasswordChange', false)
+        ->assertSet('flashMessage', "Password updated for {$target->name}. They will be asked to set a new password on next login.");
+});
+
+it('removes an uploaded avatar when an admin deletes the account, and leaves remote ones', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('avatars/target.jpg', 'image');
+    $target = User::factory()->create(['avatar_path' => 'avatars/target.jpg']);
+    $remote = User::factory()->create(['avatar_path' => 'https://cdn.example.com/a.jpg']);
+
+    Livewire::test('admin.users')->call('delete', $target->id)->call('delete', $remote->id);
+
+    expect(User::query()->whereKey([$target->id, $remote->id])->exists())->toBeFalse();
+    Storage::disk('public')->assertMissing('avatars/target.jpg');
 });

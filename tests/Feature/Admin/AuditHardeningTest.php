@@ -7,6 +7,7 @@ use App\Models\ContactMessage;
 use App\Models\User;
 use App\Models\VolunteerApplication;
 use App\Support\MediaUrl;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
@@ -87,4 +88,31 @@ it('offers a copy button for 2FA recovery codes', function () {
     Livewire::test('pages::settings.two-factor.recovery-codes')
         ->assertSee('data-test="copy-recovery-codes"', false)
         ->assertSee('Copy all');
+});
+
+it('finds logged mail whatever environment wrote it', function () {
+    $this->actingAs(User::factory()->owner()->create());
+
+    $storage = storage_path('framework/testing/logs-'.uniqid());
+    mkdir($storage.'/logs', recursive: true);
+    file_put_contents($storage.'/logs/laravel.log', <<<'LOG'
+    [2026-11-01 10:00:00] production.INFO: From: Foundation <hello@example.com>
+    To: alice@example.com
+    Subject: Production mail
+
+    [2026-11-01 10:01:00] my-staging.INFO: From: Foundation <hello@example.com>
+    To: bob@example.com
+    Subject: Staging mail
+
+    [2026-11-01 10:02:00] production.INFO: Not an email
+    LOG);
+    $originalStorage = app()->storagePath();
+    app()->useStoragePath($storage);
+
+    $subjects = collect(Livewire::test('admin.system-logs')->instance()->mailEntries())->pluck('subject')->all();
+
+    app()->useStoragePath($originalStorage);
+    File::deleteDirectory($storage);
+
+    expect($subjects)->toContain('Production mail', 'Staging mail')->toHaveCount(2);
 });

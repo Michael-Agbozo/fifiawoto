@@ -137,6 +137,25 @@ it('falls back to foundation photographs when there are no albums yet', function
         ->assertSee('School supplies distribution day');
 });
 
+it('keeps media tied to a hidden event out of the public category albums', function () {
+    $draft = Event::factory()->draft()->create();
+    $scheduled = publishedEvent(['published_at' => now()->addWeek()]);
+    $archived = publishedEvent();
+    $archived->delete();
+    MediaItem::factory()->create(['category' => MediaCategory::EducationPrograms->value, 'caption' => 'General programme photo']);
+    foreach ([$draft, $scheduled, $archived] as $event) {
+        MediaItem::factory()->create(['event_id' => $event->id, 'category' => MediaCategory::EducationPrograms->value, 'caption' => 'Unannounced '.$event->id]);
+    }
+
+    $album = app(MediaAlbums::class)->forCategory(MediaCategory::EducationPrograms);
+
+    expect($album['photos']->pluck('caption')->all())->toBe(['General programme photo']);
+    $this->get(route('media.collection', MediaCategory::EducationPrograms->value))
+        ->assertOk()
+        ->assertSee('General programme photo')
+        ->assertDontSee('Unannounced');
+});
+
 it('seeds demo albums for the demo events without duplicating them', function () {
     $this->seed(EventSeeder::class);
     $this->seed(DemoMediaSeeder::class);

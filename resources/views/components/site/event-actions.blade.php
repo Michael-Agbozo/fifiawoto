@@ -7,8 +7,6 @@
 
 @php
     $eventTitle = $event?->title;
-    $donateLabel = $event ? 'Donate to this event' : 'Donate';
-    $volunteerLabel = $event ? 'Volunteer for this event' : 'Volunteer';
     $padding = $size === 'sm' ? 'px-4 py-1.5 text-xs' : 'px-5 py-2.5 text-sm';
     $primaryClasses = 'rounded-full bg-gold-500 font-bold text-white transition hover:bg-brand-900 '.$padding;
 
@@ -24,16 +22,16 @@
 
 <div x-data="{ donateOpen: false, volunteerOpen: false }" class="{{ $wrapClasses }}">
     <button type="button" @click="donateOpen = true" class="{{ $primaryClasses }} {{ $stack ? 'w-full text-center' : '' }}">
-        {{ $event ? 'Donate to this event' : 'Donate' }}
+        {{ $event ? __('Donate to this event') : __('Donate') }}
     </button>
     <button type="button" @click="volunteerOpen = true" class="{{ $secondaryClasses }} {{ $stack ? 'w-full text-center' : '' }}">
-        {{ $event ? 'Volunteer for this event' : 'Volunteer' }}
+        {{ $event ? __('Volunteer for this event') : __('Volunteer') }}
     </button>
 
     {{-- DONATE MODAL --}}
     <x-site.modal
         name="donate"
-        :title="$eventTitle ? 'Support · '.$eventTitle : 'Support the Foundation'"
+        :title="$eventTitle ? __('Support · :v1', ['v1' => $eventTitle]) : __('Support the Foundation')"
         :subtitle="__('Every gift extends our reach across the four countries we serve.')"
         size="md"
     >
@@ -72,13 +70,13 @@
     {{-- VOLUNTEER MODAL --}}
     <x-site.modal
         name="volunteer"
-        :title="$eventTitle ? 'Volunteer for '.$eventTitle : 'Volunteer with the Foundation'"
+        :title="$eventTitle ? __('Volunteer for :v1', ['v1' => $eventTitle]) : __('Volunteer with the Foundation')"
         :subtitle="__('Tell us about yourself and the volunteer coordinator will be in touch.')"
         size="xl"
     >
         <livewire:site.volunteer-application-form
             :compact="true"
-            :context-event-title="$eventTitle"
+            :event-id="$event?->id"
             :key="'vol-modal-'.($event?->id ?? 'generic')"
         />
     </x-site.modal>

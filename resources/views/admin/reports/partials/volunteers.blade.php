@@ -60,7 +60,7 @@
     </div>
 </article>
 
-<div class="grid gap-4 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Interest areas</p>
         <div class="mt-4 space-y-2.5">

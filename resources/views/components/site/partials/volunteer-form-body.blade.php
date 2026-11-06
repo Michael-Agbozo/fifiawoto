@@ -13,26 +13,26 @@
         @enderror
         <div class="grid gap-5 sm:grid-cols-2">
             <div>
-                <label for="vol-name" class="block text-sm font-semibold text-heading">{{ __('Full name') }}</label>
-                <input id="vol-name" type="text" wire:model="full_name" required
+                <label for="vol-name-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Full name') }}</label>
+                <input id="vol-name-{{ $this->getId() }}" type="text" wire:model="full_name" required
                     class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('full_name') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-email" class="block text-sm font-semibold text-heading">{{ __('Email address') }}</label>
-                <input id="vol-email" type="email" wire:model="email" required
+                <label for="vol-email-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Email address') }}</label>
+                <input id="vol-email-{{ $this->getId() }}" type="email" wire:model="email" required
                     class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('email') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-phone" class="block text-sm font-semibold text-heading">{{ __('Phone number') }}</label>
-                <input id="vol-phone" type="tel" wire:model="phone" required
+                <label for="vol-phone-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Phone number') }}</label>
+                <input id="vol-phone-{{ $this->getId() }}" type="tel" wire:model="phone" required
                     class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('phone') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label for="vol-country" class="block text-sm font-semibold text-heading">{{ __('Country / location') }}</label>
-                <input id="vol-country" type="text" wire:model="country" required
+                <label for="vol-country-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Country / location') }}</label>
+                <input id="vol-country-{{ $this->getId() }}" type="text" wire:model="country" required
                     class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15">
                 @error('country') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
             </div>
@@ -65,16 +65,16 @@
         </fieldset>
 
         <div>
-            <label for="vol-skills" class="block text-sm font-semibold text-heading">{{ __('Skills or experience') }}</label>
-            <textarea id="vol-skills" wire:model="skills" rows="3"
+            <label for="vol-skills-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Skills or experience') }}</label>
+            <textarea id="vol-skills-{{ $this->getId() }}" wire:model="skills" rows="3"
                 class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 placeholder="{{ __('Optional, anything relevant we should know about.') }}"></textarea>
             @error('skills') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
 
         <div>
-            <label for="vol-motivation" class="block text-sm font-semibold text-heading">{{ __('Motivation') }}</label>
-            <textarea id="vol-motivation" wire:model="motivation" rows="4" required
+            <label for="vol-motivation-{{ $this->getId() }}" class="block text-sm font-semibold text-heading">{{ __('Motivation') }}</label>
+            <textarea id="vol-motivation-{{ $this->getId() }}" wire:model="motivation" rows="4" required
                 class="mt-2 w-full rounded-xl border border-cream-300 bg-cream-50 px-4 py-3 text-base text-heading placeholder-ink-500/70 transition focus:border-heading focus:bg-surface focus:outline-none focus:ring-4 focus:ring-brand-500/15"
                 placeholder="{{ __('Why do you want to volunteer with the foundation?') }}"></textarea>
             @error('motivation') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror

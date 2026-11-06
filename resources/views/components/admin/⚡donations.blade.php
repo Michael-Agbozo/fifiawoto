@@ -295,7 +295,7 @@ new class extends Component
     #[Computed]
     public function donations()
     {
-        return $this->buildQuery()->latest('received_at')->paginate(15);
+        return $this->buildQuery()->latest('received_at')->latest('id')->paginate(15);
     }
 
     #[Computed]
@@ -308,6 +308,7 @@ new class extends Component
             'filtered' => $filtered,
             'all' => $all,
             'count' => (int) $this->buildQuery()->count(),
+            'all_count' => Donation::query()->count(),
         ];
     }
 
@@ -335,7 +336,7 @@ new class extends Component
         </article>
         <article class="rounded-2xl border border-cream-300 bg-surface p-5">
             <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-label">Gifts logged</p>
-            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $this->totals['count'] }}</p>
+            <p class="mt-2 font-serif text-3xl font-bold text-ink-900">{{ $this->totals['all_count'] }}</p>
             <p class="mt-1 text-xs text-ink-500">Use the actions menu to export CSV</p>
         </article>
     </div>

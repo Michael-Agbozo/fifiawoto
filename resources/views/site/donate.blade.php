@@ -1,3 +1,7 @@
+@php
+    $mobileMoneyNumber = \App\Support\SiteSettings::get('mobile_money_number');
+@endphp
+
 <x-layouts::site :title="__('Donate')">
     <x-site.page-hero
         :title="__('Your gift, their new beginning.')"
@@ -94,12 +98,17 @@
                 <p class="eyebrow reveal-down">{{ __('Ways to give') }}</p>
                 <h2 id="how-to-give-heading" class="section-title text-heading reveal mt-3" style="transition-delay: 120ms">{{ __('Choose the channel that suits you') }}</h2>
                 <p class="reveal mt-4 text-sm leading-relaxed text-ink-500" style="transition-delay: 240ms">
-                    {{ __('Online card payments are coming soon. In the meantime the foundation accepts mobile money, bank transfers, and in-person gifts. Every channel is logged and acknowledged.') }}
+                    @if ($mobileMoneyNumber)
+                        {{ __('Online card payments are coming soon. In the meantime the foundation accepts mobile money, bank transfers, and in-person gifts. Every channel is logged and acknowledged.') }}
+                    @else
+                        {{ __('Online card payments are coming soon. In the meantime the foundation accepts bank transfers and in-person gifts. Every channel is logged and acknowledged.') }}
+                    @endif
                 </p>
             </div>
 
-            <div class="mt-14 grid gap-5 lg:grid-cols-3">
-                {{-- Mobile Money --}}
+            <div @class(['mt-14 grid gap-5', 'lg:grid-cols-3' => $mobileMoneyNumber, 'lg:grid-cols-2' => ! $mobileMoneyNumber])>
+                {{-- Mobile Money, shown once staff have saved a number in the site settings --}}
+                @if ($mobileMoneyNumber)
                 <article class="reveal flex h-full flex-col rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100">
                     <div class="flex items-center gap-3">
                         <span class="grid size-11 place-items-center rounded-xl bg-gold-500/10 text-gold-500">
@@ -117,7 +126,7 @@
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{{ __('Number') }}</dt>
-                            <dd class="mt-1 font-mono text-base font-semibold text-heading">{{ __('+233 XX XXX XXXX') }}</dd>
+                            <dd class="mt-1 font-mono text-base font-semibold text-heading">{{ $mobileMoneyNumber }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">{{ __('Reference') }}</dt>
@@ -126,6 +135,7 @@
                     </dl>
                     <p class="mt-5 text-xs text-ink-500">{{ __('Send a screenshot to') }} <a href="mailto:{{ config('notifications.admin_email') }}" class="font-semibold text-label hover:text-gold-500">{{ config('notifications.admin_email') }}</a> {{ __('so we can confirm and acknowledge your gift.') }}</p>
                 </article>
+                @endif
 
                 {{-- Bank Transfer --}}
                 <article class="reveal flex h-full flex-col rounded-3xl bg-surface p-7 shadow-[0_4px_20px_-10px_rgba(0,4,78,0.12)] ring-1 ring-brand-100" style="transition-delay: 100ms">

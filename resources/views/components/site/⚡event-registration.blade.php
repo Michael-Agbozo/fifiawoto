@@ -70,9 +70,15 @@ new class extends Component
 
         // Locking the event means two people can't both take the last place.
         $outcome = DB::transaction(function () use ($data, $email): ?EventRegistration {
-            $event = Event::query()->published()->lockForUpdate()->findOrFail($this->eventId);
+            $event = Event::query()->published()->lockForUpdate()->find($this->eventId);
 
-            if (! $event->isOpenForRegistration() || $event->registrations()->where('email', $email)->exists()) {
+            if (! $event?->isOpenForRegistration()) {
+                $this->addError('closed', __('Sign-ups for this event have closed, so your place was not saved.'));
+
+                return null;
+            }
+
+            if ($event->registrations()->where('email', $email)->exists()) {
                 return null;
             }
 
@@ -99,7 +105,7 @@ new class extends Component
 
         // Someone already signed up sees the same message, so the form doesn't reveal who is attending.
         if ($outcome) {
-            Mail::to($outcome->email)->queue(new EventRegistrationConfirmation($outcome));
+            Mail::to($outcome->email)->locale(app()->getLocale())->queue(new EventRegistrationConfirmation($outcome));
             SiteAnalytics::conversion('event_registration');
         }
 
@@ -125,6 +131,8 @@ new class extends Component
             <p class="font-semibold text-heading">{{ __('Thank you. You\'re on the list.') }}</p>
             <p class="mt-1 text-ink-500">{{ __('We\'ve emailed you the details. If you signed up before, your place is still saved.') }}</p>
         </div>
+    @elseif ($errors->has('closed'))
+        <p role="alert" class="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{{ $errors->first('closed') }}</p>
     @elseif ($this->placesLeft === 0)
         <p class="mt-4 text-sm text-ink-500">{{ __('This event is full. Please contact us if you\'d still like to take part.') }}</p>
     @else

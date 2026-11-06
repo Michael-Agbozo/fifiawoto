@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureTwoFactorIsConfigured;
+use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RecordPageVisit;
 use App\Http\Middleware\SetLocale;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'permission' => EnsureUserHasPermission::class,
         ]);
         $middleware->appendToGroup('web', EnsureAccountIsActive::class);
         $middleware->appendToGroup('web', EnsurePasswordIsChanged::class);

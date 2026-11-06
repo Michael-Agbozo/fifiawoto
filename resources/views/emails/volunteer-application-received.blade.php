@@ -7,6 +7,9 @@
 - **Phone:** {{ $application->phone }}
 - **Country:** {{ $application->country }}
 - **Availability:** {{ $application->availability->label() }}
+@if ($application->event)
+- **Event:** {{ $application->event->title }}
+@endif
 
 **Motivation:**
 

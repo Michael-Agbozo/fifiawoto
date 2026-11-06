@@ -261,6 +261,7 @@
                 ['contact',    'Messages',     collect($activity)->where('kind', 'contact')->count()],
                 ['newsletter', 'Newsletter',   collect($activity)->where('kind', 'newsletter')->count()],
             ] as [$key, $label, $count])
+                @continue($key !== 'all' && ! in_array($key, $activityKinds, true))
                 <button
                     type="button"
                     @click="tab = @js($key)"

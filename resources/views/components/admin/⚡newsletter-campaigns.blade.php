@@ -151,6 +151,25 @@ new class extends Component
         $this->flashMessage = "Retrying {$failedIds->count()} email(s).";
     }
 
+    /**
+     * Restart a campaign whose sending job stopped. Each email checks its recipient's
+     * status before sending, so nobody who already received it gets it again.
+     */
+    public function resume(int $id): void
+    {
+        abort_unless(auth()->user()?->canDo('newsletter', 'send'), 403);
+
+        $campaign = NewsletterCampaign::query()->findOrFail($id);
+
+        if (! $campaign->looksStalled()) {
+            return;
+        }
+
+        SendNewsletterCampaign::dispatch($campaign);
+
+        $this->flashMessage = 'Sending restarted.';
+    }
+
     public function askDelete(int $id): void
     {
         abort_unless(auth()->user()?->canDo('newsletter', 'delete'), 403);
@@ -308,6 +327,9 @@ new class extends Component
                                                     <button type="button" wire:click="askDelete({{ $campaign->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">Delete</button>
                                                 @endif
                                             @else
+                                                @if ($campaign->looksStalled() && auth()->user()?->canDo('newsletter', 'send'))
+                                                    <button type="button" wire:click="resume({{ $campaign->id }})" @click="open = false" class="block w-full px-4 py-2 text-left text-sm text-ink-700 hover:bg-cream-200">Resume sending</button>
+                                                @endif
                                                 @if ($campaign->failed_count > 0 && auth()->user()?->canDo('newsletter', 'send'))
                                                     <button type="button" wire:click="retryFailed({{ $campaign->id }})" @click="open = false" class="{{ $menuItem }}">Retry failed</button>
                                                 @endif

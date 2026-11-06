@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Enums\SponsorshipStatus;
 use App\Enums\SupportCategory;
 use App\Enums\SupportStatus;
+use App\Support\MediaUrl;
 use Database\Factories\BeneficiaryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,12 +13,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Beneficiary extends Model
 {
     /** Validation rules for a link to the beneficiary's Google Drive folder. */
     public const DRIVE_FOLDER_URL_RULES = ['nullable', 'string', 'max:500', 'url:https', 'regex:#^https://drive\.google\.com/#'];
+
+    /** Private disk for internal record photos, served through an authenticated route. */
+    public const PRIVATE_PHOTO_DISK = 'beneficiaries';
 
     /** @use HasFactory<BeneficiaryFactory> */
     use HasFactory;
@@ -26,7 +32,7 @@ class Beneficiary extends Model
     protected $fillable = [
         'full_name', 'date_of_birth', 'gender', 'phone', 'email', 'country',
         'region', 'category', 'description', 'status', 'assigned_to_user_id',
-        'photo_path', 'notes', 'drive_folder_url', 'source_application_id',
+        'photo_path', 'photo_disk', 'notes', 'drive_folder_url', 'source_application_id',
         'public_sponsorship_id', 'public_sponsorship_slug', 'sponsorship_published', 'public_display_name', 'public_story', 'public_photo_path', 'public_country', 'guardian_consent_at', 'guardian_consent_reference',
         'public_community_story', 'public_country_story',
     ];
@@ -121,6 +127,56 @@ class Beneficiary extends Model
     public function sponsorships(): HasMany
     {
         return $this->hasMany(Sponsorship::class);
+    }
+
+    /** URL of the internal record photo, for admin pages only. Photos not moved yet stay on the public disk. */
+    public function adminPhotoUrl(): ?string
+    {
+        if (blank($this->photo_path)) {
+            return null;
+        }
+
+        return $this->photo_disk === self::PRIVATE_PHOTO_DISK
+            ? route('admin.beneficiaries.photo', $this)
+            : MediaUrl::for($this->photo_path);
+    }
+
+    public function hasOpenSponsorship(): bool
+    {
+        return $this->sponsorships()
+            ->whereIn('status', [SponsorshipStatus::Active->value, SponsorshipStatus::Pending->value])
+            ->exists();
+    }
+
+    /**
+     * Unpublish the child and delete their gallery and public photo, whose URLs need no login.
+     *
+     * @return bool False if a file couldn't be deleted. Its row is kept, so this can be retried.
+     */
+    public function removePublicMedia(): bool
+    {
+        $disk = Storage::disk('public');
+        $removedAll = true;
+
+        foreach ($this->sponsorshipPhotos()->get() as $photo) {
+            if ($disk->delete($photo->path)) {
+                $photo->delete();
+            } else {
+                $removedAll = false;
+            }
+        }
+
+        $photoPath = $this->public_photo_path;
+
+        if (filled($photoPath) && $disk->delete($photoPath)) {
+            $photoPath = null;
+        } elseif (filled($photoPath)) {
+            $removedAll = false;
+        }
+
+        $this->update(['public_photo_path' => $photoPath, 'sponsorship_published' => false]);
+
+        return $removedAll;
     }
 
     public function isSponsored(): bool

@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use App\Models\User;
+use App\Support\SecureDocumentStore;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -79,6 +80,9 @@ new class extends Component
     #[Locked]
     public string $photo_path = '';
 
+    #[Locked]
+    public string $photo_url = '';
+
     #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:5120')]
     public $photo_upload = null;
 
@@ -131,6 +135,7 @@ new class extends Component
         $this->notes = (string) $b->notes;
         $this->drive_folder_url = (string) $b->drive_folder_url;
         $this->photo_path = (string) $b->photo_path;
+        $this->photo_url = (string) $b->adminPhotoUrl();
         $this->photo_upload = null;
         $this->remove_photo = false;
         $this->showForm = true;
@@ -152,14 +157,25 @@ new class extends Component
 
         // Never trust the client-side photo_path; the stored file comes from the DB record.
         $oldPhotoPath = $existing?->photo_path ?: null;
+        $oldPhotoDisk = $existing?->photo_disk ?: 'public';
         $photoPath = $oldPhotoPath;
+        $photoDisk = $existing?->photo_disk;
 
         if ($this->remove_photo) {
             $photoPath = null;
+            $photoDisk = null;
         }
 
         if ($this->photo_upload) {
-            $photoPath = $this->photo_upload->store('beneficiaries', 'public');
+            $photoPath = $this->photo_upload->store('photos', Beneficiary::PRIVATE_PHOTO_DISK);
+            $photoDisk = Beneficiary::PRIVATE_PHOTO_DISK;
+
+            // Livewire returns the path even if the disk refused the file, so check it arrived.
+            if (! $photoPath || ! Storage::disk($photoDisk)->exists($photoPath)) {
+                $this->addError('photo_upload', "The picture couldn't be saved. Please try again.");
+
+                return;
+            }
         }
 
         $payload = [
@@ -177,6 +193,7 @@ new class extends Component
             'notes' => $data['notes'] ?: null,
             'drive_folder_url' => trim($data['drive_folder_url']) ?: null,
             'photo_path' => $photoPath,
+            'photo_disk' => $photoDisk,
         ];
 
         if ($existing) {
@@ -211,8 +228,12 @@ new class extends Component
         }
 
         // Only remove the old file once the DB write has succeeded.
-        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && Storage::disk('public')->exists($oldPhotoPath)) {
-            Storage::disk('public')->delete($oldPhotoPath);
+        if ($oldPhotoPath && $oldPhotoPath !== $photoPath && Storage::disk($oldPhotoDisk)->exists($oldPhotoPath) && ! Storage::disk($oldPhotoDisk)->delete($oldPhotoPath)) {
+            report(new RuntimeException("Could not delete old beneficiary photo for #{$this->editingId}."));
+        }
+
+        if ($this->photo_upload) {
+            app(SecureDocumentStore::class)->discardTemporaryUploads([$this->photo_upload]);
         }
 
         $this->resetForm();
@@ -234,9 +255,23 @@ new class extends Component
 
         $b = Beneficiary::query()->findOrFail($id);
         $name = $b->full_name;
+        $this->confirmDeleteId = null;
+
+        if ($b->hasOpenSponsorship()) {
+            $this->addError('archive', "{$name} still has an active or pending sponsorship. End or decline it before archiving this record.");
+
+            return;
+        }
+
+        // Files go first: if one can't be deleted the record stays open, so archiving can be retried.
+        if (! $b->removePublicMedia()) {
+            $this->addError('archive', "Some of {$name}'s public photos couldn't be deleted, so the record wasn't archived. Please try again.");
+
+            return;
+        }
+
         $b->delete();
 
-        $this->confirmDeleteId = null;
         $this->flashMessage = "Archived beneficiary record for {$name}.";
     }
 
@@ -265,7 +300,7 @@ new class extends Component
         $this->reset([
             'editingId', 'showForm', 'full_name', 'date_of_birth', 'gender', 'phone',
             'email', 'country', 'region', 'description', 'assigned_to_user_id', 'notes',
-            'drive_folder_url', 'photo_path', 'photo_upload', 'remove_photo',
+            'drive_folder_url', 'photo_path', 'photo_url', 'photo_upload', 'remove_photo',
         ]);
         $this->category = '';
         $this->status = 'pending_review';
@@ -361,10 +396,12 @@ new class extends Component
                 </select>
             @endif
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Name, phone, email, region" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            @if (auth()->user()?->canDo('beneficiaries', 'create'))
             <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Add beneficiary
             </button>
+            @endif
             @if (filled($statusFilter) || filled($categoryFilter) || filled($countryFilter) || filled($search))
                 <x-admin.actions-menu>
                     <button type="button" wire:click="$reset('statusFilter','categoryFilter','countryFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
@@ -383,6 +420,10 @@ new class extends Component
         </div>
     @endif
 
+    @error('archive')
+        <div role="alert" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ $message }}</div>
+    @enderror
+
     <x-admin.modal :show="$showForm" :title="$editingId ? 'Edit beneficiary' : 'New beneficiary record'" size="xl" onClose="cancel">
         <form wire:submit="save" class="space-y-5">
             <div>
@@ -391,7 +432,7 @@ new class extends Component
                     @if ($photo_upload)
                         <img src="{{ $photo_upload->temporaryUrl() }}" alt="Pending upload" class="size-20 rounded-full object-cover ring-2 ring-cream-200">
                     @else
-                        <x-admin.avatar :src="filled($photo_path) && ! $remove_photo ? $photo_path : null" :name="$full_name ?: 'New beneficiary'" size="xl" />
+                        <x-admin.avatar :src="filled($photo_url) && ! $remove_photo ? $photo_url : null" :name="$full_name ?: 'New beneficiary'" size="xl" />
                     @endif
                     <div class="flex flex-col gap-2">
                         <label class="inline-flex cursor-pointer items-center gap-2 self-start rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs font-semibold text-ink-700 transition hover:border-heading hover:text-heading">
@@ -531,7 +572,7 @@ new class extends Component
                         <tr class="transition hover:bg-cream-100/40">
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
-                                    <x-admin.avatar :src="$b->photo_path" :name="$b->full_name" size="sm" />
+                                    <x-admin.avatar :src="$b->adminPhotoUrl()" :name="$b->full_name" size="sm" />
                                     <div>
                                         <a href="{{ route('admin.beneficiaries.show', $b) }}" class="font-semibold text-ink-900 hover:text-gold-500" wire:navigate>{{ $b->full_name }}</a>
                                         @if ($b->drive_folder_url)
@@ -564,14 +605,18 @@ new class extends Component
                                                 <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 Open profile
                                             </a>
+                                            @if (auth()->user()?->canDo('beneficiaries', 'update'))
                                             <button type="button" wire:click="startEdit({{ $b->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>
+                                            @endif
+                                            @if (auth()->user()?->canDo('beneficiaries', 'delete'))
                                             <button type="button" wire:click="askDelete({{ $b->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Archive
                                             </button>
+                                            @endif
                                         </x-admin.actions-menu>
                                     @endif
                                 </div>

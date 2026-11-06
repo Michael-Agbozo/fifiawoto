@@ -140,7 +140,7 @@ class ReportAnalyticsService
         $avgPrior = $priorRows->count() > 0 ? $priorTotal / $priorRows->count() : 0;
 
         // Daily series — last min(60, range_days) days
-        $days = min(60, max(7, $this->dayCount($start, $end)));
+        $days = min(60, $this->dayCount($start, $end));
         $daily = [];
         $cursor = $end->copy()->startOfDay();
         for ($i = 0; $i < $days; $i++) {

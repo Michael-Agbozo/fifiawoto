@@ -92,10 +92,13 @@ php artisan storage:link --force
 php artisan vendor:publish --tag=livewire:assets --force
 php artisan config:cache
 php artisan route:cache
-php artisan migrate --force
+php artisan migrate --force (the container stops if this fails)
+php artisan beneficiaries:secure-documents
 queue:work and schedule:work (background, restart if they exit)
 nginx (foreground)
 ```
+
+Set `TRUSTED_PROXIES=*`, `MAIL_MAILER` and `MAIL_FROM_ADDRESS` in Coolify. Without the first, every visitor shares one rate limit. Without the others, email is only written to the log.
 
 If Coolify already has its own queue worker or scheduled task for this app, remove them so work is not picked up twice.
 

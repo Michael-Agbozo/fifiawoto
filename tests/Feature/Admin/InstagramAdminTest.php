@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\InstagramSource;
 use App\Models\InstagramPost;
 use App\Models\User;
 use Livewire\Livewire;
@@ -55,4 +56,36 @@ it('shows media_url for image posts that have no thumbnail', function () {
     ]);
 
     Livewire::test('admin.instagram')->assertSeeHtml('https://cdn.example.com/image-only.jpg');
+});
+
+it('does not re-approve or duplicate a post added again under another URL form', function () {
+    $post = InstagramPost::factory()->create([
+        'external_id' => 'graph-123',
+        'permalink' => 'https://www.instagram.com/p/AbC_123/',
+        'source' => InstagramSource::Api,
+        'is_approved' => false,
+    ]);
+
+    Livewire::test('admin.instagram')
+        ->call('startCreate')
+        ->set('permalink', 'https://instagram.com/reel/AbC_123/?igsh=share')
+        ->call('add')
+        ->assertHasNoErrors();
+
+    $post->refresh();
+    expect(InstagramPost::query()->count())->toBe(1)
+        ->and($post->is_approved)->toBeFalse()
+        ->and($post->external_id)->toBe('graph-123')
+        ->and($post->source)->toBe(InstagramSource::Api);
+});
+
+it('treats shortcodes that differ only by case as different posts', function () {
+    InstagramPost::factory()->create(['permalink' => 'https://instagram.com/p/abc']);
+
+    Livewire::test('admin.instagram')
+        ->call('startCreate')
+        ->set('permalink', 'https://instagram.com/p/ABC')
+        ->call('add');
+
+    expect(InstagramPost::query()->count())->toBe(2);
 });

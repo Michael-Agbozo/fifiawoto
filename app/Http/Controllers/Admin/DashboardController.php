@@ -11,11 +11,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DashboardController extends Controller
 {
-    public function __invoke(ImpactMetricService $metrics): View
+    public function __invoke(Request $request, ImpactMetricService $metrics): View
     {
         return view('admin.dashboard', [
             'cards' => $metrics->dashboardCards(),
-            'activity' => $metrics->recentActivity(),
+            'activity' => $metrics->recentActivity($request->user()),
+            'activityKinds' => $metrics->activityKindsFor($request->user()),
             'dailyDonations' => $metrics->dailyDonations(30),
             'cumulativeDonations' => $metrics->cumulativeDonations(30),
             'totalDonations' => $metrics->totalDonations(),
@@ -33,7 +34,7 @@ class DashboardController extends Controller
         $kind = in_array($tab, ['volunteer', 'donation', 'contact', 'newsletter'], true) ? $tab : null;
 
         // Filter by kind before the 200-row limit is applied, not after.
-        $rows = $metrics->recentActivity(200, $kind);
+        $rows = $metrics->recentActivity($request->user(), 200, $kind);
 
         $filename = 'dashboard-activity-'.now()->format('Y-m-d-His').'.csv';
 

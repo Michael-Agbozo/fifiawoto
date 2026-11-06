@@ -106,6 +106,15 @@ it('adds an arrangement agreed outside the website as active', function () {
         ->monthly_amount_cents->toBe(4000);
 });
 
+it('does not remind sponsors of an archived child', function () {
+    $sponsorship = Sponsorship::factory()->active(today()->addDays(2)->toDateString())->create();
+    $sponsorship->beneficiary->delete();
+
+    $this->artisan('sponsorships:send-reminders')->assertSuccessful();
+
+    Mail::assertNotQueued(SponsorshipReminder::class);
+});
+
 it('sends each reminder once per due date', function () {
     $upcoming = Sponsorship::factory()->active(today()->addDays(2)->toDateString())->create();
     $overdue = Sponsorship::factory()->active(today()->subDays(8)->toDateString())->create();

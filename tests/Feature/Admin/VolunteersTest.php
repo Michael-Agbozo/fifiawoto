@@ -3,6 +3,7 @@
 use App\Enums\VolunteerApplicationStatus;
 use App\Enums\VolunteerRole;
 use App\Mail\VolunteerApplicationDecision;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Volunteer;
 use App\Models\VolunteerApplication;
@@ -156,4 +157,13 @@ it('refuses to approve an application that was already rejected', function () {
     expect($app->refresh()->status)->toBe(VolunteerApplicationStatus::Rejected)
         ->and(Volunteer::query()->where('email', 'kofi@example.test')->exists())->toBeFalse();
     Mail::assertNothingQueued();
+});
+
+it('shows the event in the application details', function () {
+    $event = Event::factory()->create(['title' => 'Volta Outreach']);
+    $application = VolunteerApplication::factory()->create(['event_id' => $event->id]);
+
+    Livewire::test('admin.volunteers')
+        ->call('viewApplication', $application->id)
+        ->assertSee('Volta Outreach');
 });

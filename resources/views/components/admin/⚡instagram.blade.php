@@ -57,24 +57,33 @@ new class extends Component
 
         $data = $this->validate();
 
-        $post = InstagramPost::query()->firstOrNew(['external_id' => sha1($data['permalink'])]);
+        $existing = InstagramPost::findByPermalink($data['permalink']);
 
-        $post->fill([
+        // Re-adding a post, manual or synced, only refreshes its details. Its date,
+        // approval, hidden flag and source stay as they are.
+        if ($existing) {
+            $existing->fill(array_filter([
+                'caption' => $data['caption'] ?: null,
+                'thumbnail_url' => $data['thumbnail_url'] ?: null,
+            ]))->save();
+
+            $this->flashMessage = 'That post is already in the list, so its details were updated.';
+            $this->cancel();
+
+            return;
+        }
+
+        InstagramPost::query()->create([
+            'external_id' => sha1($data['permalink']),
             'permalink' => $data['permalink'],
             'caption' => $data['caption'] ?: null,
             'thumbnail_url' => $data['thumbnail_url'] ?: null,
             'media_type' => $data['media_type'],
             'is_approved' => true,
+            'is_hidden' => false,
             'source' => InstagramSource::Manual->value,
+            'posted_at' => now(),
         ]);
-
-        // Re-adding an existing post must not bump its date or un-hide it.
-        if (! $post->exists) {
-            $post->posted_at = now();
-            $post->is_hidden = false;
-        }
-
-        $post->save();
 
         $this->flashMessage = 'Instagram post added.';
         $this->cancel();

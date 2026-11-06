@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\PasswordValidationRules;
+use App\Support\UserSessions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
@@ -36,6 +37,8 @@ new #[Title('Password settings')] class extends Component
             'password' => $validated['password'],
             'force_password_change' => false,
         ])->save();
+
+        UserSessions::endOthers(Auth::user(), session()->getId());
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

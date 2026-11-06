@@ -22,6 +22,7 @@ class SiteSettings
             'media_email' => 'media@fifiawoto.org',
             'phone' => '+233 (0) 00 000 0000',
             'phone_hours' => 'Monday to Friday, 9 am – 5 pm GMT.',
+            'mobile_money_number' => '',
             'instagram_url' => config('social.instagram') ?: 'https://instagram.com',
             'facebook_url' => config('social.facebook') ?: 'https://facebook.com',
             'youtube_url' => config('social.youtube') ?: 'https://youtube.com',

@@ -41,6 +41,16 @@ class NewsletterCampaign extends Model
     }
 
     /** Mark the campaign sent once no recipient is still waiting. */
+    /**
+     * Still marked as sending well after it started, so its job may have died. A long list
+     * can legitimately run this long too, which is harmless: resuming never double sends.
+     */
+    public function looksStalled(): bool
+    {
+        return $this->status === NewsletterCampaignStatus::Sending
+            && $this->started_at?->lt(now()->subHour()) === true;
+    }
+
     public function finishIfComplete(): void
     {
         if ($this->recipients()->where('status', NewsletterCampaignRecipient::STATUS_PENDING)->doesntExist()) {

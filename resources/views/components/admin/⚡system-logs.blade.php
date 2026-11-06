@@ -88,10 +88,10 @@ new class extends Component
         $content = (string) stream_get_contents($f);
         fclose($f);
 
-        // Capture each "local.INFO: Message ID" block — Laravel's log mailer writes
+        // Capture each "{environment}.INFO: Message ID" block — Laravel's log mailer writes
         // a header then the rendered MIME body until the next log line.
         $entries = [];
-        $pattern = '/\[(?P<time>[^\]]+)\][^\n]*?local\.INFO: (?P<head>.*?)(?=\n\[\d{4}-\d{2}-\d{2}|\z)/s';
+        $pattern = '/\[(?P<time>[^\]]+)\][^\n]*?[\w.-]+\.INFO: (?P<head>.*?)(?=\n\[\d{4}-\d{2}-\d{2}|\z)/s';
 
         if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $m) {

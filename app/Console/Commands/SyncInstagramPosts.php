@@ -76,7 +76,12 @@ class SyncInstagramPosts extends Command
                 continue;
             }
 
-            $post = InstagramPost::query()->firstOrNew(['external_id' => $item['id']]);
+            // A post added by hand first is adopted rather than duplicated, keeping its flags.
+            $post = InstagramPost::query()->where('external_id', $item['id'])->first()
+                ?? InstagramPost::findByPermalink($item['permalink'])
+                ?? new InstagramPost;
+
+            $post->external_id = $item['id'];
 
             // New API posts wait for an admin to approve them; existing approval/hidden flags are never overwritten.
             if (! $post->exists) {

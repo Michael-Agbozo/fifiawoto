@@ -5,9 +5,11 @@ use App\Enums\VolunteerApplicationStatus;
 use App\Enums\VolunteerAvailability;
 use App\Enums\VolunteerInterest;
 use App\Mail\VolunteerApplicationReceived;
+use App\Models\Event;
 use App\Models\VolunteerApplication;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -45,12 +47,19 @@ new class extends Component
 
     public bool $compact = false;
 
+    #[Locked]
+    public ?int $eventId = null;
+
+    #[Locked]
     public ?string $contextEventTitle = null;
 
-    public function mount(bool $compact = false, ?string $contextEventTitle = null): void
+    public function mount(bool $compact = false, ?int $eventId = null): void
     {
         $this->compact = $compact;
-        $this->contextEventTitle = $contextEventTitle;
+
+        $event = $eventId ? Event::query()->published()->find($eventId) : null;
+        $this->eventId = $event?->id;
+        $this->contextEventTitle = $event?->title;
     }
 
     /**
@@ -74,7 +83,7 @@ new class extends Component
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
-            $this->addError('rate', "Too many submissions. Please wait {$seconds} seconds and try again.");
+            $this->addError('rate', __('Too many submissions. Please wait :v1 seconds and try again.', ['v1' => $seconds]));
 
             return;
         }
@@ -95,6 +104,7 @@ new class extends Component
         RateLimiter::hit($key, 60);
 
         $application = VolunteerApplication::query()->create([
+            'event_id' => $this->eventId ? Event::query()->published()->find($this->eventId)?->id : null,
             'full_name' => $data['full_name'],
             'email' => $data['email'],
             'phone' => $data['phone'],

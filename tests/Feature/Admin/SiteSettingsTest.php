@@ -96,3 +96,29 @@ it('logs volunteer hours from the roster', function () {
 
     expect((float) VolunteerHourLog::query()->sole()->hours)->toBe(3.5);
 });
+
+it('hides the Mobile Money card until a number is saved', function () {
+    $this->get(route('donate'))
+        ->assertOk()
+        ->assertDontSee('Mobile Money')
+        ->assertDontSee('XX XXX')
+        ->assertDontSee('accepts mobile money')
+        ->assertSee('Bank transfer');
+
+    Livewire::test('admin.site-settings')
+        ->set('form.mobile_money_number', '+233 24 555 0100')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->get(route('donate'))
+        ->assertSee('Mobile Money')
+        ->assertSee('+233 24 555 0100')
+        ->assertSee('accepts mobile money');
+});
+
+it('rejects an overlong Mobile Money number', function () {
+    Livewire::test('admin.site-settings')
+        ->set('form.mobile_money_number', str_repeat('1', 41))
+        ->call('save')
+        ->assertHasErrors('form.mobile_money_number');
+});

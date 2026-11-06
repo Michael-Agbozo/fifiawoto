@@ -13,7 +13,8 @@ use Illuminate\Support\Collection;
 /**
  * Groups gallery media into albums: one per published event (an outreach,
  * donation drive or programme day, with its date and place), plus one per
- * category for media that isn't tied to a public event. Newest first.
+ * category for media that isn't tied to any event. Media tied to an unpublished
+ * event stays hidden until that event goes live. Newest first.
  *
  * @phpstan-type Photo array{type: string, url: ?string, thumb: ?string, embed: ?string, caption: ?string}
  * @phpstan-type Album array{key: string, title: string, kind: string, category: string, date: ?CarbonInterface, year: ?int, place: ?string, country: ?string, gallery_url: string, event_url: ?string, photos: Collection<int, Photo>}
@@ -80,7 +81,7 @@ class MediaAlbums
                 );
             });
 
-        $categoryAlbums = $items->reject(fn (MediaItem $item) => $isPublic($item->event))
+        $categoryAlbums = $items->whereNull('event_id')
             ->groupBy(fn (MediaItem $item) => $item->category->value)
             ->map(fn (Collection $group, string $category) => $this->album(
                 key: 'category-'.$category,

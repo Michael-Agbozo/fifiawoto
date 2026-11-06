@@ -44,6 +44,7 @@ new class extends Component
             'form.media_email' => ['required', 'email', 'max:255'],
             'form.phone' => ['nullable', 'string', 'max:40'],
             'form.phone_hours' => ['nullable', 'string', 'max:120'],
+            'form.mobile_money_number' => ['nullable', 'string', 'max:40'],
             'form.instagram_url' => $socialRule,
             'form.facebook_url' => $socialRule,
             'form.youtube_url' => $socialRule,
@@ -136,7 +137,7 @@ new class extends Component
             @error('form.summary') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
-            @foreach ([['contact_email', 'General email', 'email'], ['media_email', 'Press and media email', 'email'], ['phone', 'Phone', 'text'], ['phone_hours', 'Phone hours', 'text']] as [$field, $label, $type])
+            @foreach ([['contact_email', 'General email', 'email'], ['media_email', 'Press and media email', 'email'], ['phone', 'Phone', 'text'], ['phone_hours', 'Phone hours', 'text'], ['mobile_money_number', 'Mobile Money number', 'text']] as [$field, $label, $type])
                 <div>
                     <label for="set_{{ $field }}" class="{{ $labelClass }}">{{ $label }}</label>
                     <input id="set_{{ $field }}" type="{{ $type }}" wire:model="form.{{ $field }}" class="{{ $fieldClass }}">
@@ -144,6 +145,7 @@ new class extends Component
                 </div>
             @endforeach
         </div>
+        <p class="text-sm text-ink-500">Leave the Mobile Money number empty to hide that option from the donate page.</p>
     </fieldset>
 
     <fieldset class="{{ $cardClass }}" @disabled(! $canUpdate)>

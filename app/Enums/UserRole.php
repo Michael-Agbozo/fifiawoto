@@ -73,7 +73,7 @@ enum UserRole: string
             ),
             self::VolunteerCoordinator => array_merge(
                 self::crudFor('volunteers'),
-                ['beneficiaries.view', 'events.view', 'reports.view', 'inbox.view'],
+                ['events.view', 'reports.view', 'inbox.view'],
             ),
             self::MediaManager => array_merge(
                 self::crudFor('media'),

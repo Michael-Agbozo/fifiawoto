@@ -2,7 +2,11 @@
 
 use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
+use App\Enums\EventStatus;
+use App\Mail\ContactFormReceived;
 use App\Models\ContactMessage;
+use App\Models\Event;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 it('renders the contact page with the form and subject options', function () {
@@ -61,4 +65,44 @@ it('requires consent', function () {
         ->tap(fn () => $this->travel(5)->seconds())
         ->call('submit')
         ->assertHasErrors(['consent' => 'accepted']);
+});
+
+it('carries a published event from the link into the message', function () {
+    Mail::fake();
+    $event = Event::factory()->create(['title' => 'Volta Outreach', 'slug' => 'volta-outreach', 'status' => EventStatus::Published, 'published_at' => now()->subDay()]);
+
+    $this->get(route('contact', ['subject' => 'donation', 'event' => 'volta-outreach']))->assertOk()->assertSee('Volta Outreach');
+
+    Livewire::withQueryParams(['event' => $event->slug])
+        ->test('site.contact-form')
+        ->assertSee('Volta Outreach')
+        ->set('full_name', 'Kojo Donor')
+        ->set('email', 'kojo@example.test')
+        ->set('subject', ContactSubject::Donation->value)
+        ->set('message', 'I would like to give towards this outreach.')
+        ->set('consent', true)
+        ->tap(fn () => $this->travel(5)->seconds())
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    expect(ContactMessage::query()->sole()->message)->toStartWith("Event: Volta Outreach\n\n");
+    Mail::assertQueued(ContactFormReceived::class, fn (ContactFormReceived $mail) => str_contains($mail->messageBody, 'Volta Outreach'));
+});
+
+it('ignores an event link that is not published', function (mixed $slug) {
+    Event::factory()->draft()->create(['title' => 'Hidden Draft Event', 'slug' => 'hidden-draft']);
+
+    $this->get(route('contact', ['event' => $slug]))->assertOk()->assertDontSee('Hidden Draft Event');
+
+    Livewire::withQueryParams(['event' => $slug])
+        ->test('site.contact-form')
+        ->assertSet('eventId', null);
+})->with(['draft event' => 'hidden-draft', 'unknown event' => 'nope', 'malformed' => [['hidden-draft']]]);
+
+it('shows the contact form labels in French', function () {
+    app()->setLocale('fr');
+
+    Livewire::test('site.contact-form')
+        ->assertSee('Contacter la fondation')
+        ->assertSee('Envoyer le message');
 });

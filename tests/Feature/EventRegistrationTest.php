@@ -102,3 +102,55 @@ it('saves the sign-up settings on an event', function () {
 
     expect($this->event->refresh())->registration_enabled->toBeFalse()->capacity->toBe(50);
 });
+
+it('tells the visitor when sign-ups closed while the form was open', function (array $change) {
+    $component = Livewire::test('site.event-registration', ['event' => $this->event]);
+    $this->travel(10)->seconds();
+    $this->event->update($change);
+
+    $component
+        ->set('full_name', 'Ama Mensah')
+        ->set('email', 'ama@example.org')
+        ->set('party_size', 1)
+        ->set('consent', true)
+        ->call('submit')
+        ->assertHasErrors('closed')
+        ->assertSet('submitted', false)
+        ->assertSee('Sign-ups for this event have closed')
+        ->assertDontSee("You're on the list", false);
+
+    expect(EventRegistration::query()->count())->toBe(0);
+    Mail::assertNothingQueued();
+})->with([
+    'registration disabled' => [['registration_enabled' => false]],
+    'event ended' => [['starts_at' => now()->subWeek(), 'ends_at' => null]],
+    'event unpublished' => [['status' => EventStatus::Draft]],
+]);
+
+it('queues the confirmation in the language of the visitor', function () {
+    app()->setLocale('fr');
+
+    signUp($this->event);
+
+    Mail::assertQueued(EventRegistrationConfirmation::class, fn (EventRegistrationConfirmation $mail) => $mail->locale === 'fr');
+});
+
+it('writes the confirmation in French with a French date', function () {
+    $this->event->update(['title' => 'Journée Volta', 'starts_at' => '2030-03-15 10:00:00']);
+    $registration = $this->event->registrations()->create([
+        'full_name' => 'Ama Mensah',
+        'email' => 'ama@example.org',
+        'party_size' => 2,
+        'consented_at' => now(),
+    ]);
+
+    $mail = (new EventRegistrationConfirmation($registration))->locale('fr');
+
+    $mail->assertSeeInHtml('Votre inscription est confirmée')
+        ->assertSeeInHtml('15 mars 2030')
+        ->assertSeeInHtml('Avec toute notre gratitude')
+        ->assertDontSeeInHtml('March');
+
+    app()->setLocale('fr');
+    expect($mail->envelope()->subject)->toBe('Votre inscription est confirmée : Journée Volta');
+});

@@ -5,7 +5,9 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\User;
+use App\Support\SecureDocumentStore;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Livewire\Livewire;
@@ -128,7 +130,7 @@ it('only deletes documents and folders that belong to the open beneficiary', fun
 it('lets view-only roles open the profile but not change documents', function () {
     $beneficiary = Beneficiary::factory()->create();
     $document = storedBeneficiaryDocument($beneficiary);
-    $this->actingAs(User::factory()->volunteerCoordinator()->create());
+    $this->actingAs(User::factory()->volunteerCoordinator()->create(['permissions' => ['beneficiaries.view']]));
 
     Livewire::test('admin.beneficiary-show', ['beneficiary' => $beneficiary])
         ->assertOk()
@@ -182,6 +184,108 @@ it('keeps the original when the copy to the private disk fails', function () {
 
     expect($document->refresh()->disk)->toBe('public');
     Storage::disk('public')->assertExists("beneficiaries/{$beneficiary->id}/documents/old.pdf");
+});
+
+it('reports a failed delete of the public copy and retries it on a rerun', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $sourcePath = "beneficiaries/{$beneficiary->id}/documents/old.pdf";
+    $document = storedBeneficiaryDocument($beneficiary, ['disk' => 'public', 'path' => $sourcePath]);
+    $workingDisk = Storage::disk('public');
+
+    $failingDisk = Mockery::mock($workingDisk)->makePartial();
+    $failingDisk->shouldReceive('delete')->andReturnFalse();
+    Storage::set('public', $failingDisk);
+
+    $this->artisan('beneficiaries:secure-documents')
+        ->expectsOutputToContain('Could not delete the public copy')
+        ->expectsOutputToContain('Moved 0 file(s)')
+        ->assertFailed();
+
+    expect($document->refresh()->disk)->toBe('public');
+    $workingDisk->assertExists($sourcePath);
+
+    Storage::set('public', $workingDisk);
+
+    $this->artisan('beneficiaries:secure-documents')->assertSuccessful();
+
+    expect($document->refresh())
+        ->disk->toBe('beneficiaries')
+        ->encrypted_at->not->toBeNull();
+    $workingDisk->assertMissing($sourcePath);
+});
+
+it('finishes a move that crashed after deleting the public copy', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $target = "{$beneficiary->id}/documents/old.pdf";
+    Storage::disk('beneficiaries')->put($target, '%PDF-1.4 secret');
+    $document = BeneficiaryDocument::query()->create([
+        'beneficiary_id' => $beneficiary->id, 'disk' => 'public', 'path' => "beneficiaries/{$target}",
+        'original_name' => 'old.pdf', 'mime_type' => 'application/pdf', 'size_bytes' => 15,
+    ]);
+
+    $this->artisan('beneficiaries:secure-documents')->assertSuccessful();
+
+    expect($document->refresh())
+        ->disk->toBe('beneficiaries')
+        ->path->toBe($target)
+        ->encrypted_at->not->toBeNull();
+});
+
+it('removes a public copy left behind by an earlier failed delete', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $document = storedBeneficiaryDocument($beneficiary, ['encrypted_at' => now()]);
+    $leftover = "beneficiaries/{$document->path}";
+    Storage::disk('public')->put($leftover, '%PDF-1.4 secret');
+    Storage::disk('public')->put('beneficiaries/unrelated.jpg', 'keep me');
+
+    $this->artisan('beneficiaries:secure-documents', ['--dry-run' => true])->assertSuccessful();
+    Storage::disk('public')->assertExists($leftover);
+
+    $this->artisan('beneficiaries:secure-documents')->assertSuccessful();
+
+    Storage::disk('public')->assertMissing($leftover);
+    Storage::disk('public')->assertExists('beneficiaries/unrelated.jpg');
+    Storage::disk('beneficiaries')->assertExists($document->path);
+});
+
+it('does nothing, and says so, when everything is already secured', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $document = storedBeneficiaryDocument($beneficiary, ['encrypted_at' => now()]);
+    $stamp = $document->encrypted_at->toDateTimeString();
+    $bytes = Storage::disk('beneficiaries')->get($document->path);
+
+    $this->artisan('beneficiaries:secure-documents')->expectsOutput('Nothing to do.')->assertSuccessful();
+
+    expect($document->refresh()->encrypted_at->toDateTimeString())->toBe($stamp)
+        ->and(Storage::disk('beneficiaries')->get($document->path))->toBe($bytes);
+});
+
+it('stands aside when another run holds the lock', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $document = storedBeneficiaryDocument($beneficiary, ['encrypted_at' => null]);
+    $lock = Cache::lock('beneficiaries:secure-documents', 60);
+    $lock->get();
+
+    $this->artisan('beneficiaries:secure-documents')->assertSuccessful();
+
+    expect($document->refresh()->encrypted_at)->toBeNull();
+    $lock->release();
+});
+
+it('carries on with other files when one fails, and exits non-zero', function () {
+    $beneficiary = Beneficiary::factory()->create();
+    $first = storedBeneficiaryDocument($beneficiary, ['path' => "{$beneficiary->id}/documents/a.pdf"]);
+    $second = storedBeneficiaryDocument($beneficiary, ['path' => "{$beneficiary->id}/documents/b.pdf"]);
+
+    $store = Mockery::mock(SecureDocumentStore::class);
+    $store->shouldReceive('encryptInPlace')->with($first->path)->andThrow(new RuntimeException('disk error'));
+    $store->shouldReceive('encryptInPlace')->with($second->path)->andReturnTrue();
+    app()->instance(SecureDocumentStore::class, $store);
+
+    $this->artisan('beneficiaries:secure-documents')->assertFailed();
+
+    expect($first->refresh()->encrypted_at)->toBeNull()
+        ->and($second->refresh()->encrypted_at)->not->toBeNull();
 });
 
 it('accepts legitimate images and documents up to 20MB through the temporary upload', function (string $name, int $kilobytes, string $mime) {

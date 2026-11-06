@@ -7,6 +7,7 @@ use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use App\Models\SponsorshipPhoto;
+use App\Support\SecureDocumentStore;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,6 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use App\Support\SecureDocumentStore;
 use Livewire\WithFileUploads;
 
 new class extends Component
@@ -26,7 +26,9 @@ new class extends Component
     public string $publicDisplayName = '';
 
     public string $publicStory = '';
+
     public string $publicCommunityStory = '';
+
     public string $publicCountryStory = '';
 
     public string $publicCountry = '';
@@ -123,6 +125,12 @@ new class extends Component
     {
         abort_unless(auth()->user()?->refresh()->canDo('beneficiaries', 'update'), 403);
 
+        if (! $this->hasRecordedGuardianConsent()) {
+            $this->addError('galleryUploads', 'Record guardian consent and its reference, and save the public profile, before adding gallery photos.');
+
+            return;
+        }
+
         $remaining = SponsorshipPhoto::MAX_PER_CHILD - $this->beneficiary->sponsorshipPhotos()->count();
 
         $this->validate([
@@ -151,6 +159,13 @@ new class extends Component
         $count = count($this->galleryUploads);
         $this->reset('galleryUploads', 'galleryUploadsSensitive');
         $this->flashMessage = $count === 1 ? 'Gallery photo added.' : $count.' gallery photos added.';
+    }
+
+    private function hasRecordedGuardianConsent(): bool
+    {
+        $beneficiary = $this->beneficiary->fresh();
+
+        return $beneficiary?->guardian_consent_at !== null && filled($beneficiary->guardian_consent_reference);
     }
 
     public function toggleGallerySensitive(int $photoId): void
@@ -496,6 +511,8 @@ new class extends Component
             $saved++;
         }
 
+        app(SecureDocumentStore::class)->discardTemporaryUploads($this->documentUploads);
+
         $this->showUploadForm = false;
         $this->documentUploads = [];
         $this->documentDescription = '';
@@ -676,7 +693,10 @@ new class extends Component
                 </ul>
             @endif
 
-            @if ($galleryPhotos->count() < \App\Models\SponsorshipPhoto::MAX_PER_CHILD)
+            @if (! $beneficiary->guardian_consent_at || blank($beneficiary->guardian_consent_reference))
+                <p class="mt-5 rounded-2xl border border-dashed border-cream-300 p-4 text-sm text-ink-500">Record guardian consent and its reference, and save the public profile, before adding gallery photos.</p>
+                @error('galleryUploads')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
+            @elseif ($galleryPhotos->count() < \App\Models\SponsorshipPhoto::MAX_PER_CHILD)
                 <form wire:submit="uploadGalleryPhotos" class="mt-5 flex flex-col gap-3 rounded-2xl border border-dashed border-cream-300 p-4 sm:flex-row sm:items-center">
                     <label class="flex-1 text-sm text-heading">Add photos
                         <input type="file" multiple wire:model="galleryUploads" accept="image/jpeg,image/png,image/webp" class="mt-2 block w-full text-sm">
@@ -706,7 +726,7 @@ new class extends Component
         {{-- LEFT: profile card --}}
         <article class="space-y-4 rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <div class="flex items-center gap-4">
-                <x-admin.avatar :src="$beneficiary->photo_path" :name="$beneficiary->full_name" size="lg" />
+                <x-admin.avatar :src="$beneficiary->adminPhotoUrl()" :name="$beneficiary->full_name" size="lg" />
                 <div class="min-w-0">
                     <h2 class="font-serif text-2xl font-bold text-ink-900">{{ $beneficiary->full_name }}</h2>
                     <p class="text-xs text-ink-500">{{ $beneficiary->region }}{{ $beneficiary->region ? ', ' : '' }}{{ $beneficiary->country }}</p>
@@ -1006,8 +1026,10 @@ new class extends Component
                         <ul class="mt-2 divide-y divide-cream-200 rounded-2xl border border-cream-200 bg-surface">
                             @foreach ($docs as $doc)
                                 @php
-                                    $url = $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc) : null;
-                                    $downloadUrl = $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc, download: true) : null;
+                                    // Files stay locked to these roles even for someone granted view access to the record.
+                                    $canOpenFiles = auth()->user()?->hasRole(\App\Enums\UserRole::Owner, \App\Enums\UserRole::SuperAdmin, \App\Enums\UserRole::FoundationStaff);
+                                    $url = $canOpenFiles && $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc) : null;
+                                    $downloadUrl = $canOpenFiles && $doc->path ? \App\Http\Controllers\Admin\DocumentDownloadController::beneficiaryDocumentUrl($doc, download: true) : null;
                                     $mime = (string) $doc->mime_type;
                                     $iconColor = match (true) {
                                         str_starts_with($mime, 'image/') => 'text-emerald-600',

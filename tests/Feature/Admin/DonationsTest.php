@@ -227,3 +227,23 @@ it('allows exporting donations with donations.view and reports.export', function
 
     expect(base64_decode(data_get($component->effects, 'download.content')))->toContain('Export Donor');
 });
+
+it('counts all gifts on the Gifts logged card regardless of filters', function () {
+    Donation::factory()->create(['donor_name' => 'Ama Match']);
+    Donation::factory()->count(2)->create(['donor_name' => 'Kofi Other']);
+
+    $component = Livewire::test('admin.donations')->set('search', 'Ama Match');
+
+    expect($component->instance()->totals['count'])->toBe(1)
+        ->and($component->instance()->totals['all_count'])->toBe(3);
+});
+
+it('orders gifts received at the same moment newest id first', function () {
+    $received = now()->startOfSecond();
+    $first = Donation::factory()->create(['received_at' => $received]);
+    $second = Donation::factory()->create(['received_at' => $received]);
+
+    $ids = Livewire::test('admin.donations')->instance()->donations->pluck('id')->all();
+
+    expect($ids)->toBe([$second->id, $first->id]);
+});

@@ -2,12 +2,14 @@
 
 use App\Enums\AssistanceType;
 use App\Enums\BeneficiaryApplicationStatus;
+use App\Enums\SponsorshipStatus;
 use App\Enums\SupportCategory;
 use App\Enums\SupportStatus;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use App\Models\Sponsorship;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -118,6 +120,64 @@ it('keeps the old photo when the record update fails', function () {
         ->call('save'))->toThrow(RuntimeException::class);
 
     Storage::disk('public')->assertExists('beneficiaries/own.jpg');
+});
+
+it('blocks archiving while a sponsorship is active or pending', function (SponsorshipStatus $status) {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsorship/gallery/one.jpg', 'x');
+    $b = Beneficiary::factory()->create(['public_photo_path' => 'sponsorship/one.jpg']);
+    $b->sponsorshipPhotos()->create(['path' => 'sponsorship/gallery/one.jpg', 'sort' => 1]);
+    Sponsorship::factory()->create(['beneficiary_id' => $b->id, 'status' => $status]);
+
+    Livewire::test('admin.beneficiaries')
+        ->call('delete', $b->id)
+        ->assertHasErrors('archive')
+        ->assertSee('still has an active or pending sponsorship');
+
+    expect($b->refresh()->trashed())->toBeFalse()
+        ->and($b->public_photo_path)->toBe('sponsorship/one.jpg');
+    Storage::disk('public')->assertExists('sponsorship/gallery/one.jpg');
+})->with([SponsorshipStatus::Active, SponsorshipStatus::Pending]);
+
+it('deletes public photos when archiving, and keeps the private record', function () {
+    Storage::fake('public');
+    Storage::fake('beneficiaries');
+    Storage::disk('public')->put('sponsorship/one.jpg', 'x');
+    Storage::disk('public')->put('sponsorship/gallery/one.jpg', 'x');
+    Storage::disk('beneficiaries')->put('photos/own.jpg', 'x');
+    $b = Beneficiary::factory()->create([
+        'public_photo_path' => 'sponsorship/one.jpg', 'photo_path' => 'photos/own.jpg', 'photo_disk' => 'beneficiaries',
+        'sponsorship_published' => true, 'guardian_consent_at' => now(), 'guardian_consent_reference' => 'Signed',
+    ]);
+    $b->sponsorshipPhotos()->create(['path' => 'sponsorship/gallery/one.jpg', 'sort' => 1]);
+    Sponsorship::factory()->create(['beneficiary_id' => $b->id, 'status' => SponsorshipStatus::Ended]);
+
+    Livewire::test('admin.beneficiaries')->call('delete', $b->id)->assertHasNoErrors();
+
+    $b->refresh();
+    expect($b->trashed())->toBeTrue()
+        ->and($b->public_photo_path)->toBeNull()
+        ->and($b->sponsorship_published)->toBeFalse()
+        ->and($b->sponsorshipPhotos()->count())->toBe(0);
+    Storage::disk('public')->assertMissing('sponsorship/one.jpg');
+    Storage::disk('public')->assertMissing('sponsorship/gallery/one.jpg');
+    Storage::disk('beneficiaries')->assertExists('photos/own.jpg');
+});
+
+it('does not archive when a public photo cannot be deleted', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('sponsorship/gallery/one.jpg', 'x');
+    $b = Beneficiary::factory()->create();
+    $photo = $b->sponsorshipPhotos()->create(['path' => 'sponsorship/gallery/one.jpg', 'sort' => 1]);
+
+    $failingDisk = Mockery::mock(Storage::disk('public'))->makePartial();
+    $failingDisk->shouldReceive('delete')->andReturnFalse();
+    Storage::set('public', $failingDisk);
+
+    Livewire::test('admin.beneficiaries')->call('delete', $b->id)->assertHasErrors('archive');
+
+    expect($b->refresh()->trashed())->toBeFalse()
+        ->and($photo->fresh())->not->toBeNull();
 });
 
 it('rolls back the new record if seeding its folders fails', function () {

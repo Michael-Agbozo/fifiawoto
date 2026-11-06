@@ -78,10 +78,15 @@ class Event extends Model
         return (int) $this->registrations()->sum('party_size');
     }
 
+    /** Still to come or in progress: it counts until the end of its last day. */
+    public function isUpcoming(): bool
+    {
+        return ($this->ends_at ?? $this->starts_at)?->endOfDay()->isFuture() === true;
+    }
+
     public function isOpenForRegistration(): bool
     {
-        return $this->registration_enabled
-            && ($this->ends_at ?? $this->starts_at)?->endOfDay()->isFuture() === true;
+        return $this->registration_enabled && $this->isUpcoming();
     }
 
     public function getRouteKeyName(): string
@@ -135,6 +140,11 @@ class Event extends Model
      */
     public function scopeUpcoming(Builder $query): void
     {
-        $query->where('starts_at', '>=', now()->startOfDay())->orderBy('starts_at');
+        $query->where(function (Builder $q): void {
+            $q->where('ends_at', '>=', now()->startOfDay())
+                ->orWhere(function (Builder $singleDay): void {
+                    $singleDay->whereNull('ends_at')->where('starts_at', '>=', now()->startOfDay());
+                });
+        })->orderBy('starts_at');
     }
 }

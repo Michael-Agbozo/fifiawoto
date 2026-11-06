@@ -49,6 +49,7 @@ Total: 14 resources × ~4 actions ≈ **52 distinct permission keys**.
 Notes:
 
 - Every admin Livewire component checks `{resource}.view` in `mount()` and the matching action permission inside each mutating method, so access is enforced server-side even if the route middleware is bypassed.
+- Each Reports tab also needs the matching `view` key (`donations.view` for Donations, and so on), and donor names on the Overview tab need `donations.view`. `reports.view` alone shows totals only.
 - `inbox.reply` also covers changing a message's status (mark resolved / mark new / archive) and the automatic New → In progress flip when a message is opened. Users with only `inbox.view` can read messages without changing them.
 
 ---
@@ -69,7 +70,7 @@ Notes:
 
 ### `volunteer_coordinator`
 - Full CRUD: `volunteers`
-- View-only: `beneficiaries.view`, `events.view`, `reports.view`, `inbox.view`
+- View-only: `events.view`, `reports.view`, `inbox.view`
 
 ### `media_manager`
 - Full CRUD: `media`, `instagram`, `testimonials`, `leaders`, `newsletter`
@@ -101,7 +102,12 @@ Permissions are stored as a JSON array on the `users.permissions` column. The mo
 
 The platform enforces permissions at three independent layers — defence-in-depth:
 
-1. **Route middleware** (`EnsureUserHasRole` in `bootstrap/app.php`) — the coarse gate. The `/admin/users` route, for example, is restricted to `role:owner,super_admin`. If your role isn't on the list, you get a 403 before any controller runs.
+1. **Route middleware** — the coarse gate. Admin pages use `permission:{resource}.view` (`EnsureUserHasPermission`), the same key the sidebar and the Livewire component check, so role defaults and per-user extras behave alike. If you lack the key, you get a 403 before any controller runs.
+
+   Three surfaces stay locked to a role list with `role:` (`EnsureUserHasRole`), so per-user extras don't open them:
+   - `/admin/users`: `owner`, `super_admin`
+   - `/admin/system-logs`: `owner`
+   - Beneficiary and application file downloads: `owner`, `super_admin`, `foundation_staff`. `beneficiaries.view` alone shows the profile but not identity or medical files.
 
 2. **UI gating** in Blade — buttons and menus only render when the user has the relevant permission:
    ```blade
@@ -162,7 +168,7 @@ When introducing a new resource (say, `partners`):
    'partners' => ['label' => 'Partner organisations', 'actions' => $crud],
    ```
 2. Add the appropriate defaults to one or more roles in `app/Enums/UserRole.php` (`self::crudFor('partners')` for full CRUD, or specific keys for view-only).
-3. Wire the **route middleware** to admit the right roles.
+3. Gate the **route** with `permission:{resource}.view`.
 4. Add **UI gating** in the Blade view (`@if canDo(...)`).
 5. Add **`abort_unless(canDo(...))` server-side guards** to every mutation method on the Livewire component.
 6. Add the resource's mutations to `AdminAuthorizationGuardTest.php` so regressions are caught automatically.

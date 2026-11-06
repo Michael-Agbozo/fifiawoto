@@ -5,6 +5,8 @@
     $width = 720;
     $height = 200;
     $stepX = count($daily) > 1 ? $width / (count($daily) - 1) : 0;
+    // A one-day range has no line to draw, so it gets a centred dot instead.
+    $isSingleDay = count($daily) === 1;
     $points = collect($daily)
         ->map(function ($pt, $i) use ($stepX, $maxDaily, $height) {
             $x = round($i * $stepX, 2);
@@ -43,7 +45,7 @@
 <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Daily donation trend</p>
-        <p class="text-xs text-ink-500">{{ count($daily) }} days · peak {{ \App\Support\Money::format($maxDaily / 100) }}</p>
+        <p class="text-xs text-ink-500">{{ count($daily) }} {{ \Illuminate\Support\Str::plural('day', count($daily)) }} · peak {{ \App\Support\Money::format($maxDaily / 100) }}</p>
     </div>
     <div class="mt-5 overflow-x-auto">
         <svg viewBox="0 0 {{ $width }} {{ $height + 30 }}" preserveAspectRatio="none" class="h-52 w-full">
@@ -53,14 +55,16 @@
                     <stop offset="100%" stop-color="#00044e" stop-opacity="0"/>
                 </linearGradient>
             </defs>
-            @if ($points)
+            @if ($isSingleDay)
+                <circle cx="{{ $width / 2 }}" cy="{{ round($height - ($daily[0]['cents'] / $maxDaily) * ($height - 20), 2) }}" r="4" fill="#00044e"/>
+            @elseif ($points)
                 <polygon points="{{ $areaPoints }}" fill="url(#dailyArea)" />
                 <polyline points="{{ $points }}" fill="none" stroke="#00044e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
             @endif
             @foreach ($daily as $i => $pt)
                 @if ($i % max(1, intdiv(count($daily), 8)) === 0)
                     @php
-                        $cx = round($i * $stepX, 2);
+                        $cx = $isSingleDay ? $width / 2 : round($i * $stepX, 2);
                     @endphp
                     <text x="{{ $cx }}" y="{{ $height + 20 }}" text-anchor="middle" font-size="9" fill="#6b6b85">{{ $pt['label'] }}</text>
                 @endif
@@ -69,7 +73,7 @@
     </div>
 </article>
 
-<div class="grid gap-4 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">By payment method</p>
         <div class="mt-5 space-y-3">

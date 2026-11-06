@@ -24,6 +24,7 @@ class SendSponsorshipReminders extends Command
         $sent = 0;
 
         Sponsorship::query()->active()->where('reminders_enabled', true)->whereNotNull('next_due_on')
+            ->whereHas('beneficiary', fn ($beneficiaries) => $beneficiaries->withoutTrashed())
             ->with('beneficiary')
             ->eachById(function (Sponsorship $sponsorship) use (&$sent): void {
                 $due = $sponsorship->next_due_on;
