@@ -15,6 +15,7 @@ class VolunteerApplication extends Model
     use HasFactory;
 
     protected $fillable = [
+        'event_id',
         'full_name',
         'email',
         'phone',
@@ -41,6 +42,16 @@ class VolunteerApplication extends Model
             'status' => VolunteerApplicationStatus::class,
             'availability' => VolunteerAvailability::class,
         ];
+    }
+
+    /**
+     * The event the person applied from. Still shown if that event is later archived.
+     *
+     * @return BelongsTo<Event, $this>
+     */
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class)->withTrashed();
     }
 
     /**

@@ -125,13 +125,13 @@ class SponsorshipCheckout extends Component
         }
 
         if ($this->child()->isSponsored()) {
-            $this->addError('review', 'This child has just been sponsored. Please choose another child, or contact our team.');
+            $this->addAlreadySponsoredError();
 
             return;
         }
 
         if ($this->step !== 'review') {
-            $this->addError('review', 'Please review your details before submitting your request.');
+            $this->addError('review', __('Please review your details before submitting your request.'));
 
             return;
         }
@@ -140,7 +140,7 @@ class SponsorshipCheckout extends Component
 
         if ($details !== $this->reviewedDetails) {
             $this->step = 'summary';
-            $this->addError('review', 'Your details have changed. Please review them again before submitting.');
+            $this->addError('review', __('Your details have changed. Please review them again before submitting.'));
 
             return;
         }
@@ -149,7 +149,7 @@ class SponsorshipCheckout extends Component
         $rateKey = 'public-form:sponsorship-checkout:'.(request()->ip() ?? 'anon');
 
         if (RateLimiter::tooManyAttempts($rateKey, 3)) {
-            $this->addError('rate', 'Too many requests. Please wait a minute and try again.');
+            $this->addError('rate', __('Too many requests. Please wait a minute and try again.'));
 
             return;
         }
@@ -171,8 +171,13 @@ class SponsorshipCheckout extends Component
                 return true;
             }
 
-            DB::transaction(function () use ($details): void {
+            $created = DB::transaction(function () use ($details): bool {
                 $child = Beneficiary::query()->publicSponsorship()->where('public_sponsorship_id', $this->profile)->lockForUpdate()->firstOrFail();
+
+                if ($child->isSponsored()) {
+                    return false;
+                }
+
                 $messageBody = implode("\n", [
                     'Pending sponsorship request — no payment taken or subscription created.',
                     'Child: '.$child->public_display_name.' ('.$child->public_sponsorship_id.')',
@@ -215,7 +220,15 @@ class SponsorshipCheckout extends Component
                 Mail::to(config('notifications.admin_email'))->queue(
                     (new ContactFormReceived($name, $details['email'], $details['phone'], 'Sponsorship request', $messageBody))->afterCommit()
                 );
+
+                return true;
             });
+
+            if (! $created) {
+                $this->addAlreadySponsoredError();
+
+                return true;
+            }
 
             SiteAnalytics::conversion('sponsorship_request');
             Cache::put($completedKey, true, now()->addDay());
@@ -225,7 +238,7 @@ class SponsorshipCheckout extends Component
         });
 
         if (! $handled) {
-            $this->addError('rate', 'Your request is being processed. Please try again shortly.');
+            $this->addError('rate', __('Your request is being processed. Please try again shortly.'));
         }
     }
 
@@ -241,6 +254,11 @@ class SponsorshipCheckout extends Component
             'firstMonthCents' => $monthlyCents + $giftCents,
             'currency' => Money::baseCurrency(),
         ]);
+    }
+
+    private function addAlreadySponsoredError(): void
+    {
+        $this->addError('review', __('This child has just been sponsored. Please choose another child, or contact our team.'));
     }
 
     private function child(): Beneficiary

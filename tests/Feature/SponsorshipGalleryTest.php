@@ -41,6 +41,22 @@ it('uploads gallery photos and can mark them sensitive', function () {
     $photos->each(fn ($photo) => Storage::disk('public')->assertExists($photo->path));
 });
 
+it('refuses gallery uploads until guardian consent is recorded', function (array $attributes) {
+    $child = Beneficiary::factory()->active()->create(['date_of_birth' => today()->subYears(9), ...$attributes]);
+
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $child])
+        ->assertSee('Record guardian consent')
+        ->set('galleryUploads', [UploadedFile::fake()->image('home.jpg')])
+        ->call('uploadGalleryPhotos')
+        ->assertHasErrors('galleryUploads');
+
+    expect($child->sponsorshipPhotos()->count())->toBe(0)
+        ->and(Storage::disk('public')->allFiles())->toBeEmpty();
+})->with([
+    'no consent' => [['guardian_consent_at' => null, 'guardian_consent_reference' => null]],
+    'no reference' => [['guardian_consent_at' => now(), 'guardian_consent_reference' => null]],
+]);
+
 it('rejects files that are not images', function () {
     $child = galleryChild();
 

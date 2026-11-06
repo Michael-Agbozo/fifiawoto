@@ -76,6 +76,51 @@ it('encrypts existing plain documents with the command', function () {
         ->and(readEncrypted($document->path))->toBe('OLD PLAIN FILE');
 });
 
+it('stamps a file that was encrypted just before a crash instead of encrypting it twice', function () {
+    $path = app(SecureDocumentStore::class)->store(UploadedFile::fake()->createWithContent('id.txt', 'ORIGINAL'), '1/documents');
+    $bytes = Storage::disk('beneficiaries')->get($path);
+    $document = BeneficiaryDocument::factory()->create(['beneficiary_id' => $this->beneficiary->id, 'disk' => 'beneficiaries', 'path' => $path, 'original_name' => 'id.txt', 'mime_type' => 'text/plain', 'size_bytes' => 8, 'encrypted_at' => null]);
+
+    $this->artisan('beneficiaries:secure-documents')->assertSuccessful();
+
+    expect($document->refresh()->encrypted_at)->not->toBeNull()
+        ->and(Storage::disk('beneficiaries')->get($path))->toBe($bytes)
+        ->and(readEncrypted($path))->toBe('ORIGINAL');
+});
+
+it('still encrypts plain files, including ones the encrypted check could misread', function (string $content) {
+    Storage::disk('beneficiaries')->put('1/documents/plain.bin', $content);
+
+    expect(app(SecureDocumentStore::class)->isEncrypted('1/documents/plain.bin'))->toBeFalse()
+        ->and(app(SecureDocumentStore::class)->encryptInPlace('1/documents/plain.bin'))->toBeTrue()
+        ->and(readEncrypted('1/documents/plain.bin'))->toBe($content);
+})->with([
+    'small header value' => [pack('N', 5).'hello'],
+    'shorter than a header' => ['ab'],
+    'pdf' => ['%PDF-1.4 secret'],
+]);
+
+it('deletes the temporary upload once documents are saved', function () {
+    Livewire::test('admin.beneficiary-show', ['beneficiary' => $this->beneficiary])
+        ->set('documentUploads', [UploadedFile::fake()->createWithContent('id.txt', 'PLAIN')])
+        ->call('uploadDocuments')
+        ->assertHasNoErrors();
+
+    expect(BeneficiaryDocument::query()->sole()->original_name)->toBe('id.txt')
+        ->and(BeneficiaryDocument::query()->sole()->size_bytes)->toBe(5)
+        ->and(Storage::disk('tmp-for-tests')->allFiles('livewire-tmp'))->toBeEmpty();
+});
+
+it('keeps the temporary upload when saving fails, so it can be retried', function () {
+    BeneficiaryDocument::creating(fn () => throw new RuntimeException('db down'));
+
+    expect(fn () => Livewire::test('admin.beneficiary-show', ['beneficiary' => $this->beneficiary])
+        ->set('documentUploads', [UploadedFile::fake()->createWithContent('id.txt', 'PLAIN')])
+        ->call('uploadDocuments'))->toThrow(RuntimeException::class);
+
+    expect(Storage::disk('tmp-for-tests')->allFiles('livewire-tmp'))->not->toBeEmpty();
+});
+
 it('still serves documents that are not encrypted yet', function () {
     Storage::disk('beneficiaries')->put('1/documents/old.txt', 'OLD PLAIN FILE');
     $document = BeneficiaryDocument::factory()->create(['beneficiary_id' => $this->beneficiary->id, 'disk' => 'beneficiaries', 'path' => '1/documents/old.txt', 'original_name' => 'old.txt', 'mime_type' => 'text/plain', 'size_bytes' => 14, 'encrypted_at' => null]);

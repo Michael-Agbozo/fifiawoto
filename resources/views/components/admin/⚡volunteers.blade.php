@@ -326,7 +326,7 @@ new class extends Component
     public function viewingApplication(): ?VolunteerApplication
     {
         return $this->viewingApplicationId
-            ? VolunteerApplication::query()->with('reviewer')->find($this->viewingApplicationId)
+            ? VolunteerApplication::query()->with(['reviewer', 'event'])->find($this->viewingApplicationId)
             : null;
     }
 
@@ -447,7 +447,7 @@ new class extends Component
                                                 <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                 View details
                                             </button>
-                                            @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
+                                            @if ($app->status === \App\Enums\VolunteerApplicationStatus::New && auth()->user()?->canDo('volunteers', 'update'))
                                                 <button type="button" wire:click="viewApplication({{ $app->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></svg>
                                                     Review &amp; approve
@@ -562,6 +562,7 @@ new class extends Component
                                                     <svg class="size-4 text-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                                     View details
                                                 </button>
+                                                @if (auth()->user()?->canDo('volunteers', 'update'))
                                                 <button type="button" wire:click="startLogHours({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/></svg>
                                                     Log hours
@@ -570,10 +571,13 @@ new class extends Component
                                                     <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                     Edit role
                                                 </button>
+                                                @endif
+                                                @if (auth()->user()?->canDo('volunteers', 'delete'))
                                                 <button type="button" wire:click="askRemove({{ $volunteer->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                     <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                     Remove from roster
                                                 </button>
+                                                @endif
                                             </x-admin.actions-menu>
                                         @endif
                                     </div>
@@ -606,6 +610,12 @@ new class extends Component
                             <dt class="text-xs text-ink-500">Country</dt>
                             <dd class="mt-0.5 text-sm text-ink-900">{{ $app->country }}</dd>
                         </div>
+                        @if ($app->event)
+                            <div class="sm:col-span-2">
+                                <dt class="text-xs text-ink-500">Event</dt>
+                                <dd class="mt-0.5 text-sm text-ink-900">{{ $app->event->title }}</dd>
+                            </div>
+                        @endif
                     </dl>
                 </section>
 
@@ -666,7 +676,7 @@ new class extends Component
                 <p class="mt-2 whitespace-pre-line rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-relaxed text-ink-900">{{ $app->motivation }}</p>
             </section>
 
-            @if ($app->status === \App\Enums\VolunteerApplicationStatus::New)
+            @if ($app->status === \App\Enums\VolunteerApplicationStatus::New && auth()->user()?->canDo('volunteers', 'update'))
                 <section class="mt-6 rounded-2xl border border-cream-300 bg-cream-50 p-4">
                     <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Approve into roster</h3>
                     <p class="mt-1 text-xs text-ink-500">Pick a starting role for {{ $app->full_name }} and approve. A welcome email will be sent.</p>

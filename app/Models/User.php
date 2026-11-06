@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
@@ -54,6 +55,18 @@ class User extends Authenticatable
         'two_factor_recovery_codes',
         'remember_token',
     ];
+
+    protected static function booted(): void
+    {
+        static::deleted(function (User $user): void {
+            $path = $user->avatar_path;
+
+            // Remote URLs (seeded/external) are not ours to delete.
+            if (filled($path) && ! str_starts_with($path, 'http')) {
+                Storage::disk('public')->delete($path);
+            }
+        });
+    }
 
     /**
      * @return array<string, string>

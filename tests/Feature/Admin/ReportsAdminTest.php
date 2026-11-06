@@ -152,3 +152,34 @@ it('labels report totals with the configured base currency', function () {
         ->set('category', 'donations')
         ->assertSee('GH₵1,234');
 });
+
+it('exports the KPIs from the overview tab', function () {
+    Donation::factory()->create(['amount_cents' => 12345, 'received_at' => now()]);
+
+    $csv = downloadedReportCsv(Livewire::test('admin.reports')->call('downloadCsv')->assertFileDownloaded());
+
+    expect($csv)->toContain('Metric,Value')
+        ->toContain('Donations received')
+        ->toContain('New beneficiaries')
+        ->not->toContain('No rows in selected range');
+
+    Livewire::test('admin.reports')->call('downloadExcel')->assertFileDownloaded();
+});
+
+it('paginates the detail table on screen while exports stay complete', function () {
+    Donation::factory()->count(30)->create(['received_at' => now()]);
+    Donation::factory()->create(['donor_name' => 'Zed Last Donor', 'received_at' => now()->addSecond()]);
+
+    $component = Livewire::test('admin.reports')->set('category', 'donations');
+
+    $component->assertSee('31 row(s)')->assertDontSee('Zed Last Donor');
+    expect($component->instance()->detailRows->count())->toBe(25);
+
+    $component->call('gotoPage', 2)->assertSee('Zed Last Donor');
+
+    expect(downloadedReportCsv($component->call('downloadCsv')))->toContain('Zed Last Donor');
+
+    // Changing tab goes back to the first page.
+    $component->set('category', 'events');
+    expect($component->instance()->getPage())->toBe(1);
+});

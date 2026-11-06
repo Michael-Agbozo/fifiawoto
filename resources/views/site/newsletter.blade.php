@@ -33,7 +33,7 @@
                 <form method="POST" action="{{ $formUrl }}" class="mt-8">
                     @csrf
                     <button type="submit" class="btn btn-primary">
-                        {{ $isUnsubscribe ? 'Unsubscribe' : 'Yes, subscribe me again' }}
+                        {{ $isUnsubscribe ? __('Unsubscribe') : __('Yes, subscribe me again') }}
                     </button>
                 </form>
             @endif

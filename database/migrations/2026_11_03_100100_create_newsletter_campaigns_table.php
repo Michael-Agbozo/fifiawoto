@@ -8,6 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // An earlier version of this migration failed partway on MySQL. It only runs when it
+        // hasn't been recorded, so any tables found here are empty leftovers from that failure.
+        Schema::dropIfExists('newsletter_campaign_recipients');
+        Schema::dropIfExists('newsletter_campaigns');
+
         Schema::create('newsletter_campaigns', function (Blueprint $table) {
             $table->id();
             $table->string('subject', 150);
@@ -29,8 +34,9 @@ return new class extends Migration
             $table->timestamp('sent_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['newsletter_campaign_id', 'email']);
-            $table->index(['newsletter_campaign_id', 'status']);
+            // Spelled out because the generated names are longer than MySQL's 64 characters.
+            $table->unique(['newsletter_campaign_id', 'email'], 'campaign_recipients_campaign_email_unique');
+            $table->index(['newsletter_campaign_id', 'status'], 'campaign_recipients_campaign_status_index');
         });
     }
 

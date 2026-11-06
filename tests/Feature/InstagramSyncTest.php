@@ -151,3 +151,32 @@ it('schedules the token refresh weekly', function () {
         ->expectsOutputToContain('instagram:refresh-token')
         ->assertSuccessful();
 });
+
+it('adopts a manually added post instead of duplicating it, keeping its flags', function () {
+    config(['services.instagram.access_token' => 'token-123']);
+
+    $manual = InstagramPost::factory()->create([
+        'external_id' => sha1('https://instagram.com/p/shared/'),
+        'permalink' => 'https://instagram.com/p/shared/',
+        'source' => InstagramSource::Manual,
+        'is_approved' => false,
+        'is_hidden' => true,
+    ]);
+
+    Http::fake([
+        'graph.instagram.com/*' => Http::response(['data' => [[
+            'id' => 'graph-shared',
+            'media_type' => 'IMAGE',
+            'permalink' => 'https://www.instagram.com/p/shared/',
+        ]]]),
+    ]);
+
+    $this->artisan('instagram:sync')->assertSuccessful();
+    $this->artisan('instagram:sync')->assertSuccessful();
+
+    $manual->refresh();
+    expect(InstagramPost::query()->count())->toBe(1)
+        ->and($manual->external_id)->toBe('graph-shared')
+        ->and($manual->is_approved)->toBeFalse()
+        ->and($manual->is_hidden)->toBeTrue();
+});

@@ -27,7 +27,7 @@ class NewsletterResubscribeConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirm your newsletter subscription',
+            subject: __('Confirm your newsletter subscription'),
         );
     }
 

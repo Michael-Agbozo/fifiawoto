@@ -75,6 +75,17 @@ it('validates the application', function () {
     expect(BeneficiaryApplication::query()->count())->toBe(0);
 });
 
+it('deletes the temporary uploads once the application is saved', function () {
+    fillSupportApplication()
+        ->set('documents', [UploadedFile::fake()->create('medical.pdf', 10, 'application/pdf')])
+        ->call('submit')
+        ->assertHasNoErrors();
+
+    $document = BeneficiaryApplication::query()->sole()->documents()->sole();
+    expect($document->original_name)->toBe('medical.pdf')
+        ->and(Storage::disk('tmp-for-tests')->allFiles('livewire-tmp'))->toBeEmpty();
+});
+
 it('rejects unsafe or too many documents', function () {
     // Unsafe types are rejected at upload time (config/livewire.php temporary_file_upload rules)
     // or on submit — either way, nothing with that extension is ever stored.

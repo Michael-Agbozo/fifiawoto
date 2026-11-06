@@ -11,6 +11,7 @@ use App\Models\ContactMessage;
 use App\Models\Donation;
 use App\Models\Event;
 use App\Models\NewsletterSubscriber;
+use App\Models\User;
 use App\Models\VolunteerApplication;
 use App\Models\VolunteerHourLog;
 use App\Support\Money;
@@ -218,16 +219,30 @@ class ImpactMetricService
     }
 
     /**
-     * Recent activity feed for the dashboard table. Pass $kind (volunteer,
-     * contact, donation, newsletter) to only read that source, so the limit
-     * applies after filtering.
+     * Activity sources the user may see, each behind its module's view permission.
+     *
+     * @return array<int, string>
+     */
+    public function activityKindsFor(User $user): array
+    {
+        return array_keys(array_filter(
+            ['volunteer' => 'volunteers', 'contact' => 'inbox', 'donation' => 'donations', 'newsletter' => 'newsletter'],
+            fn (string $resource): bool => $user->canDo($resource, 'view'),
+        ));
+    }
+
+    /**
+     * Recent activity feed for the dashboard table, limited to the sources the
+     * viewer may see. Pass $kind (volunteer, contact, donation, newsletter) to
+     * only read that source, so the limit applies after filtering.
      *
      * @return array<int, array{when: Carbon|null, kind: string, label: string, status: string, status_class: string, name: string, detail: string, category: string}>
      */
-    public function recentActivity(int $limit = 12, ?string $kind = null): array
+    public function recentActivity(User $viewer, int $limit = 12, ?string $kind = null): array
     {
         $entries = collect();
-        $wants = fn (string $source): bool => $kind === null || $kind === $source;
+        $visibleKinds = $this->activityKindsFor($viewer);
+        $wants = fn (string $source): bool => in_array($source, $visibleKinds, true) && ($kind === null || $kind === $source);
 
         if ($wants('volunteer')) {
             VolunteerApplication::query()

@@ -57,7 +57,9 @@ new class extends Component
             'event_id' => [
                 'nullable',
                 'required_if:type,event',
-                Rule::exists('events', 'id'),
+                Rule::when($this->type === 'event', [
+                    Rule::in(Event::query()->published()->upcoming()->pluck('id')->all()),
+                ]),
             ],
             'announcement_heading' => ['nullable', 'required_if:type,announcement', 'string', 'max:120'],
             'announcement_body' => ['nullable', 'string', 'max:600'],
@@ -74,6 +76,7 @@ new class extends Component
     {
         return [
             'event_id.required_if' => 'Pick the event to promote.',
+            'event_id.in' => 'Pick a published event that has not started yet.',
             'announcement_heading.required_if' => 'An announcement needs a heading.',
             'announcement_cta_url.regex' => 'Use a full https:// link or a site path starting with /.',
         ];

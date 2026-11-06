@@ -3,6 +3,7 @@
 use App\Concerns\DetectsSpamSubmissions;
 use App\Mail\NewsletterResubscribeConfirmation;
 use App\Models\NewsletterSubscriber;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -41,7 +42,7 @@ new class extends Component
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
-            $this->addError('rate', "Too many attempts. Please wait {$seconds} seconds.");
+            $this->addError('rate', __('Too many attempts. Please wait :v1 seconds.', ['v1' => $seconds]));
 
             return;
         }
@@ -61,19 +62,22 @@ new class extends Component
 
         RateLimiter::hit($key, 60);
 
-        $subscriber = NewsletterSubscriber::query()->where('email', $data['email'])->first();
-
-        if ($subscriber === null) {
-            NewsletterSubscriber::query()->create([
-                'email' => $data['email'],
+        try {
+            $subscriber = NewsletterSubscriber::query()->firstOrCreate(['email' => $data['email']], [
                 'name' => $data['name'] ?: null,
                 'subscribed_at' => now(),
                 'source' => $this->source,
             ]);
+        } catch (UniqueConstraintViolationException) {
+            // A simultaneous signup for the same address got there first.
+            $subscriber = NewsletterSubscriber::query()->where('email', $data['email'])->first();
+        }
+
+        if ($subscriber?->wasRecentlyCreated) {
             \App\Support\SiteAnalytics::conversion('newsletter_signup');
-        } elseif ($subscriber->unsubscribed_at !== null) {
+        } elseif ($subscriber?->unsubscribed_at !== null) {
             // Never silently re-subscribe an address that opted out: the owner must confirm by email.
-            Mail::to($subscriber->email)->queue(new NewsletterResubscribeConfirmation($subscriber));
+            Mail::to($subscriber->email)->locale(app()->getLocale())->queue(new NewsletterResubscribeConfirmation($subscriber));
         }
 
         // Existing active subscribers are left untouched (no name/source overwrite). The same

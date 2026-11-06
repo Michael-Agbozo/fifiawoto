@@ -4,6 +4,7 @@ use App\Enums\UserRole;
 use App\Mail\TeamInvitation;
 use App\Models\User;
 use App\Support\Permissions;
+use App\Support\UserSessions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -147,6 +148,7 @@ new class extends Component
             'phone' => $data['phone'] ?: null,
             'role' => $data['role'],
             'password' => Hash::make($generated),
+            'force_password_change' => true,
             'email_verified_at' => now(),
         ]);
 
@@ -227,7 +229,11 @@ new class extends Component
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
         $newPassword = Str::password(14);
-        $user->forceFill(['password' => Hash::make($newPassword)])->save();
+        $user->forceFill([
+            'password' => Hash::make($newPassword),
+            'force_password_change' => true,
+        ])->save();
+        UserSessions::endOthers($user);
 
         $this->generatedPassword = $newPassword;
         $this->flashMessage = "Password reset for {$user->name}. Share securely.";
@@ -281,10 +287,13 @@ new class extends Component
             'password' => Hash::make($this->newPassword),
             'force_password_change' => $this->forcePasswordChange,
         ])->save();
+        UserSessions::endOthers($user);
+
+        $mustChangePassword = $this->forcePasswordChange;
 
         $this->cancelResetPassword();
         $this->flashMessage = "Password updated for {$user->name}."
-            .($this->forcePasswordChange ? ' They will be asked to set a new password on next login.' : '');
+            .($mustChangePassword ? ' They will be asked to set a new password on next login.' : '');
     }
 
     public function cancelResetPassword(): void
@@ -311,6 +320,11 @@ new class extends Component
         }
 
         $user->forceFill(['is_active' => ! $user->is_active])->save();
+
+        // EnsureAccountIsActive blocks the next request, but a session it never saw would revive on reactivation.
+        if (! $user->is_active) {
+            UserSessions::endOthers($user);
+        }
 
         $this->flashMessage = $user->is_active
             ? "{$user->name}'s account is now active."
@@ -791,7 +805,7 @@ new class extends Component
                                                 Manage permissions
                                             </button>
                                             @endif
-                                            <button type="button" wire:click="resetPassword({{ $user->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                                            <button type="button" wire:click="resetPassword({{ $user->id }})" wire:confirm="Reset the password for {{ $user->name }}? They will be signed out everywhere." @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-gold-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a4 4 0 1 1-4 4M7 11h.01M11 11h.01M3 11l8 0M3 11l3 3M3 11l3-3"/></svg>
                                                 Reset password
                                             </button>

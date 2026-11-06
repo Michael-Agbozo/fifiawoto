@@ -50,8 +50,8 @@
         [
             'heading' => 'Operations',
             'items' => [
-                ['label' => 'User management',          'route' => 'admin.users.index',                     'icon' => 'shield',    'show' => $user?->canDo('users', 'view') ?? false],
-                ['label' => 'System logs',              'route' => 'admin.system-logs.index',               'icon' => 'shield',    'show' => $user?->canDo('system_logs', 'view') ?? false],
+                ['label' => 'User management',          'route' => 'admin.users.index',                     'icon' => 'shield',    'show' => $user?->hasRole(\App\Enums\UserRole::Owner, \App\Enums\UserRole::SuperAdmin) ?? false],
+                ['label' => 'System logs',              'route' => 'admin.system-logs.index',               'icon' => 'shield',    'show' => $user?->hasRole(\App\Enums\UserRole::Owner) ?? false],
             ],
         ],
         [

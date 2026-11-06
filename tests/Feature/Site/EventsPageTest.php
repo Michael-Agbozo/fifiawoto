@@ -174,3 +174,39 @@ it('offers one-tap country searches and marks the active one', function () {
         ->assertSee(route('events.index', ['q' => 'Ghana']), escape: false)
         ->assertSee('aria-current="true"', escape: false);
 });
+
+it('keeps an event listed as upcoming until the end of its last day', function () {
+    $this->freezeTime();
+
+    $published = ['status' => EventStatus::Published->value, 'published_at' => now()->subMonth()];
+    $inProgress = Event::factory()->create([...$published, 'title' => 'Running Now', 'starts_at' => now()->subDays(2), 'ends_at' => now()->addDays(2)]);
+    $today = Event::factory()->create([...$published, 'title' => 'Earlier Today', 'starts_at' => now()->startOfDay(), 'ends_at' => null]);
+    $finished = Event::factory()->create([...$published, 'title' => 'All Finished', 'starts_at' => now()->subDays(5), 'ends_at' => now()->subDay()]);
+    $future = Event::factory()->create([...$published, 'title' => 'Still To Come', 'starts_at' => now()->addWeek(), 'ends_at' => null]);
+
+    $response = $this->get(route('events.index'))->assertOk();
+
+    expect($response->viewData('upcoming')->pluck('id')->all())->toEqualCanonicalizing([$inProgress->id, $today->id, $future->id])
+        ->and($response->viewData('past')->pluck('id')->all())->toBe([$finished->id])
+        ->and(Event::query()->upcoming()->pluck('id')->all())->toEqualCanonicalizing([$inProgress->id, $today->id, $future->id]);
+});
+
+it('moves event modals to the body so the header cannot cover them', function () {
+    Event::factory()->create(['status' => EventStatus::Published->value, 'published_at' => now()->subDay(), 'starts_at' => now()->addWeek()]);
+
+    $html = $this->get(route('events.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('<template x-teleport="body">')
+        ->and(preg_match_all('/<template x-teleport="body">\s*<div\s+x-cloak\s+x-show="(donate|volunteer)Open"/', $html))
+        ->toBe(substr_count($html, 'Open = false" class="absolute inset-0'));
+});
+
+it('shows the event buttons and modals in French', function () {
+    $event = Event::factory()->create(['title' => 'Volta', 'status' => EventStatus::Published->value, 'published_at' => now()->subDay(), 'starts_at' => now()->addWeek()]);
+
+    $this->withSession(['locale' => 'fr'])->get(route('events.show', $event))
+        ->assertOk()
+        ->assertSee('Être bénévole pour cet événement')
+        ->assertSee('Soutenir · Volta')
+        ->assertSee('Devenir bénévole pour Volta');
+});

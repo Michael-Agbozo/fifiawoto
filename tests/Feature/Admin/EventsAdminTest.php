@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -236,4 +237,103 @@ it('only counts base-currency donations towards an event goal', function () {
     $listed = Livewire::test('admin.events')->instance()->events->firstWhere('id', $event->id);
 
     expect((int) $listed->raised_cents)->toBe(25000);
+});
+
+it('does not email volunteers about an event that has already ended', function () {
+    Mail::fake();
+    Volunteer::factory()->create(['email' => 'alice@example.com']);
+    $event = Event::factory()->create([
+        'status' => EventStatus::Draft,
+        'starts_at' => now()->subDays(10),
+        'ends_at' => now()->subDays(8),
+    ]);
+
+    Livewire::test('admin.events')->call('publish', $event->id);
+
+    Mail::assertNothingQueued();
+    expect($event->refresh()->status)->toBe(EventStatus::Published)
+        ->and($event->volunteers_notified_at)->toBeNull();
+});
+
+it('still emails volunteers about an event running today', function () {
+    Mail::fake();
+    Volunteer::factory()->create(['email' => 'alice@example.com']);
+    $event = Event::factory()->create([
+        'status' => EventStatus::Draft,
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->startOfDay(),
+    ]);
+
+    Livewire::test('admin.events')->call('publish', $event->id);
+
+    Mail::assertQueued(EventVolunteerInvitation::class, 1);
+});
+
+it('keeps invitations claimable when queueing fails, then sends each one once on retry', function () {
+    Volunteer::factory()->create(['email' => 'alice@example.com']);
+    $event = Event::factory()->create([
+        'status' => EventStatus::Draft,
+        'starts_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek(),
+    ]);
+
+    $realMailer = app('mail.manager');
+    Mail::shouldReceive('queue')->once()->andThrow(new RuntimeException('queue down'));
+
+    $component = Livewire::test('admin.events')->call('publish', $event->id);
+
+    expect($event->refresh()->volunteers_notified_at)->toBeNull()
+        ->and($component->get('flashMessage'))->toContain('could not be queued');
+
+    Mail::swap($realMailer);
+    Mail::fake();
+    $component->call('unpublish', $event->id)
+        ->call('publish', $event->id)
+        ->call('unpublish', $event->id)
+        ->call('publish', $event->id);
+
+    Mail::assertQueued(EventVolunteerInvitation::class, 1);
+    expect($event->refresh()->volunteers_notified_at)->not->toBeNull();
+});
+
+it('rolls back queued invitations when a later one fails', function () {
+    config(['queue.default' => 'database']);
+    Volunteer::factory()->create(['email' => 'alice@example.com']);
+    Volunteer::factory()->create(['email' => 'bob@example.com']);
+    $event = Event::factory()->create([
+        'status' => EventStatus::Draft,
+        'starts_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek(),
+    ]);
+
+    $realMailer = app('mail.manager');
+    $sent = 0;
+    Mail::shouldReceive('queue')->twice()->andReturnUsing(function ($mail) use (&$sent, $realMailer) {
+        if (++$sent === 2) {
+            throw new RuntimeException('queue down');
+        }
+
+        $queued = $realMailer->queue($mail);
+        expect(DB::table('jobs')->count())->toBe(1);
+
+        return $queued;
+    });
+
+    Livewire::test('admin.events')->call('publish', $event->id);
+
+    expect(DB::table('jobs')->count())->toBe(0)
+        ->and($event->refresh()->volunteers_notified_at)->toBeNull();
+});
+
+it('removes an uploaded hero image when an event is deleted', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('events/hero.jpg', 'image');
+    Storage::disk('public')->put('images/foundation/seeded.jpg', 'image');
+    $uploaded = Event::factory()->create(['hero_image_path' => 'events/hero.jpg']);
+    $seeded = Event::factory()->create(['hero_image_path' => 'images/foundation/seeded.jpg']);
+
+    Livewire::test('admin.events')->call('delete', $uploaded->id)->call('delete', $seeded->id);
+
+    Storage::disk('public')->assertMissing('events/hero.jpg');
+    Storage::disk('public')->assertExists('images/foundation/seeded.jpg');
 });

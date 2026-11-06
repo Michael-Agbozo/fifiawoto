@@ -6,15 +6,26 @@ use App\Models\Event;
 use App\Models\VolunteerApplication;
 use App\Services\ReportAnalyticsService;
 use App\Support\CsvCell;
+use App\Support\Money;
 use App\Support\SimpleXlsx;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
+    use WithPagination;
+
+    /** Detail rows shown per page on screen; exports always carry every row. */
+    public const TABLE_PER_PAGE = 25;
+
     /** Maximum detail rows rendered into a PDF (keeps DomPDF memory bounded). */
     public const PDF_ROW_LIMIT = 2000;
 
@@ -50,6 +61,16 @@ new class extends Component
         if (in_array($property, ['fromDate', 'toDate'], true)) {
             $this->validate();
         }
+
+        if (in_array($property, ['category', 'fromDate', 'toDate'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    public function clearDateRange(): void
+    {
+        $this->reset('fromDate', 'toDate');
+        $this->resetPage();
     }
 
     protected function parseDate(string $value): ?Carbon
@@ -81,89 +102,166 @@ new class extends Component
     }
 
     /**
-     * @return array<int, array<string, string|int>>
+     * Permission each tab needs on top of reports.view, because it lists people or
+     * records that reports.view alone doesn't cover.
+     *
+     * @return array<string, string|null>
      */
-    protected function rowsForCategory(?int $limit = null): array
+    protected function categoryPermissions(): array
     {
+        return [
+            'overview' => null,
+            'donations' => 'donations.view',
+            'volunteers' => 'volunteers.view',
+            'events' => 'events.view',
+            'beneficiaries' => 'beneficiaries.view',
+        ];
+    }
+
+    public function canViewCategory(string $category): bool
+    {
+        $permission = $this->categoryPermissions()[$category] ?? null;
+
+        return $permission === null || auth()->user()?->hasPermission($permission);
+    }
+
+    /**
+     * Rows behind the detail table, oldest first (id breaks ties so pages stay stable).
+     * Null for categories with no detail table, such as the overview.
+     */
+    protected function detailQuery(): ?Builder
+    {
+        abort_unless($this->canViewCategory($this->category), 403);
+
         [$from, $to] = $this->range();
 
-        return match ($this->category) {
+        $query = match ($this->category) {
             'donations' => Donation::query()
                 ->with('event')
                 ->whereBetween('received_at', [$from, $to])
-                ->orderBy('received_at')
-                ->when($limit, fn ($q) => $q->limit($limit))
-                ->get()
-                ->map(fn ($d) => [
-                    'Received at' => $d->received_at?->toDateString(),
-                    'Donor' => $d->donor_name,
-                    'Amount' => number_format($d->amount_cents / 100, 2),
-                    'Currency' => $d->currency,
-                    'Method' => $d->payment_method,
-                    'Event' => $d->event?->title ?? '',
-                ])
-                ->all(),
+                ->orderBy('received_at'),
             'volunteers' => VolunteerApplication::query()
                 ->whereBetween('created_at', [$from, $to])
-                ->orderBy('created_at')
-                ->when($limit, fn ($q) => $q->limit($limit))
-                ->get()
-                ->map(fn ($a) => [
-                    'Submitted' => $a->created_at?->toDateString(),
-                    'Name' => $a->full_name,
-                    'Email' => $a->email,
-                    'Country' => $a->country,
-                    'Availability' => $a->availability->label(),
-                    'Status' => $a->status->label(),
-                ])
-                ->all(),
+                ->orderBy('created_at'),
             // "Raised" = all-time total for the event in the base currency, matching
             // ReportAnalyticsService::events().
             'events' => Event::query()
                 ->whereBetween('starts_at', [$from, $to])
                 ->withSum(['donations as raised_cents' => fn ($q) => $q->inBaseCurrency()], 'amount_cents')
-                ->orderBy('starts_at')
-                ->when($limit, fn ($q) => $q->limit($limit))
-                ->get()
-                ->map(fn ($e) => [
-                    'Starts' => $e->starts_at?->toDateString(),
-                    'Title' => $e->title,
-                    'Location' => $e->location.', '.$e->country,
-                    'Status' => $e->status->label(),
-                    'Goal' => $e->goal_cents ? number_format($e->goal_cents / 100, 2) : '—',
-                    'Raised' => number_format(((int) $e->raised_cents) / 100, 2),
-                ])
-                ->all(),
+                ->orderBy('starts_at'),
             'beneficiaries' => Beneficiary::query()
                 ->whereBetween('created_at', [$from, $to])
-                ->orderBy('created_at')
-                ->when($limit, fn ($q) => $q->limit($limit))
-                ->get()
-                ->map(fn ($b) => [
-                    'Recorded' => $b->created_at?->toDateString(),
-                    'Name' => $b->full_name,
-                    'Country' => $b->country,
-                    'Region' => $b->region,
-                    'Category' => $b->category->label(),
-                    'Status' => $b->status->label(),
-                ])
-                ->all(),
-            default => [],
+                ->orderBy('created_at'),
+            default => null,
+        };
+
+        return $query?->orderBy('id');
+    }
+
+    /**
+     * @return array<string, string|int|null>
+     */
+    protected function detailRow(Model $record): array
+    {
+        return match ($this->category) {
+            'donations' => [
+                'Received at' => $record->received_at?->toDateString(),
+                'Donor' => $record->donor_name,
+                'Amount' => number_format($record->amount_cents / 100, 2),
+                'Currency' => $record->currency,
+                'Method' => $record->payment_method,
+                'Event' => $record->event?->title ?? '',
+            ],
+            'volunteers' => [
+                'Submitted' => $record->created_at?->toDateString(),
+                'Name' => $record->full_name,
+                'Email' => $record->email,
+                'Country' => $record->country,
+                'Availability' => $record->availability->label(),
+                'Status' => $record->status->label(),
+            ],
+            'events' => [
+                'Starts' => $record->starts_at?->toDateString(),
+                'Title' => $record->title,
+                'Location' => $record->location.', '.$record->country,
+                'Status' => $record->status->label(),
+                'Goal' => $record->goal_cents ? number_format($record->goal_cents / 100, 2) : '—',
+                'Raised' => number_format(((int) $record->raised_cents) / 100, 2),
+            ],
+            'beneficiaries' => [
+                'Recorded' => $record->created_at?->toDateString(),
+                'Name' => $record->full_name,
+                'Country' => $record->country,
+                'Region' => $record->region,
+                'Category' => $record->category->label(),
+                'Status' => $record->status->label(),
+            ],
         };
     }
 
-    #[Computed]
-    public function rows(): array
+    /**
+     * @return array<int, array<string, string|int|null>>
+     */
+    protected function rowsForCategory(?int $limit = null): array
     {
-        return $this->rowsForCategory();
+        $query = $this->detailQuery();
+
+        if (! $query) {
+            return [];
+        }
+
+        return $query
+            ->when($limit, fn ($q) => $q->limit($limit))
+            ->get()
+            ->map(fn (Model $record) => $this->detailRow($record))
+            ->all();
+    }
+
+    /**
+     * What CSV and Excel carry: every detail row, or the KPIs on the overview tab,
+     * which has no detail table.
+     *
+     * @return array<int, array<string, string|int|null>>
+     */
+    protected function exportRows(): array
+    {
+        if ($this->category !== 'overview') {
+            return $this->rowsForCategory();
+        }
+
+        $kpis = $this->analytics['kpis'];
+
+        return collect([
+            ['Donations received', Money::format($kpis['donations']['value'], 2), $kpis['donations']['delta']],
+            ['Volunteer applications', $kpis['volunteer_apps']['value'], $kpis['volunteer_apps']['delta']],
+            ['New beneficiaries', $kpis['beneficiaries']['value'], $kpis['beneficiaries']['delta']],
+            ['Events', $kpis['events']['value'], $kpis['events']['delta']],
+        ])->map(fn (array $kpi) => [
+            'Metric' => $kpi[0],
+            'Value' => $kpi[1],
+            'Change on prior period' => $kpi[2] === null ? '—' : $kpi[2].'%',
+        ])->all();
+    }
+
+    #[Computed]
+    public function detailRows(): ?LengthAwarePaginator
+    {
+        return $this->detailQuery()
+            ?->paginate(self::TABLE_PER_PAGE)
+            ->through(fn (Model $record) => $this->detailRow($record));
     }
 
     #[Computed]
     public function analytics(): array
     {
+        abort_unless($this->canViewCategory($this->category), 403);
+
         [$from, $to] = $this->range();
 
-        return app(ReportAnalyticsService::class)->for($this->category, $from->toDateString(), $to->toDateString());
+        $analytics = app(ReportAnalyticsService::class)->for($this->category, $from->toDateString(), $to->toDateString());
+
+        // Totals are fine for anyone on the overview; donors' names need donations.view.
+        return auth()->user()?->canDo('donations', 'view') ? $analytics : Arr::except($analytics, 'top_donors');
     }
 
     public function downloadCsv(): StreamedResponse
@@ -172,7 +270,7 @@ new class extends Component
 
         $this->validate();
 
-        $rows = $this->rowsForCategory();
+        $rows = $this->exportRows();
         $filename = "report-{$this->category}-".now()->format('Y-m-d-His').'.csv';
 
         return response()->streamDownload(function () use ($rows) {
@@ -195,7 +293,7 @@ new class extends Component
 
         $this->validate();
 
-        $rows = $this->rowsForCategory();
+        $rows = $this->exportRows();
         $filename = "report-{$this->category}-".now()->format('Y-m-d-His').'.xlsx';
 
         return response()->streamDownload(function () use ($rows): void {
@@ -254,6 +352,7 @@ new class extends Component
         'events' => 'Events',
         'beneficiaries' => 'Beneficiaries',
     ];
+    $categories = array_filter($categories, fn (string $value): bool => $this->canViewCategory($value), ARRAY_FILTER_USE_KEY);
 @endphp
 
 <div class="space-y-6">
@@ -287,7 +386,7 @@ new class extends Component
                 </button>
                 @endif
                 @if (filled($fromDate) || filled($toDate))
-                    <button type="button" wire:click="$reset('fromDate','toDate')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
+                    <button type="button" wire:click="clearDateRange" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                         <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         Clear date range
                     </button>
@@ -336,25 +435,26 @@ new class extends Component
 
     {{-- Detail table (skipped on overview) --}}
     @if ($category !== 'overview')
+        @php $detailRows = $this->detailRows; @endphp
         <div class="overflow-hidden rounded-3xl border border-cream-300 bg-surface shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
             <header class="border-b border-cream-200 px-6 py-4">
                 <h3 class="font-serif text-lg font-bold text-ink-900">Detail table</h3>
-                <p class="mt-0.5 text-xs text-ink-500">{{ count($this->rows) }} row(s) in this view · export via the actions menu</p>
+                <p class="mt-0.5 text-xs text-ink-500">{{ number_format($detailRows->total()) }} row(s) in this view · export via the actions menu</p>
             </header>
-            @if (empty($this->rows))
+            @if ($detailRows->isEmpty())
                 <div class="p-10 text-center text-sm text-ink-500">No rows for that category and range.</div>
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-cream-100/60 text-xs font-semibold uppercase tracking-[0.18em] text-ink-500">
                             <tr>
-                                @foreach (array_keys($this->rows[0]) as $heading)
+                                @foreach (array_keys($detailRows->first()) as $heading)
                                     <th class="px-6 py-3">{{ $heading }}</th>
                                 @endforeach
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-cream-200 text-sm">
-                            @foreach ($this->rows as $row)
+                            @foreach ($detailRows as $row)
                                 <tr class="transition hover:bg-cream-100/40">
                                     @foreach ($row as $cell)
                                         <td class="px-6 py-3 text-ink-700">{{ $cell }}</td>
@@ -364,6 +464,9 @@ new class extends Component
                         </tbody>
                     </table>
                 </div>
+                @if ($detailRows->hasPages())
+                    <div class="border-t border-cream-200 px-6 py-4">{{ $detailRows->links() }}</div>
+                @endif
             @endif
         </div>
     @endif

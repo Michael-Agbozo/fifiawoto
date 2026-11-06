@@ -18,7 +18,7 @@ class EventRegistrationConfirmation extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "You're signed up: ".$this->registration->event->title);
+        return new Envelope(subject: __("You're signed up: :v1", ['v1' => $this->registration->event->title]));
     }
 
     public function content(): Content

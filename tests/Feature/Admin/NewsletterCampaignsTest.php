@@ -118,3 +118,32 @@ it('stops a role without the send permission from sending', function () {
 
     Livewire::actingAs($user)->test('admin.newsletter-campaigns')->call('askSend', $campaign->id)->assertForbidden();
 });
+
+it('restarts a campaign whose job stopped without emailing anyone twice', function () {
+    Mail::fake();
+    $campaign = NewsletterCampaign::factory()->create(['status' => NewsletterCampaignStatus::Sending, 'started_at' => now()->subHours(2)]);
+    $done = NewsletterSubscriber::factory()->create();
+    NewsletterSubscriber::factory()->create();
+    $campaign->recipients()->create([
+        'newsletter_subscriber_id' => $done->id,
+        'email' => $done->email,
+        'status' => NewsletterCampaignRecipient::STATUS_SENT,
+    ]);
+
+    Livewire::test('admin.newsletter-campaigns')->call('resume', $campaign->id);
+
+    Mail::assertSentCount(1);
+    expect($campaign->recipients()->where('status', NewsletterCampaignRecipient::STATUS_SENT)->count())->toBe(2)
+        ->and($campaign->fresh()->status)->toBe(NewsletterCampaignStatus::Sent);
+});
+
+it('does not restart a campaign that has only just started', function () {
+    Mail::fake();
+    NewsletterSubscriber::factory()->create();
+    $campaign = NewsletterCampaign::factory()->create(['status' => NewsletterCampaignStatus::Sending, 'started_at' => now()->subMinutes(5)]);
+
+    Livewire::test('admin.newsletter-campaigns')->call('resume', $campaign->id);
+
+    Mail::assertNothingSent();
+    expect($campaign->recipients()->count())->toBe(0);
+});

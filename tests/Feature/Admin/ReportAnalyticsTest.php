@@ -172,3 +172,23 @@ it('excludes donations outside the base currency from analytics', function () {
         ->and(collect($donations['top_donors'])->pluck('donor_name')->all())->toBe(['Usd Donor'])
         ->and($overview['kpis']['donations']['value'])->toEqual(100);
 });
+
+it('charts only the days in a short range', function () {
+    $service = app(ReportAnalyticsService::class);
+    $today = now()->toDateString();
+
+    expect($service->for('donations', $today, $today)['daily'])->toHaveCount(1)
+        ->and($service->for('donations', now()->subDays(2)->toDateString(), $today)['daily'])->toHaveCount(3);
+});
+
+it('renders the donations chart for a one-day range', function () {
+    Donation::factory()->create(['amount_cents' => 5000, 'received_at' => now()]);
+
+    Livewire::test('admin.reports')
+        ->set('category', 'donations')
+        ->set('fromDate', now()->toDateString())
+        ->set('toDate', now()->toDateString())
+        ->assertOk()
+        ->assertSee('1 day ·')
+        ->assertSeeHtml('<circle cx="360"');
+});

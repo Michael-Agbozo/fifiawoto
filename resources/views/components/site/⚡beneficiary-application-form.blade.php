@@ -6,12 +6,12 @@ use App\Enums\BeneficiaryApplicationStatus;
 use App\Mail\BeneficiaryApplicationReceived;
 use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryDocument;
+use App\Support\SecureDocumentStore;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use App\Support\SecureDocumentStore;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -76,7 +76,7 @@ new class extends Component
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
-            $this->addError('rate', "Too many submissions. Please wait {$seconds} seconds and try again.");
+            $this->addError('rate', __('Too many submissions. Please wait :v1 seconds and try again.', ['v1' => $seconds]));
 
             return;
         }
@@ -138,6 +138,8 @@ new class extends Component
 
             throw $e;
         }
+
+        app(SecureDocumentStore::class)->discardTemporaryUploads($this->documents);
 
         Mail::to(config('notifications.admin_email'))
             ->queue(new BeneficiaryApplicationReceived($application));

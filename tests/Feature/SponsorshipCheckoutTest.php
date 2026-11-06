@@ -9,6 +9,7 @@ use App\Models\ContactMessage;
 use App\Models\Donation;
 use App\Models\Sponsorship;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -237,4 +238,38 @@ it('stops a request if the child was sponsored in the meantime', function () {
     $component->call('submit')->assertHasErrors('review');
 
     expect(Sponsorship::query()->where('status', SponsorshipStatus::Pending->value)->count())->toBe(0);
+});
+
+it('rechecks sponsorship once the child is locked', function () {
+    Mail::fake();
+    $child = checkoutProfile();
+    $component = filledSponsorshipCheckout($child)->call('review')->set('consent', true);
+    $this->travel(5)->seconds();
+    $baseLevel = DB::transactionLevel();
+    $sponsoredInTheMeantime = false;
+
+    // Another request finishes between the first check and this request getting the lock.
+    Beneficiary::retrieved(function (Beneficiary $retrieved) use ($child, $baseLevel, &$sponsoredInTheMeantime): void {
+        if (! $sponsoredInTheMeantime && DB::transactionLevel() > $baseLevel && $retrieved->is($child)) {
+            $sponsoredInTheMeantime = true;
+            Sponsorship::factory()->active()->create(['beneficiary_id' => $child->id]);
+        }
+    });
+
+    $component->call('submit')->assertHasErrors('review')->assertSet('step', 'review');
+
+    expect($sponsoredInTheMeantime)->toBeTrue()
+        ->and(Sponsorship::query()->where('status', SponsorshipStatus::Pending->value)->count())->toBe(0)
+        ->and(ContactMessage::query()->count())->toBe(0);
+    Mail::assertNothingQueued();
+});
+
+it('shows checkout errors in French', function () {
+    app()->setLocale('fr');
+    $child = checkoutProfile();
+
+    filledSponsorshipCheckout($child)
+        ->set('consent', true)
+        ->call('submit')
+        ->assertSee('Veuillez vérifier vos informations');
 });

@@ -8,7 +8,10 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Livewire\Features\SupportFileUploads\FileUploadConfiguration;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use RuntimeException;
+use Throwable;
 
 /**
  * Scans and encrypts beneficiary + application documents (IDs, medical records…).
@@ -65,33 +68,91 @@ class SecureDocumentStore
         return $path;
     }
 
-    /** Replace an existing plain file with its encrypted form, checking the result first. */
+    /**
+     * Delete Livewire's plaintext temporary copies and the original names kept beside
+     * them. Call once the encrypted files and
+     * their rows are safely saved, so a failed save can still be retried from the upload.
+     *
+     * @param  iterable<int|string, UploadedFile>  $uploads
+     */
+    public function discardTemporaryUploads(iterable $uploads): void
+    {
+        foreach ($uploads as $upload) {
+            if (! $upload instanceof TemporaryUploadedFile) {
+                continue;
+            }
+
+            $metadataPath = FileUploadConfiguration::path($upload->getFilename().'.json', false);
+
+            if (! $upload->delete() || ! FileUploadConfiguration::storage()->delete($metadataPath)) {
+                report(new RuntimeException('Could not delete a temporary upload after storing it.'));
+            }
+        }
+    }
+
+    /**
+     * Replace an existing plain file with its encrypted form, checking the result first.
+     * A file that is already encrypted is left alone, as after a crash between replacing
+     * the file and recording that it was encrypted.
+     */
     public function encryptInPlace(string $path): bool
     {
+        if ($this->isEncrypted($path)) {
+            return true;
+        }
+
         $disk = Storage::disk(self::DISK);
         $temporaryPath = $path.'.encrypting';
         $source = $disk->readStream($path);
 
-        if (! $source || ! $this->writeEncrypted($source, $temporaryPath)) {
+        if (! $source) {
             return false;
         }
 
-        fclose($source);
-
-        $encrypted = $disk->readStream($temporaryPath);
-        $original = hash_init('sha256');
-        foreach ($this->decrypt($encrypted) as $chunk) {
-            hash_update($original, $chunk);
+        try {
+            $written = $this->writeEncrypted($source, $temporaryPath);
+        } finally {
+            fclose($source);
         }
-        fclose($encrypted);
 
-        if (hash_final($original) !== hash('sha256', (string) $disk->get($path))) {
+        try {
+            return $written
+                && $this->decryptedHash($temporaryPath) === $this->plainHash($path)
+                && $disk->move($temporaryPath, $path);
+        } finally {
             $disk->delete($temporaryPath);
+        }
+    }
 
+    /** Whether the file on the private disk decrypts completely with the app's keys. */
+    public function isEncrypted(string $path): bool
+    {
+        $stream = Storage::disk(self::DISK)->readStream($path);
+
+        if (! $stream) {
             return false;
         }
 
-        return $disk->move($temporaryPath, $path);
+        try {
+            // A plain file's first bytes rarely make a sensible chunk length, which saves reading all of it.
+            $header = (string) fread($stream, 4);
+
+            if (strlen($header) < 4 || unpack('N', $header)[1] > self::CHUNK_BYTES * 3) {
+                return false;
+            }
+
+            rewind($stream);
+
+            foreach ($this->decrypt($stream) as $chunk) {
+                // Every chunk has to decrypt and be in order.
+            }
+
+            return true;
+        } catch (Throwable) {
+            return false;
+        } finally {
+            fclose($stream);
+        }
     }
 
     /**
@@ -127,6 +188,32 @@ class SecureDocumentStore
         if (! $sawLast) {
             throw new RuntimeException('Encrypted document is corrupt: the file is incomplete.');
         }
+    }
+
+    private function decryptedHash(string $path): string
+    {
+        $stream = Storage::disk(self::DISK)->readStream($path);
+        $hash = hash_init('sha256');
+
+        try {
+            foreach ($this->decrypt($stream) as $chunk) {
+                hash_update($hash, $chunk);
+            }
+        } finally {
+            fclose($stream);
+        }
+
+        return hash_final($hash);
+    }
+
+    private function plainHash(string $path): string
+    {
+        $stream = Storage::disk(self::DISK)->readStream($path);
+        $hash = hash_init('sha256');
+        hash_update_stream($hash, $stream);
+        fclose($stream);
+
+        return hash_final($hash);
     }
 
     /** @param resource $source */

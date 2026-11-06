@@ -46,46 +46,6 @@ enum UserRole: string
         return in_array($this, self::adminRoles(), true);
     }
 
-    public function canManageBeneficiaries(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::FoundationStaff], true);
-    }
-
-    public function canManageEvents(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::FoundationStaff], true);
-    }
-
-    public function canManageDonations(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::FoundationStaff], true);
-    }
-
-    public function canManageVolunteers(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::VolunteerCoordinator], true);
-    }
-
-    public function canManageMedia(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::MediaManager], true);
-    }
-
-    public function canManageUsers(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin], true);
-    }
-
-    public function canViewReports(): bool
-    {
-        return in_array($this, [self::Owner, self::SuperAdmin, self::FoundationStaff], true);
-    }
-
-    public function canViewSystemLogs(): bool
-    {
-        return $this === self::Owner;
-    }
-
     /**
      * Default granular permission keys granted by this role.
      *
@@ -113,7 +73,7 @@ enum UserRole: string
             ),
             self::VolunteerCoordinator => array_merge(
                 self::crudFor('volunteers'),
-                ['beneficiaries.view', 'events.view', 'reports.view', 'inbox.view'],
+                ['events.view', 'reports.view', 'inbox.view'],
             ),
             self::MediaManager => array_merge(
                 self::crudFor('media'),

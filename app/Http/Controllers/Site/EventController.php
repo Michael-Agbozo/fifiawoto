@@ -30,7 +30,7 @@ class EventController extends Controller
 
         $events = $query->orderBy('starts_at')->get();
 
-        [$upcoming, $past] = $events->partition(fn (Event $e) => $e->starts_at?->isFuture() ?? false);
+        [$upcoming, $past] = $events->partition(fn (Event $e) => $e->isUpcoming());
 
         return view('site.events.index', [
             'upcoming' => $upcoming->values(),

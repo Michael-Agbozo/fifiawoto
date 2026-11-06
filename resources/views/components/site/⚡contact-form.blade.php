@@ -5,6 +5,7 @@ use App\Enums\ContactMessageStatus;
 use App\Enums\ContactSubject;
 use App\Mail\ContactFormReceived;
 use App\Models\ContactMessage;
+use App\Models\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Validate;
@@ -34,9 +35,12 @@ new class extends Component
     #[\Livewire\Attributes\Locked]
     public ?string $sponsorshipProfile = null;
 
+    #[\Livewire\Attributes\Locked]
+    public ?int $eventId = null;
+
     public bool $submitted = false;
 
-    /** Pre-select the subject from links like /contact?subject=donation. */
+    /** Pre-select the subject and event from links like /contact?subject=donation&event=slug. */
     public function mount(?string $sponsorshipProfile = null): void
     {
         $this->sponsorshipProfile = $sponsorshipProfile;
@@ -47,6 +51,16 @@ new class extends Component
         if ($this->sponsorshipProfile) {
             $this->subject = ContactSubject::Sponsorship->value;
         }
+
+        $eventSlug = request()->query('event');
+        if (! $this->sponsorshipProfile && is_string($eventSlug)) {
+            $this->eventId = Event::query()->published()->where('slug', $eventSlug)->value('id');
+        }
+    }
+
+    private function contextEvent(): ?Event
+    {
+        return $this->eventId ? Event::query()->published()->find($this->eventId) : null;
     }
 
     /**
@@ -74,7 +88,7 @@ new class extends Component
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
-            $this->addError('rate', "Too many submissions. Please wait {$seconds} seconds and try again.");
+            $this->addError('rate', __('Too many submissions. Please wait :v1 seconds and try again.', ['v1' => $seconds]));
 
             return;
         }
@@ -91,6 +105,9 @@ new class extends Component
 
         if (isset($child)) {
             $data['message'] = 'Sponsorship enquiry: '.$child->public_display_name.' ('.$child->public_sponsorship_id.")\n\n".$data['message'];
+        }
+        if ($event = $this->contextEvent()) {
+            $data['message'] = 'Event: '.$event->title."\n\n".$data['message'];
         }
         RateLimiter::hit($key, 60);
 
@@ -125,6 +142,7 @@ new class extends Component
     {
         return [
             'subjectOptions' => ContactSubject::options(),
+            'eventTitle' => $this->contextEvent()?->title,
             'sponsorshipName' => $this->sponsorshipProfile
                 ? \App\Models\Beneficiary::query()->publicSponsorship()->where('public_sponsorship_id', $this->sponsorshipProfile)->firstOrFail()->public_display_name
                 : null,
@@ -137,7 +155,7 @@ new class extends Component
         <div class="rounded-3xl border border-brand-100 bg-surface p-8 shadow-sm sm:p-10">
             <div class="text-center">
                 <p class="eyebrow">{{ __('Send a Message') }}</p>
-                <h2 id="contact-form-heading" class="section-title text-heading mt-3">{{ $sponsorshipName ? 'Enquire about supporting '.$sponsorshipName : 'Contact the Foundation' }}</h2>
+                <h2 id="contact-form-heading" class="section-title text-heading mt-3">{{ $sponsorshipName ? __('Enquire about supporting :v1', ['v1' => $sponsorshipName]) : __('Contact the Foundation') }}</h2>
                 <p class="mt-3 text-sm text-ink-500">
                     @if ($sponsorshipName)
                         {{ __('Your enquiry is about :v1. Our team will help you explore sponsorship and explain the next steps.', ['v1' => $sponsorshipName]) }}
@@ -145,6 +163,11 @@ new class extends Component
                         {{ __('We welcome inquiries from individuals, organizations, and partners interested in supporting the mission.') }}
                     @endif
                 </p>
+                @if ($eventTitle)
+                    <p class="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-heading-soft">
+                        {{ __('Your message is about:') }} <strong class="font-semibold text-heading">{{ $eventTitle }}</strong>
+                    </p>
+                @endif
             </div>
 
             @if ($submitted)
@@ -213,7 +236,7 @@ new class extends Component
                         <button type="submit"
                             class="btn btn-primary disabled:opacity-60"
                             wire:loading.attr="disabled">
-                            <span wire:loading.remove>{{ $sponsorshipProfile ? 'Send sponsorship enquiry' : 'Send Message' }}</span>
+                            <span wire:loading.remove>{{ $sponsorshipProfile ? __('Send sponsorship enquiry') : __('Send Message') }}</span>
                             <span wire:loading>{{ __('Sending…') }}</span>
                         </button>
                     </div>

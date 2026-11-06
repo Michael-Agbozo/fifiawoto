@@ -8,6 +8,7 @@ use App\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Models\Volunteer;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -256,10 +257,7 @@ new class extends Component
             Storage::disk('public')->delete($oldHeroPath);
         }
 
-        $queued = $this->notifyVolunteersOnFirstPublish($event);
-        if ($queued > 0) {
-            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
-        }
+        $this->notifyVolunteersOnFirstPublish($event);
 
         $this->resetForm();
     }
@@ -275,10 +273,7 @@ new class extends Component
         ]);
         $this->flashMessage = "{$e->title} is now published.";
 
-        $queued = $this->notifyVolunteersOnFirstPublish($e);
-        if ($queued > 0) {
-            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
-        }
+        $this->notifyVolunteersOnFirstPublish($e);
     }
 
     /**
@@ -293,33 +288,53 @@ new class extends Component
     }
 
     /**
-     * Queue volunteer invitations the first time an event is Published.
-     * The conditional update claims the event atomically so invites are
-     * never sent twice, even under concurrent publishes.
+     * Queue volunteer invitations the first time an event is Published, unless it
+     * has already ended. The event row is locked for the whole batch and only marked
+     * as notified once every invitation is queued. The database queue shares this
+     * transaction, so a failure rolls back the whole batch and publishing again
+     * retries it, and two concurrent publishes can't both send.
      */
-    protected function notifyVolunteersOnFirstPublish(Event $event): int
+    protected function notifyVolunteersOnFirstPublish(Event $event): void
     {
-        $claimed = Event::query()
-            ->whereKey($event->id)
-            ->where('status', EventStatus::Published->value)
-            ->whereNull('volunteers_notified_at')
-            ->update(['volunteers_notified_at' => now()]);
-
-        if ($claimed === 0) {
-            return 0;
+        if (($event->ends_at ?? $event->starts_at)?->endOfDay()->isPast()) {
+            return;
         }
 
-        $event->refresh();
+        try {
+            $queued = DB::transaction(function () use ($event): int {
+                $claimed = Event::query()
+                    ->whereKey($event->id)
+                    ->where('status', EventStatus::Published->value)
+                    ->whereNull('volunteers_notified_at')
+                    ->lockForUpdate()
+                    ->first();
 
-        $queued = 0;
-        Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($event, &$queued) {
-            foreach ($volunteers as $volunteer) {
-                Mail::queue(new EventVolunteerInvitation($event, $volunteer));
-                $queued++;
-            }
-        });
+                if (! $claimed) {
+                    return 0;
+                }
 
-        return $queued;
+                $queued = 0;
+                Volunteer::query()->whereNotNull('email')->chunkById(200, function ($volunteers) use ($claimed, &$queued): void {
+                    foreach ($volunteers as $volunteer) {
+                        Mail::queue(new EventVolunteerInvitation($claimed, $volunteer));
+                        $queued++;
+                    }
+                });
+
+                $claimed->update(['volunteers_notified_at' => now()]);
+
+                return $queued;
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->flashMessage .= ' Volunteer invitations could not be queued. Unpublish and publish it again to retry.';
+
+            return;
+        }
+
+        if ($queued > 0) {
+            $this->flashMessage .= " Invitation queued for {$queued} volunteer(s).";
+        }
     }
 
     public function unpublish(int $id): void
@@ -356,7 +371,15 @@ new class extends Component
 
         $e = Event::query()->findOrFail($id);
         $title = $e->title;
+        $heroPath = $e->hero_image_path;
+
+        // Events can't be restored once deleted, so the uploaded image goes with them.
+        $e->update(['hero_image_path' => null]);
         $e->delete();
+
+        if (filled($heroPath) && str_starts_with($heroPath, 'events/')) {
+            Storage::disk('public')->delete($heroPath);
+        }
 
         $this->confirmDeleteId = null;
         $this->flashMessage = "Event '{$title}' deleted.";
@@ -453,10 +476,12 @@ new class extends Component
     >
         <x-slot:actions>
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search title, location, country" class="rounded-xl border border-cream-300 bg-surface px-3 py-2 text-xs text-ink-900 placeholder-ink-500/70 focus:border-heading focus:outline-none focus:ring-2 focus:ring-heading/15">
+            @if (auth()->user()?->canDo('events', 'create'))
             <button type="button" wire:click="startCreate" class="btn btn-primary gap-2 px-4 py-2 text-xs">
                 <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 New event
             </button>
+            @endif
             @if (filled($statusFilter) || filled($search))
                 <x-admin.actions-menu>
                     <button type="button" wire:click="$reset('statusFilter','search')" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
@@ -661,6 +686,7 @@ new class extends Component
                                         </div>
                                     @else
                                         <x-admin.actions-menu>
+                                            @if (auth()->user()?->canDo('events', 'update'))
                                             @if ($event->status !== EventStatus::Published)
                                                 <button type="button" wire:click="publish({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                     <svg class="size-4 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg>
@@ -672,18 +698,23 @@ new class extends Component
                                                     Unpublish
                                                 </button>
                                             @endif
+                                            @endif
                                             <button type="button" wire:click="showRegistrations({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
                                                 Sign-ups
                                             </button>
+                                            @if (auth()->user()?->canDo('events', 'update'))
                                             <button type="button" wire:click="startEdit({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink-700 transition hover:bg-cream-100 hover:text-heading">
                                                 <svg class="size-4 text-ink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 1 1 2.915 2.914L7.5 19.679l-4 1 1-4L16.862 4.487Z"/></svg>
                                                 Edit
                                             </button>
+                                            @endif
+                                            @if (auth()->user()?->canDo('events', 'delete'))
                                             <button type="button" wire:click="askDelete({{ $event->id }})" @click="open = false" class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50">
                                                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
                                                 Delete
                                             </button>
+                                            @endif
                                         </x-admin.actions-menu>
                                     @endif
                                 </div>

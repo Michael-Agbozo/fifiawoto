@@ -33,11 +33,13 @@ it('gates beneficiaries to Foundation Staff but blocks Media Manager', function 
     $this->actingAs($blocked)->get(route('admin.beneficiaries.index'))->assertForbidden();
 });
 
-it('gates volunteers to Volunteer Coordinator but blocks Foundation Staff', function () {
-    $allowed = User::factory()->volunteerCoordinator()->create();
-    $blocked = User::factory()->foundationStaff()->create();
+it('opens volunteers to Volunteer Coordinator and view-only Foundation Staff but blocks Media Manager', function () {
+    $coordinator = User::factory()->volunteerCoordinator()->create();
+    $foundationStaff = User::factory()->foundationStaff()->create();
+    $blocked = User::factory()->mediaManager()->create();
 
-    $this->actingAs($allowed)->get(route('admin.volunteers.index'))->assertOk();
+    $this->actingAs($coordinator)->get(route('admin.volunteers.index'))->assertOk();
+    $this->actingAs($foundationStaff)->get(route('admin.volunteers.index'))->assertOk();
     $this->actingAs($blocked)->get(route('admin.volunteers.index'))->assertForbidden();
 });
 

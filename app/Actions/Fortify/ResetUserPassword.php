@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Models\User;
+use App\Support\UserSessions;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\ResetsUserPasswords;
 
@@ -24,6 +25,9 @@ class ResetUserPassword implements ResetsUserPasswords
 
         $user->forceFill([
             'password' => $input['password'],
+            'force_password_change' => false,
         ])->save();
+
+        UserSessions::endOthers($user);
     }
 }

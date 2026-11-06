@@ -68,7 +68,7 @@
     </div>
 </article>
 
-<div class="grid gap-4 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
     <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Beneficiaries by category</p>
         <div class="mt-5">
@@ -81,6 +81,7 @@
     </article>
 
     <article class="rounded-3xl border border-cream-300 bg-surface p-6 shadow-[0_8px_30px_-15px_rgba(0,4,78,0.08)]">
+        @if (array_key_exists('top_donors', $analytics))
         <p class="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top donors</p>
         <ul class="mt-4 space-y-3 text-sm">
             @forelse ($analytics['top_donors'] ?? [] as $donor)
@@ -95,6 +96,7 @@
                 <li class="text-xs text-ink-500">No donor activity in range.</li>
             @endforelse
         </ul>
+        @endif
 
         <p class="mt-6 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-label">Top events</p>
         <ul class="mt-3 space-y-2 text-sm">

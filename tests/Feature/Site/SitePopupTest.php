@@ -55,7 +55,7 @@ it('promotes an upcoming event and hides once it has passed', function () {
 
     $this->get(route('home'))->assertSee('Back to School Drive')->assertSee(route('events.show', $event), false);
 
-    $event->update(['starts_at' => now()->subWeek()]);
+    $event->update(['starts_at' => now()->subWeek(), 'ends_at' => now()->subWeek()]);
     $this->get(route('home'))->assertDontSee('data-site-popup', false);
 });
 
@@ -140,4 +140,41 @@ it('restricts popup settings to permitted admins', function () {
 
     $this->get(route('admin.settings.popup'))->assertForbidden();
     Livewire::test('admin.popup-settings')->assertForbidden();
+});
+
+it('only lets the popup promote a published upcoming event', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+
+    $past = Event::factory()->create(['status' => EventStatus::Published, 'published_at' => now()->subWeek(), 'starts_at' => now()->subDays(3), 'ends_at' => now()->subDays(3)]);
+    $draft = Event::factory()->create(['status' => EventStatus::Draft, 'starts_at' => now()->addWeek(), 'ends_at' => now()->addWeek()]);
+    $upcoming = Event::factory()->create(['status' => EventStatus::Published, 'published_at' => now()->subDay(), 'starts_at' => now()->addWeek(), 'ends_at' => now()->addWeek()]);
+
+    foreach ([$past, $draft] as $event) {
+        Livewire::test('admin.popup-settings')
+            ->set('type', 'event')
+            ->set('event_id', $event->id)
+            ->call('save')
+            ->assertHasErrors(['event_id' => 'in']);
+    }
+
+    Livewire::test('admin.popup-settings')
+        ->set('type', 'event')
+        ->set('event_id', $upcoming->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(SitePopup::config()['event_id'])->toBe($upcoming->id);
+});
+
+it('ignores a stale event when the popup is another type', function () {
+    $this->actingAs(User::factory()->superAdmin()->create());
+    $past = Event::factory()->create(['status' => EventStatus::Published, 'published_at' => now()->subWeek(), 'starts_at' => now()->subDays(3), 'ends_at' => now()->subDays(3)]);
+
+    Livewire::test('admin.popup-settings')
+        ->set('type', 'donate')
+        ->set('event_id', $past->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(SitePopup::config()['event_id'])->toBeNull();
 });

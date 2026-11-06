@@ -33,6 +33,13 @@ class DocumentDownloadController extends Controller
         'image/gif',
     ];
 
+    /** Photo types the record form accepts. */
+    protected const PHOTO_MIME_TYPES = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+    ];
+
     public static function beneficiaryDocumentUrl(BeneficiaryDocument $document, bool $download = false): string
     {
         return URL::temporarySignedRoute(
@@ -56,6 +63,30 @@ class DocumentDownloadController extends Controller
         abort_unless($request->user()?->canDo('beneficiaries', 'view'), 403);
 
         return $this->stream($request, $document);
+    }
+
+    /**
+     * Unsigned, so an avatar's URL stays stable across Livewire re-renders.
+     * Still requires an authenticated admin with the `view` permission.
+     */
+    public function beneficiaryPhoto(Request $request, Beneficiary $beneficiary): StreamedResponse
+    {
+        abort_unless($request->user()?->canDo('beneficiaries', 'view'), 403);
+
+        $storage = Storage::disk(Beneficiary::PRIVATE_PHOTO_DISK);
+
+        abort_unless(
+            $beneficiary->photo_disk === Beneficiary::PRIVATE_PHOTO_DISK
+                && filled($beneficiary->photo_path)
+                && $storage->exists($beneficiary->photo_path)
+                && in_array($storage->mimeType($beneficiary->photo_path), self::PHOTO_MIME_TYPES, true),
+            404,
+        );
+
+        return $storage->response($beneficiary->photo_path, null, [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     public function applicationDocument(Request $request, BeneficiaryApplication $application, BeneficiaryApplicationDocument $document): StreamedResponse
