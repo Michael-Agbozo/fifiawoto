@@ -50,6 +50,7 @@ new class extends Component
             'form.youtube_url' => $socialRule,
             'form.hero_text' => ['required', 'string', 'max:300'],
             'form.baseline_children' => ['required', 'integer', 'min:0', 'max:10000000'],
+            'form.baseline_women' => ['required', 'integer', 'min:0', 'max:10000000'],
             'form.baseline_communities' => ['required', 'integer', 'min:0', 'max:100000'],
             'form.baseline_countries' => ['required', 'integer', 'min:0', 'max:300'],
             'form.baseline_volunteer_hours' => ['required', 'integer', 'min:0', 'max:100000000'],
@@ -105,7 +106,7 @@ new class extends Component
         return self::HERO_SLOTS;
     }
 
-    /** @return array{children: int, communities: int, countries: int, volunteer_hours: int} */
+    /** @return array{children: int, women: int, communities: int, countries: int, volunteer_hours: int} */
     #[Computed]
     public function impact(): array
     {
@@ -190,9 +191,10 @@ new class extends Component
         <legend class="sr-only">Impact numbers</legend>
         <h2 class="font-serif text-xl text-heading">Impact numbers</h2>
         <p class="text-sm text-ink-500">Starting figures cover work done before this system existed. New beneficiary records and logged volunteer hours are counted automatically.</p>
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             @foreach ([
                 ['baseline_children', 'Children supported', $this->impact['children'], 'New records are added to this.'],
+                ['baseline_women', 'Women empowered', $this->impact['women'], 'Supported women aged 18 or over, and widows, are added to this. Hidden while the total is 0.'],
                 ['baseline_communities', 'Communities', $this->impact['communities'], 'Shows whichever is higher: this or the regions on record.'],
                 ['baseline_countries', 'Countries', $this->impact['countries'], 'Shows whichever is higher: this or the countries on record.'],
                 ['baseline_volunteer_hours', 'Volunteer hours', $this->impact['volunteer_hours'], 'Logged hours are added to this. Hidden while the total is 0.'],

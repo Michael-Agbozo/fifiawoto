@@ -704,5 +704,8 @@
 "Confirm your newsletter subscription": "Confirmez votre abonnement à la newsletter",
 "Someone (hopefully you) asked to subscribe **:v1** to the :v2 newsletter. This address previously unsubscribed, so we won't send anything until you confirm.": "Quelqu'un (vous, nous l'espérons) a demandé à abonner **:v1** à la newsletter de :v2. Cette adresse s'était désabonnée : nous n'enverrons donc rien tant que vous n'aurez pas confirmé.",
 "If you didn't request this, you can ignore this email and you'll stay unsubscribed. The link expires in :v1 hours.": "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail et vous resterez désabonné. Le lien expire dans :v1 heures.",
-"Don't want to hear from us?": "Vous ne souhaitez plus recevoir nos messages ?"
+"Don't want to hear from us?": "Vous ne souhaitez plus recevoir nos messages ?",
+"Women Empowered": "Femmes autonomisées",
+"Watch :v1’s story": "Voir le témoignage de :v1",
+"Video from :v1": "Vidéo de :v1"
 }

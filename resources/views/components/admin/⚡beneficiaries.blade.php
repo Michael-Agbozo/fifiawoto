@@ -6,6 +6,7 @@ use App\Enums\TimelineEntryType;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use App\Support\Audit;
 use App\Models\User;
 use App\Support\SecureDocumentStore;
 use Illuminate\Support\Facades\DB;
@@ -198,9 +199,12 @@ new class extends Component
 
         if ($existing) {
             $existing->update($payload);
+            if ($changes = Audit::changes($existing, Beneficiary::AUDITABLE_VALUES)) {
+                Audit::record('beneficiary.updated', "Updated {$existing->full_name}'s record (".implode(', ', $changes['fields']).').', $existing, $changes);
+            }
             $this->flashMessage = 'Beneficiary record updated.';
         } else {
-            DB::transaction(function () use ($payload): void {
+            $created = DB::transaction(function () use ($payload): Beneficiary {
                 $b = Beneficiary::query()->create($payload);
 
                 foreach ([
@@ -222,7 +226,15 @@ new class extends Component
                     'occurred_at' => now(),
                     'recorded_by' => auth()->id(),
                 ]);
+
+                return $b;
             });
+
+            Audit::record('beneficiary.created', "Created a beneficiary record for {$created->full_name}.", $created, [
+                'category' => $created->category,
+                'status' => $created->status,
+                'country' => $created->country,
+            ]);
 
             $this->flashMessage = 'Beneficiary record created with default folders.';
         }
@@ -271,6 +283,8 @@ new class extends Component
         }
 
         $b->delete();
+
+        Audit::record('beneficiary.archived', "Archived the beneficiary record for {$name}.", $b);
 
         $this->flashMessage = "Archived beneficiary record for {$name}.";
     }

@@ -29,8 +29,8 @@ Route::get('/dashboard/export', [DashboardController::class, 'exportActivity'])-
 /*
 | Each page is gated on the same "{resource}.view" key the sidebar and its Livewire
 | component check, so role defaults and per-user grants behave alike. See
-| docs/PERMISSIONS.md. Three things stay locked to a role list on purpose: identity and
-| medical files, user management, and system logs. Per-user grants don't open those.
+| docs/PERMISSIONS.md. Four things stay locked to a role list on purpose: identity and
+| medical files, user management, the audit log and system logs. Per-user grants don't open those.
 */
 
 Route::view('/beneficiaries', 'admin.beneficiaries.index')
@@ -130,6 +130,11 @@ Route::view('/settings/popup', 'admin.settings.popup')
 Route::view('/users', 'admin.users.index')
     ->middleware('role:owner,super_admin')
     ->name('users.index');
+
+// Audit log (Owner · Admin). Read-only: entries can't be edited or deleted anywhere.
+Route::view('/audit-log', 'admin.audit-log.index')
+    ->middleware('role:owner,super_admin')
+    ->name('audit-log.index');
 
 // System logs (Owner only — top-level super admin access)
 Route::view('/system-logs', 'admin.system-logs.index')

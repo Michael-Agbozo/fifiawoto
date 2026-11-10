@@ -31,6 +31,7 @@ class SiteSettings
             'hero_image_left' => 'images/foundation/outreach-2.webp',
             'hero_image_right' => 'images/foundation/outreach-3.webp',
             'baseline_children' => 520,
+            'baseline_women' => 230,
             'baseline_communities' => 18,
             'baseline_countries' => 4,
             'baseline_volunteer_hours' => 0,

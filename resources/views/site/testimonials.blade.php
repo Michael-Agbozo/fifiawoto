@@ -45,6 +45,7 @@
                             <blockquote class="mt-4 font-serif text-base leading-relaxed text-heading">
                                 &ldquo;{{ $t->quote }}&rdquo;
                             </blockquote>
+                            <x-site.testimonial-video :testimonial="$t" class="mt-4" />
                             <figcaption class="mt-5 flex items-center gap-3 border-t border-cream-300 pt-4">
                                 @if (filled($photo))
                                     <img src="{{ \App\Support\MediaUrl::for($photo) }}" alt="{{ $t->author_name }}" class="aspect-square size-12 rounded-full object-cover" loading="lazy">

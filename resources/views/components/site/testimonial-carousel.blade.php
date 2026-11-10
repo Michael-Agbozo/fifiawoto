@@ -119,6 +119,7 @@
                                         ])>
                                             &ldquo;{{ $testimonial->quote }}&rdquo;
                                         </blockquote>
+                                        <x-site.testimonial-video :testimonial="$testimonial" class="mt-5" />
                                     </div>
                                     <figcaption @class([
                                         'flex items-center gap-3',

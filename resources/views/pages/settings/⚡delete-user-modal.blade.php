@@ -2,6 +2,7 @@
 
 use App\Concerns\PasswordValidationRules;
 use App\Livewire\Actions\Logout;
+use App\Support\Audit;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -23,7 +24,13 @@ new class extends Component
             return;
         }
 
-        tap(Auth::user(), $logout(...))->delete();
+        $user = Auth::user();
+        Audit::record('user.deleted', "{$user->name} deleted their own account.", $user, [
+            'email' => $user->email,
+            'role' => $user->role,
+        ]);
+
+        tap($user, $logout(...))->delete();
 
         $this->redirect('/', navigate: true);
     }

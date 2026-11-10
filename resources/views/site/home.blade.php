@@ -156,12 +156,13 @@
             @php
                 $impactStats = array_filter([
                     [$impact['children'], '+', 'Children Supported'],
+                    $impact['women'] > 0 ? [$impact['women'], '+', 'Women Empowered'] : null,
                     [$impact['communities'], '+', 'Communities Reached'],
                     [$impact['countries'], '', 'Countries Impacted'],
                     $impact['volunteer_hours'] > 0 ? [$impact['volunteer_hours'], '+', 'Volunteer Hours'] : null,
                 ]);
             @endphp
-            <div @class(['mt-12 grid gap-4 pt-4 sm:mt-16 sm:gap-10 sm:pt-12', 'grid-cols-3' => count($impactStats) === 3, 'grid-cols-2 sm:grid-cols-4' => count($impactStats) === 4])>
+            <div @class(['mt-12 grid gap-4 pt-4 sm:mt-16 sm:gap-10 sm:pt-12', 'grid-cols-3' => count($impactStats) === 3, 'grid-cols-2 sm:grid-cols-4' => count($impactStats) === 4, 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' => count($impactStats) === 5])>
                 @foreach (array_values($impactStats) as $index => [$value, $suffix, $label])
                     <div class="reveal" style="transition-delay: {{ $index * 160 }}ms">
                         <p
