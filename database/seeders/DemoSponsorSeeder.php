@@ -26,9 +26,9 @@ class DemoSponsorSeeder extends Seeder
         }
 
         $pledges = [
-            ['Ama (Demo)', 'Hannah Whitfield', 5000, SponsorshipStatus::Active, today()->subMonths(3)->addDays(12), 3],
-            ['Kofi (Demo)', 'Marcus Bell', 4000, SponsorshipStatus::Active, today()->subMonths(2)->addDays(2), 2],
-            ['Abena (Demo)', 'Priya Nair', 7500, SponsorshipStatus::Active, today()->subMonths(3)->subDays(9), 3],
+            ['Ama (Demo)', 'Hannah Whitfield', 5000, SponsorshipStatus::Active, today()->addDays(12)->subMonthsNoOverflow(3), 3],
+            ['Kofi (Demo)', 'Marcus Bell', 4000, SponsorshipStatus::Active, today()->addDays(2)->subMonthsNoOverflow(2), 2],
+            ['Abena (Demo)', 'Priya Nair', 7500, SponsorshipStatus::Active, today()->subDays(9)->subMonthsNoOverflow(3), 3],
             ['Kwame (Demo)', 'Thomas Reed', 5000, SponsorshipStatus::Pending, null, 0],
             ['Esi (Demo)', 'Laura Mensah', 6000, SponsorshipStatus::Ended, today()->subMonths(8), 6],
         ];

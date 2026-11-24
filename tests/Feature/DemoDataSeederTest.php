@@ -57,17 +57,24 @@ it('fills every feature with demo data and does not duplicate it on rerun', func
         ->and(PageVisit::query()->count())->toBeGreaterThan(500);
 });
 
-it('shows a pledge in each state with due dates that follow its gifts', function () {
+it('shows a pledge in each state with due dates that follow its gifts', function (string $date) {
+    $this->travelTo($date);
     $this->seed(DatabaseSeeder::class);
 
-    $dueDate = fn (string $sponsor) => Sponsorship::query()->where('sponsor_name', $sponsor)->sole()->next_due_on;
+    $pledge = fn (string $sponsor) => Sponsorship::query()->where('sponsor_name', $sponsor)->sole();
 
-    expect($dueDate('Hannah Whitfield')->isSameDay(today()->addDays(12)))->toBeTrue()
-        ->and($dueDate('Marcus Bell')->isSameDay(today()->addDays(2)))->toBeTrue()
-        ->and($dueDate('Priya Nair')->isPast())->toBeTrue()
+    // Counting back whole months from a month end can land a few days early, never late.
+    foreach ([['Hannah Whitfield', 3, 12], ['Marcus Bell', 2, 2]] as [$sponsor, $monthsPaid, $dueInDays]) {
+        $due = $pledge($sponsor)->next_due_on;
+
+        expect($due->isSameDay($pledge($sponsor)->started_on->copy()->addMonthsNoOverflow($monthsPaid)))->toBeTrue()
+            ->and($due->betweenIncluded(today()->addDays($dueInDays - 3), today()->addDays($dueInDays)))->toBeTrue();
+    }
+
+    expect($pledge('Priya Nair')->next_due_on->isPast())->toBeTrue()
         ->and(Sponsorship::query()->where('status', SponsorshipStatus::Pending)->count())->toBe(1)
         ->and(Sponsorship::query()->where('status', SponsorshipStatus::Ended)->count())->toBe(1);
-});
+})->with(['2026-11-24', '2026-01-31', '2026-02-28', '2026-03-30', '2026-05-31', '2026-12-31']);
 
 it('never gives demo records an address that could reach a real person', function () {
     $this->seed(DatabaseSeeder::class);
