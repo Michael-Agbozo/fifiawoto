@@ -8,6 +8,7 @@ use App\Mail\SponsorshipReminder;
 use App\Models\Beneficiary;
 use App\Models\Donation;
 use App\Models\Sponsorship;
+use App\Support\Audit;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -153,6 +154,9 @@ new class extends Component
 
         if ($existing) {
             $existing->update($payload + ['started_on' => $data['started_on'] ?: null]);
+            if ($changes = Audit::changes($existing, ['monthly_amount_cents', 'reminders_enabled', 'started_on', 'sponsor_name'])) {
+                Audit::record('sponsorship.updated', "Updated {$existing->sponsor_name}'s sponsorship.", $existing, $changes);
+            }
             $existing->syncNextDueOn();
             $this->flashMessage = "Updated {$data['sponsor_name']}.";
             $this->resetForm();
@@ -171,6 +175,12 @@ new class extends Component
             'currency' => Money::baseCurrency(),
         ]);
         $sponsorship->activate(Carbon::parse($data['started_on']));
+
+        Audit::record('sponsorship.created', "Added {$sponsorship->sponsor_name} as an active sponsor of beneficiary #{$sponsorship->beneficiary_id}.", $sponsorship, [
+            'beneficiary_id' => $sponsorship->beneficiary_id,
+            'monthly_amount_cents' => $sponsorship->monthly_amount_cents,
+            'started_on' => $sponsorship->started_on?->toDateString(),
+        ]);
 
         $this->flashMessage = "Added {$data['sponsor_name']} as a sponsor.";
         $this->resetForm();
@@ -209,6 +219,11 @@ new class extends Component
             return;
         }
 
+        Audit::record('sponsorship.activated', "Activated {$sponsorship->sponsor_name}'s sponsorship of beneficiary #{$sponsorship->beneficiary_id}.", $sponsorship, [
+            'beneficiary_id' => $sponsorship->beneficiary_id,
+            'started_on' => $sponsorship->started_on?->toDateString(),
+        ]);
+
         Mail::to($sponsorship->sponsor_email)->queue(new SponsorshipActivated($sponsorship->load('beneficiary')));
 
         $this->activatingId = null;
@@ -221,6 +236,9 @@ new class extends Component
 
         $sponsorship = Sponsorship::query()->where('status', SponsorshipStatus::Pending->value)->findOrFail($id);
         $sponsorship->update(['status' => SponsorshipStatus::Declined]);
+        Audit::record('sponsorship.declined', "Declined the sponsorship request from {$sponsorship->sponsor_name}.", $sponsorship, [
+            'beneficiary_id' => $sponsorship->beneficiary_id,
+        ]);
         $this->flashMessage = "Declined the request from {$sponsorship->sponsor_name}.";
     }
 
@@ -230,6 +248,10 @@ new class extends Component
 
         $sponsorship = Sponsorship::query()->active()->findOrFail($id);
         $sponsorship->update(['status' => SponsorshipStatus::Ended, 'ended_on' => today()]);
+        Audit::record('sponsorship.ended', "Ended {$sponsorship->sponsor_name}'s sponsorship of beneficiary #{$sponsorship->beneficiary_id}.", $sponsorship, [
+            'beneficiary_id' => $sponsorship->beneficiary_id,
+            'ended_on' => today()->toDateString(),
+        ]);
         $this->flashMessage = "Ended {$sponsorship->sponsor_name}'s sponsorship. The child shows as available again.";
     }
 
@@ -279,6 +301,13 @@ new class extends Component
             'notes' => 'Sponsorship of '.$sponsorship->beneficiary->public_display_name,
         ]);
 
+        Audit::record('donation.created', "Recorded a sponsorship payment of {$donation->currency} ".number_format($donation->amount_cents / 100, 2)." from {$donation->donor_name}.", $donation, [
+            'amount_cents' => $donation->amount_cents,
+            'currency' => $donation->currency,
+            'sponsorship_id' => $sponsorship->id,
+            'months_covered' => $donation->months_covered,
+        ]);
+
         Mail::queue(new DonationReceipt($donation->fresh('event')));
 
         $this->payingId = null;
@@ -314,7 +343,15 @@ new class extends Component
     {
         abort_unless(auth()->user()?->canDo('sponsorships', 'delete'), 403);
 
+        $sponsorship = Sponsorship::query()->find($id);
         Sponsorship::query()->whereKey($id)->delete();
+
+        if ($sponsorship) {
+            Audit::record('sponsorship.deleted', "Deleted {$sponsorship->sponsor_name}'s sponsorship record.", $sponsorship, [
+                'beneficiary_id' => $sponsorship->beneficiary_id,
+                'status' => $sponsorship->status,
+            ]);
+        }
         $this->confirmDeleteId = null;
         $this->flashMessage = 'Sponsorship record deleted. Its donations are still on record.';
     }

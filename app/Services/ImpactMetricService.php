@@ -40,8 +40,14 @@ class ImpactMetricService
             ->orWhereDate('date_of_birth', '>', today()->subYears(18)->toDateString()))
             ->count();
 
+        $women = (clone $supported)->where('gender', 'female')->where(fn ($query) => $query
+            ->where('category', SupportCategory::WidowSupport->value)
+            ->orWhereDate('date_of_birth', '<=', today()->subYears(18)->toDateString()))
+            ->count();
+
         return [
             'children' => (int) SiteSettings::get('baseline_children') + $children,
+            'women' => (int) SiteSettings::get('baseline_women') + $women,
             'communities' => max((int) SiteSettings::get('baseline_communities'), (clone $supported)->whereNotNull('region')->distinct()->count('region')),
             'countries' => max((int) SiteSettings::get('baseline_countries'), (clone $supported)->whereNotNull('country')->distinct()->count('country')),
             'volunteer_hours' => (int) SiteSettings::get('baseline_volunteer_hours') + (int) floor((float) VolunteerHourLog::query()->sum('hours')),

@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Mail\TeamInvitation;
 use App\Models\User;
+use App\Support\Audit;
 use App\Support\Permissions;
 use App\Support\UserSessions;
 use Illuminate\Support\Facades\Hash;
@@ -107,7 +108,17 @@ new class extends Component
 
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
+        $previous = $user->extraPermissions();
         $user->forceFill(['permissions' => $filtered ?: null])->save();
+
+        $added = array_values(array_diff($filtered, $previous));
+        $removed = array_values(array_diff($previous, $filtered));
+        if ($added || $removed) {
+            Audit::record('user.permissions_changed', "Changed extra permissions for {$user->name}.", $user, [
+                'added' => $added,
+                'removed' => $removed,
+            ]);
+        }
 
         $this->editPermissionsId = null;
         $this->editPermissionsValues = [];
@@ -153,6 +164,11 @@ new class extends Component
         ]);
 
         Mail::queue(new TeamInvitation($user, $generated));
+
+        Audit::record('user.created', "Created an account for {$user->name} as {$user->role->label()} and sent an invitation.", $user, [
+            'email' => $user->email,
+            'role' => $user->role,
+        ]);
 
         $this->generatedPassword = $generated;
         $this->flashMessage = "Account created for {$data['name']}. Invitation email sent.";
@@ -214,7 +230,15 @@ new class extends Component
             return;
         }
 
+        $previousRole = $user->role;
         $user->forceFill(['role' => $this->editRoleValue])->save();
+
+        if ($previousRole !== $user->role) {
+            Audit::record('user.role_changed', "Changed {$user->name}'s role from ".($previousRole?->label() ?? 'none')." to {$user->role->label()}.", $user, [
+                'before' => ['role' => $previousRole],
+                'after' => ['role' => $user->role],
+            ]);
+        }
 
         $this->editRoleId = null;
         $this->editRoleValue = '';
@@ -235,6 +259,11 @@ new class extends Component
         ])->save();
         UserSessions::endOthers($user);
 
+        Audit::record('user.password_reset', "Reset {$user->name}'s password to a generated one.", $user, [
+            'method' => 'generated',
+            'must_change_on_next_login' => true,
+        ]);
+
         $this->generatedPassword = $newPassword;
         $this->flashMessage = "Password reset for {$user->name}. Share securely.";
     }
@@ -251,6 +280,10 @@ new class extends Component
         }
 
         $status = Password::broker(config('fortify.passwords'))->sendResetLink(['email' => $user->email]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            Audit::record('user.password_reset_link_sent', "Sent {$user->name} a password reset link.", $user);
+        }
 
         $this->flashMessage = match ($status) {
             Password::RESET_LINK_SENT => "Password reset link sent to {$user->name}.",
@@ -291,6 +324,11 @@ new class extends Component
 
         $mustChangePassword = $this->forcePasswordChange;
 
+        Audit::record('user.password_reset', "Set a new password for {$user->name}.", $user, [
+            'method' => 'set_by_admin',
+            'must_change_on_next_login' => $mustChangePassword,
+        ]);
+
         $this->cancelResetPassword();
         $this->flashMessage = "Password updated for {$user->name}."
             .($mustChangePassword ? ' They will be asked to set a new password on next login.' : '');
@@ -326,6 +364,12 @@ new class extends Component
             UserSessions::endOthers($user);
         }
 
+        Audit::record(
+            $user->is_active ? 'user.activated' : 'user.deactivated',
+            ($user->is_active ? 'Reactivated' : 'Deactivated')." {$user->name}'s account.",
+            $user,
+        );
+
         $this->flashMessage = $user->is_active
             ? "{$user->name}'s account is now active."
             : "{$user->name}'s account has been deactivated.";
@@ -354,6 +398,8 @@ new class extends Component
         $this->ensureCanManage($user);
         $disableTwoFactorAuthentication($user);
 
+        Audit::record('user.two_factor_disabled', "Turned off two-factor authentication for {$user->name}.", $user);
+
         $this->confirmDisable2faId = null;
         $this->flashMessage = "2FA has been disabled for {$user->name}.";
     }
@@ -366,6 +412,14 @@ new class extends Component
         $user = User::query()->findOrFail($id);
         $this->ensureCanManage($user);
         $user->forceFill(['requires_two_factor' => ! $user->requires_two_factor])->save();
+
+        Audit::record(
+            $user->requires_two_factor ? 'user.two_factor_required' : 'user.two_factor_requirement_removed',
+            $user->requires_two_factor
+                ? "Required two-factor authentication for {$user->name}."
+                : "Removed the two-factor requirement for {$user->name}.",
+            $user,
+        );
 
         $this->flashMessage = $user->requires_two_factor
             ? "2FA is now required for {$user->name}."
@@ -406,6 +460,11 @@ new class extends Component
 
         $name = $user->name;
         $user->delete();
+
+        Audit::record('user.deleted', "Deleted {$name}'s account.", $user, [
+            'email' => $user->email,
+            'role' => $user->role,
+        ]);
 
         $this->confirmDeleteId = null;
         $this->flashMessage = "Removed account for {$name}.";

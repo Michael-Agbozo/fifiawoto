@@ -7,6 +7,7 @@ use App\Mail\NewsletterCampaignMail;
 use App\Models\NewsletterCampaign;
 use App\Models\NewsletterCampaignRecipient;
 use App\Models\NewsletterSubscriber;
+use App\Support\Audit;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -129,7 +130,11 @@ new class extends Component
             ->update(['status' => NewsletterCampaignStatus::Sending->value, 'sent_by' => auth()->id(), 'started_at' => now()]);
 
         if ($started) {
-            SendNewsletterCampaign::dispatch(NewsletterCampaign::query()->findOrFail($this->confirmSendId));
+            $campaign = NewsletterCampaign::query()->findOrFail($this->confirmSendId);
+            SendNewsletterCampaign::dispatch($campaign);
+            Audit::record('newsletter.campaign_sent', "Started sending the newsletter \"{$campaign->subject}\" to {$this->activeSubscriberCount} subscriber(s).", $campaign, [
+                'subscriber_count' => $this->activeSubscriberCount,
+            ]);
             $this->flashMessage = 'Sending has started. Progress shows in the list below.';
         }
 

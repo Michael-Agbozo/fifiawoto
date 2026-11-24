@@ -168,7 +168,8 @@ it('exports the KPIs from the overview tab', function () {
 
 it('paginates the detail table on screen while exports stay complete', function () {
     Donation::factory()->count(30)->create(['received_at' => now()]);
-    Donation::factory()->create(['donor_name' => 'Zed Last Donor', 'received_at' => now()->addSecond()]);
+    // The smallest gift, so the top donors summary on the same page never lists it.
+    Donation::factory()->create(['donor_name' => 'Zed Last Donor', 'amount_cents' => 100, 'received_at' => now()->addSecond()]);
 
     $component = Livewire::test('admin.reports')->set('category', 'donations');
 

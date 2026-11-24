@@ -41,6 +41,7 @@ function adminGatingMatrix(): array
         'admin.settings.site' => $management,
         'admin.settings.popup' => $management,
         'admin.users.index' => $management,
+        'admin.audit-log.index' => $management,
         'admin.system-logs.index' => [UserRole::Owner],
     ];
 }
@@ -78,14 +79,16 @@ it('honours a per-user grant in both the sidebar and the route', function () {
     $this->actingAs($user)->get(route('admin.donations.index'))->assertOk();
 });
 
-it('never opens user management or system logs through a per-user grant', function () {
-    $user = User::factory()->foundationStaff()->create(['permissions' => ['users.view', 'users.update', 'system_logs.view']]);
+it('never opens user management, the audit log or system logs through a per-user grant', function () {
+    $user = User::factory()->foundationStaff()->create(['permissions' => ['users.view', 'users.update', 'system_logs.view', 'audit_log.view']]);
     $sidebar = sidebarLinks($user);
 
     expect(sidebarShows($sidebar, 'admin.users.index'))->toBeFalse()
+        ->and(sidebarShows($sidebar, 'admin.audit-log.index'))->toBeFalse()
         ->and(sidebarShows($sidebar, 'admin.system-logs.index'))->toBeFalse();
 
     $this->actingAs($user)->get(route('admin.users.index'))->assertForbidden();
+    $this->actingAs($user)->get(route('admin.audit-log.index'))->assertForbidden();
     $this->actingAs($user)->get(route('admin.system-logs.index'))->assertForbidden();
 });
 

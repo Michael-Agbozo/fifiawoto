@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryApplicationDocument;
 use App\Models\BeneficiaryDocument;
+use App\Support\Audit;
 use App\Support\SecureDocumentStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -62,7 +63,10 @@ class DocumentDownloadController extends Controller
     {
         abort_unless($request->user()?->canDo('beneficiaries', 'view'), 403);
 
-        return $this->stream($request, $document);
+        $response = $this->stream($request, $document);
+        $this->recordAccess($request, $document, "{$beneficiary->full_name}'s record");
+
+        return $response;
     }
 
     /**
@@ -93,7 +97,23 @@ class DocumentDownloadController extends Controller
     {
         abort_unless($request->user()?->canDo('beneficiary_applications', 'view'), 403);
 
-        return $this->stream($request, $document);
+        $response = $this->stream($request, $document);
+        $this->recordAccess($request, $document, "the application from {$application->full_name}");
+
+        return $response;
+    }
+
+    /** Logged once the file is known to exist, so a 404 doesn't read as an access. */
+    protected function recordAccess(Request $request, BeneficiaryDocument|BeneficiaryApplicationDocument $document, string $owner): void
+    {
+        $downloaded = $request->boolean('download');
+
+        Audit::record(
+            $document instanceof BeneficiaryDocument ? 'beneficiary_document.'.($downloaded ? 'downloaded' : 'viewed') : 'application_document.'.($downloaded ? 'downloaded' : 'viewed'),
+            ($downloaded ? 'Downloaded' : 'Opened')." \"{$document->original_name}\" from {$owner}.",
+            $document,
+            ['file_name' => $document->original_name],
+        );
     }
 
     protected function stream(Request $request, BeneficiaryDocument|BeneficiaryApplicationDocument $document): StreamedResponse

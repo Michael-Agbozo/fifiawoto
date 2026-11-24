@@ -51,6 +51,7 @@
             'heading' => 'Operations',
             'items' => [
                 ['label' => 'User management',          'route' => 'admin.users.index',                     'icon' => 'shield',    'show' => $user?->hasRole(\App\Enums\UserRole::Owner, \App\Enums\UserRole::SuperAdmin) ?? false],
+                ['label' => 'Audit log',                'route' => 'admin.audit-log.index',                 'icon' => 'shield',    'show' => $user?->hasRole(\App\Enums\UserRole::Owner, \App\Enums\UserRole::SuperAdmin) ?? false],
                 ['label' => 'System logs',              'route' => 'admin.system-logs.index',               'icon' => 'shield',    'show' => $user?->hasRole(\App\Enums\UserRole::Owner) ?? false],
             ],
         ],

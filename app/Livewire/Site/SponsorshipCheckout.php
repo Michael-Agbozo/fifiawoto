@@ -10,6 +10,7 @@ use App\Mail\ContactFormReceived;
 use App\Models\Beneficiary;
 use App\Models\ContactMessage;
 use App\Models\Sponsorship;
+use App\Support\Audit;
 use App\Support\Money;
 use App\Support\SiteAnalytics;
 use Illuminate\Contracts\View\View;
@@ -203,7 +204,7 @@ class SponsorshipCheckout extends Component
                     'status' => ContactMessageStatus::New,
                 ]);
 
-                Sponsorship::query()->create([
+                $sponsorship = Sponsorship::query()->create([
                     'beneficiary_id' => $child->id,
                     'contact_message_id' => $message->id,
                     'sponsor_name' => $name,
@@ -215,6 +216,11 @@ class SponsorshipCheckout extends Component
                     'one_time_gift_cents' => $details['gift_cents'],
                     'currency' => $details['currency'],
                     'status' => SponsorshipStatus::Pending,
+                ]);
+
+                Audit::record('sponsorship.requested', "{$name} asked on the website to sponsor {$child->public_display_name}.", $sponsorship, [
+                    'beneficiary_id' => $child->id,
+                    'monthly_amount_cents' => $sponsorship->monthly_amount_cents,
                 ]);
 
                 Mail::to(config('notifications.admin_email'))->queue(

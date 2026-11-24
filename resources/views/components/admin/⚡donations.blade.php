@@ -4,6 +4,7 @@ use App\Enums\PaymentMethod;
 use App\Mail\DonationReceipt;
 use App\Models\Donation;
 use App\Models\Event;
+use App\Support\Audit;
 use App\Support\CsvCell;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
@@ -140,10 +141,19 @@ new class extends Component
 
         if ($this->editingId) {
             // Save through the model so the received_at date cast is applied consistently.
-            Donation::query()->findOrFail($this->editingId)->update($payload);
+            $donation = Donation::query()->findOrFail($this->editingId);
+            $donation->update($payload);
+            if ($changes = Audit::changes($donation, ['amount_cents', 'currency', 'payment_method', 'event_id', 'received_at', 'donor_name'])) {
+                Audit::record('donation.updated', "Updated the gift from {$donation->donor_name}.", $donation, $changes);
+            }
             $this->flashMessage = "Updated gift from {$data['donor_name']}.";
         } else {
             $donation = Donation::query()->create($payload + ['recorded_by' => auth()->id()]);
+            Audit::record('donation.created', "Recorded a gift of {$donation->currency} ".number_format($donation->amount_cents / 100, 2)." from {$donation->donor_name}.", $donation, [
+                'amount_cents' => $donation->amount_cents,
+                'currency' => $donation->currency,
+                'payment_method' => $donation->payment_method,
+            ]);
             $this->flashMessage = "Recorded gift from {$data['donor_name']}.";
 
             // Never email a receipt for a zero/missing amount (e.g. a malformed import).
@@ -175,6 +185,12 @@ new class extends Component
         $d = Donation::query()->findOrFail($id);
         $name = $d->donor_name;
         $d->delete();
+
+        Audit::record('donation.deleted', "Deleted the gift of {$d->currency} ".number_format($d->amount_cents / 100, 2)." from {$name}.", $d, [
+            'amount_cents' => $d->amount_cents,
+            'currency' => $d->currency,
+            'received_at' => $d->received_at?->toDateString(),
+        ]);
 
         $this->confirmDeleteId = null;
         $this->flashMessage = "Deleted gift from {$name}.";

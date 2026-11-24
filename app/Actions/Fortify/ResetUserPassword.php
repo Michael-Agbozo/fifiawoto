@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Models\User;
+use App\Support\Audit;
 use App\Support\UserSessions;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\ResetsUserPasswords;
@@ -29,5 +30,7 @@ class ResetUserPassword implements ResetsUserPasswords
         ])->save();
 
         UserSessions::endOthers($user);
+
+        Audit::record('user.password_reset_by_link', "{$user->name} reset their password using an emailed link.", $user, actor: $user);
     }
 }

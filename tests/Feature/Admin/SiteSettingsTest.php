@@ -62,15 +62,16 @@ it('blocks the page for roles without access', function () {
 });
 
 it('adds new records to the impact baselines', function () {
-    SiteSettings::save(['baseline_children' => 100, 'baseline_communities' => 1, 'baseline_countries' => 1, 'baseline_volunteer_hours' => 50]);
+    SiteSettings::save(['baseline_children' => 100, 'baseline_women' => 0, 'baseline_communities' => 1, 'baseline_countries' => 1, 'baseline_volunteer_hours' => 50]);
 
-    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'category' => SupportCategory::ChildEducation, 'region' => 'Volta', 'country' => 'Ghana']);
-    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'category' => SupportCategory::Medical, 'date_of_birth' => today()->subYears(40), 'region' => 'Lomé', 'country' => 'Togo']);
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'male', 'category' => SupportCategory::ChildEducation, 'region' => 'Volta', 'country' => 'Ghana']);
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'male', 'category' => SupportCategory::Medical, 'date_of_birth' => today()->subYears(40), 'region' => 'Lomé', 'country' => 'Togo']);
     Beneficiary::factory()->create(['status' => SupportStatus::PendingReview, 'category' => SupportCategory::ChildEducation, 'region' => 'Accra', 'country' => 'Benin']);
     VolunteerHourLog::query()->create(['hours' => 2.5, 'served_on' => today()]);
 
     expect(app(ImpactMetricService::class)->publicStats())->toBe([
         'children' => 101,
+        'women' => 0,
         'communities' => 2,
         'countries' => 2,
         'volunteer_hours' => 52,
@@ -121,4 +122,24 @@ it('rejects an overlong Mobile Money number', function () {
         ->set('form.mobile_money_number', str_repeat('1', 41))
         ->call('save')
         ->assertHasErrors('form.mobile_money_number');
+});
+
+it('counts supported adult women and widows towards women empowered', function () {
+    SiteSettings::save(['baseline_women' => 10]);
+
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'female', 'category' => SupportCategory::Medical, 'date_of_birth' => today()->subYears(35)]);
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'female', 'category' => SupportCategory::WidowSupport, 'date_of_birth' => null]);
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'female', 'category' => SupportCategory::ChildEducation, 'date_of_birth' => today()->subYears(9)]);
+    Beneficiary::factory()->create(['status' => SupportStatus::Active, 'gender' => 'male', 'category' => SupportCategory::Medical, 'date_of_birth' => today()->subYears(40)]);
+    Beneficiary::factory()->create(['status' => SupportStatus::PendingReview, 'gender' => 'female', 'category' => SupportCategory::WidowSupport]);
+
+    expect(app(ImpactMetricService::class)->publicStats()['women'])->toBe(12);
+});
+
+it('shows women empowered on the home page only when there is a number to show', function () {
+    SiteSettings::save(['baseline_women' => 230]);
+    $this->get(route('home'))->assertOk()->assertSee('Women Empowered');
+
+    SiteSettings::save(['baseline_women' => 0]);
+    $this->get(route('home'))->assertOk()->assertDontSee('Women Empowered');
 });

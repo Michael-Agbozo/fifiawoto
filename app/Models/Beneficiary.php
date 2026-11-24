@@ -21,6 +21,16 @@ class Beneficiary extends Model
     /** Validation rules for a link to the beneficiary's Google Drive folder. */
     public const DRIVE_FOLDER_URL_RULES = ['nullable', 'string', 'max:500', 'url:https', 'regex:#^https://drive\.google\.com/#'];
 
+    /**
+     * Fields whose before/after values may go in the audit log. Everything else
+     * (case notes, stories, contact details, dates of birth, file paths) is
+     * logged by field name only.
+     */
+    public const AUDITABLE_VALUES = [
+        'status', 'category', 'country', 'assigned_to_user_id',
+        'sponsorship_published', 'guardian_consent_at',
+    ];
+
     /** Private disk for internal record photos, served through an authenticated route. */
     public const PRIVATE_PHOTO_DISK = 'beneficiaries';
 

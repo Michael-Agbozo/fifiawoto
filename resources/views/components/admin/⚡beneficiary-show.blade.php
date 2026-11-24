@@ -7,6 +7,7 @@ use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
 use App\Models\SponsorshipPhoto;
+use App\Support\Audit;
 use App\Support\SecureDocumentStore;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -113,6 +114,9 @@ new class extends Component
         ]);
 
         $this->beneficiary->update(['drive_folder_url' => $this->driveFolderUrl ?: null]);
+        if ($changes = Audit::changes($this->beneficiary)) {
+            Audit::record('beneficiary.updated', ($this->driveFolderUrl ? 'Linked' : 'Unlinked')." the Google Drive folder for {$this->beneficiary->full_name}.", $this->beneficiary, $changes);
+        }
         $this->flashMessage = $this->driveFolderUrl ? 'Google Drive folder linked.' : 'Google Drive folder link removed.';
         $this->dispatch('drive-folder-saved');
     }
@@ -157,6 +161,10 @@ new class extends Component
         }
 
         $count = count($this->galleryUploads);
+        Audit::record('beneficiary.gallery_photos_added', "Added {$count} public gallery photo(s) for {$this->beneficiary->full_name}.", $this->beneficiary, [
+            'count' => $count,
+            'sensitive' => $this->galleryUploadsSensitive,
+        ]);
         $this->reset('galleryUploads', 'galleryUploadsSensitive');
         $this->flashMessage = $count === 1 ? 'Gallery photo added.' : $count.' gallery photos added.';
     }
@@ -194,6 +202,9 @@ new class extends Component
         $photo = $this->beneficiary->sponsorshipPhotos()->findOrFail($photoId);
         Storage::disk('public')->delete($photo->path);
         $photo->delete();
+        Audit::record('beneficiary.gallery_photo_removed', "Removed a public gallery photo for {$this->beneficiary->full_name}.", $this->beneficiary, [
+            'photo_id' => $photoId,
+        ]);
         $this->flashMessage = 'Gallery photo removed.';
     }
 
@@ -232,6 +243,8 @@ new class extends Component
                 return;
             }
         }
+        $hadConsent = $this->beneficiary->guardian_consent_at !== null;
+        $wasPublished = (bool) $this->beneficiary->sponsorship_published;
         $oldPhoto = $this->beneficiary->public_photo_path;
         $photo = $oldPhoto;
         if ($this->sponsorshipPhoto && $this->sponsorshipPublished) {
@@ -265,7 +278,47 @@ new class extends Component
             $this->beneficiary->unsetRelation('sponsorshipPhotos');
         }
         $this->reset('sponsorshipPhoto');
+        $this->recordSponsorshipChanges($hadConsent, $wasPublished);
         $this->flashMessage = 'Public sponsorship settings saved.';
+    }
+
+    /**
+     * Consent and publishing get their own audit entries so they're easy to find;
+     * any other public-profile edits are logged by field name.
+     */
+    private function recordSponsorshipChanges(bool $hadConsent, bool $wasPublished): void
+    {
+        $beneficiary = $this->beneficiary;
+        $changes = Audit::changes($beneficiary, Beneficiary::AUDITABLE_VALUES);
+        $hasConsent = $beneficiary->guardian_consent_at !== null;
+        $isPublished = (bool) $beneficiary->sponsorship_published;
+
+        if ($hasConsent !== $hadConsent) {
+            Audit::record(
+                $hasConsent ? 'beneficiary.consent_given' : 'beneficiary.consent_withdrawn',
+                $hasConsent
+                    ? "Recorded guardian consent for {$beneficiary->full_name}."
+                    : "Recorded that guardian consent was withdrawn for {$beneficiary->full_name}; public photos removed.",
+                $beneficiary,
+            );
+        }
+
+        if ($isPublished !== $wasPublished) {
+            Audit::record(
+                $isPublished ? 'beneficiary.sponsorship_published' : 'beneficiary.sponsorship_unpublished',
+                ($isPublished ? 'Published' : 'Unpublished')." the public sponsorship profile for {$beneficiary->full_name}.",
+                $beneficiary,
+            );
+        }
+
+        $loggedAbove = ['guardian_consent_at', 'sponsorship_published', ...($hasConsent !== $hadConsent ? ['guardian_consent_reference'] : [])];
+        $otherFields = array_values(array_diff($changes['fields'] ?? [], $loggedAbove));
+
+        if ($otherFields !== []) {
+            Audit::record('beneficiary.updated', "Updated the public sponsorship profile for {$beneficiary->full_name} (".implode(', ', $otherFields).').', $beneficiary, [
+                'fields' => $otherFields,
+            ]);
+        }
     }
 
     // ---------- Status / quick actions ----------
@@ -278,6 +331,9 @@ new class extends Component
         }
 
         $this->beneficiary->update(['status' => $status]);
+        if ($changes = Audit::changes($this->beneficiary, Beneficiary::AUDITABLE_VALUES)) {
+            Audit::record('beneficiary.updated', "Set {$this->beneficiary->full_name}'s status to ".SupportStatus::from($status)->label().'.', $this->beneficiary, $changes);
+        }
         $this->beneficiary->refresh();
 
         // Auto timeline entry
@@ -442,6 +498,12 @@ new class extends Component
         BeneficiaryDocument::query()->whereIn('folder_id', $folderIds)->delete();
         BeneficiaryFolder::query()->whereIn('id', $folderIds)->delete();
 
+        Audit::record('beneficiary_document.folder_deleted', "Deleted the folder \"{$folder->name}\" and its {$docs->count()} file(s) from {$this->beneficiary->full_name}'s record.", $this->beneficiary, [
+            'folder_id' => $folder->id,
+            'document_ids' => $docs->pluck('id')->all(),
+            'file_names' => $docs->pluck('original_name')->all(),
+        ]);
+
         $this->confirmDeleteFolderId = null;
         $this->beneficiary->load(['folders', 'documents']);
         $this->flashMessage = 'Folder and its contents removed.';
@@ -494,7 +556,7 @@ new class extends Component
         foreach ($this->documentUploads as $index => $upload) {
             $path = app(SecureDocumentStore::class)->store($upload, "{$this->beneficiary->id}/documents");
 
-            BeneficiaryDocument::query()->create([
+            $document = BeneficiaryDocument::query()->create([
                 'beneficiary_id' => $this->beneficiary->id,
                 'folder_id' => $folderId,
                 'disk' => 'beneficiaries',
@@ -509,6 +571,13 @@ new class extends Component
                 'scan_checked_at' => now(),
             ]);
             $saved++;
+
+            Audit::record('beneficiary_document.uploaded', "Uploaded \"{$document->original_name}\" to {$this->beneficiary->full_name}'s record.", $document, [
+                'beneficiary_id' => $this->beneficiary->id,
+                'file_name' => $document->original_name,
+                'size_bytes' => $document->size_bytes,
+                'scan_status' => $document->scan_status,
+            ]);
         }
 
         app(SecureDocumentStore::class)->discardTemporaryUploads($this->documentUploads);
@@ -539,6 +608,11 @@ new class extends Component
             Storage::disk($doc->disk ?: 'public')->delete($doc->path);
         }
         $doc->delete();
+
+        Audit::record('beneficiary_document.deleted', "Deleted \"{$doc->original_name}\" from {$this->beneficiary->full_name}'s record.", $doc, [
+            'beneficiary_id' => $this->beneficiary->id,
+            'file_name' => $doc->original_name,
+        ]);
 
         $this->confirmDeleteDocumentId = null;
         $this->beneficiary->load('documents');

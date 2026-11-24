@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\PasswordValidationRules;
+use App\Support\Audit;
 use App\Support\UserSessions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -39,6 +40,10 @@ new #[Title('Password settings')] class extends Component
         ])->save();
 
         UserSessions::endOthers(Auth::user(), session()->getId());
+
+        Audit::record('user.password_changed', Auth::user()->name.' changed their own password.', Auth::user(), [
+            'after_admin_reset' => (bool) $forced,
+        ]);
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

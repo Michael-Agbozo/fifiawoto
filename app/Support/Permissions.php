@@ -46,6 +46,7 @@ class Permissions
             'reports' => ['label' => 'Reports', 'actions' => ['view' => 'View', 'export' => 'Export']],
             'users' => ['label' => 'User accounts', 'actions' => $crud],
             'system_logs' => ['label' => 'System logs', 'actions' => ['view' => 'View']],
+            'audit_log' => ['label' => 'Audit log', 'actions' => ['view' => 'View']],
         ];
     }
 

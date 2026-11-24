@@ -11,6 +11,7 @@ use App\Models\BeneficiaryApplication;
 use App\Models\BeneficiaryDocument;
 use App\Models\BeneficiaryFolder;
 use App\Models\BeneficiaryTimelineEntry;
+use App\Support\Audit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -65,11 +66,25 @@ new class extends Component
             return;
         }
 
+        $previousStatus = $app->status;
         $app->update([
             'status' => $status,
             'reviewer_id' => auth()->id(),
             'reviewed_at' => now(),
         ]);
+
+        if ($previousStatus !== $app->status) {
+            Audit::record(
+                match ($app->status) {
+                    BeneficiaryApplicationStatus::Approved => 'beneficiary_application.approved',
+                    BeneficiaryApplicationStatus::Rejected => 'beneficiary_application.rejected',
+                    default => 'beneficiary_application.status_changed',
+                },
+                "Set the application from {$app->full_name} to {$app->status->label()}.",
+                $app,
+                ['before' => ['status' => $previousStatus], 'after' => ['status' => $app->status]],
+            );
+        }
 
         $this->flashMessage = "Application from {$app->full_name} set to {$app->status->label()}.";
     }
@@ -190,6 +205,15 @@ new class extends Component
             return;
         }
 
+        Audit::record('beneficiary_application.approved', "Approved the application from {$app->full_name} and created a beneficiary record.", $app, [
+            'beneficiary_id' => $beneficiary->id,
+        ]);
+        Audit::record('beneficiary.created', "Created a beneficiary record for {$beneficiary->full_name} from their application.", $beneficiary, [
+            'source_application_id' => $app->id,
+            'category' => $beneficiary->category,
+            'status' => $beneficiary->status,
+        ]);
+
         if (filled($app->email)) {
             Mail::queue(new BeneficiaryApplicationConverted($app));
         }
@@ -220,6 +244,9 @@ new class extends Component
         }
 
         $app->delete();
+        Audit::record('beneficiary_application.deleted', "Deleted the application from {$app->full_name} and its {$app->documents->count()} file(s).", $app, [
+            'status' => $app->status,
+        ]);
         $this->confirmDeleteId = null;
         $this->flashMessage = 'Application removed.';
     }
